@@ -202,6 +202,7 @@ def reference_embedding(path):
 def warm_cache(rooms, base):
     """Precompute reference features so the first scan isn't slow. Safe to run in a thread."""
     base = Path(base).resolve()
+    warm_items(base)
     for room in rooms:
         for name in room.get('images', []):
             path = (base / name).resolve()
@@ -298,6 +299,125 @@ def match_rooms(query_raw, rooms, base, limit=3):
          f"in {time.time() - started:.1f}s")
     return [{'room_id': r, 'matches': scores[r]['matches'], 'similarity': scores[r]['similarity'],
              'evidence': accepted[r], 'confident': confident} for r in ranked[:limit]]
+
+
+# ---------------------------------------------------------------- item recognition
+
+# Labeled examples: data/items (synthetic "campus_lost_items" set, 11 classes, RUID first).
+ITEM_MIN_SIMILARITY = float(os.getenv('ITEM_MIN_SIMILARITY', '0.35'))
+ITEM_MIN_MARGIN = float(os.getenv('ITEM_MIN_MARGIN', '0.02'))
+
+# class -> (title shown to the finder, backend category, priority, always private)
+ITEM_CLASSES = {
+    'ruid': ('Rutgers ID card (RUID)', 'id_card', 'P1-critical', True),
+    'wallet': ('Wallet', 'wallet', 'P1', True),
+    'phone': ('Phone', 'electronics', 'P1', True),
+    'keys': ('Keys', 'keys', 'P1', True),
+    'other_id_card': ('ID card', 'id_card', 'P2', True),
+    'eyeglasses': ('Glasses', 'other', 'P2', False),
+    'earbuds': ('Earbuds', 'electronics', 'P2', False),
+    'headphones': ('Headphones', 'electronics', 'P2', False),
+    'backpack': ('Backpack', 'bag', 'P2', False),
+    'water_bottle': ('Water bottle', 'bottle', 'P3', False),
+    'umbrella': ('Umbrella', 'other', 'P3', False),
+}
+
+
+def _center_crop(image, keep=0.8):
+    h, w = image.shape[:2]
+    dh, dw = int(h * (1 - keep) / 2), int(w * (1 - keep) / 2)
+    return image[dh:h - dh, dw:w - dw]
+
+
+@lru_cache(maxsize=1)
+def item_references(base):
+    """[(class, path, (x0, y0, x1, y1))] from data/items/annotations.csv."""
+    import csv
+    root = Path(base) / 'items'
+    refs = []
+    try:
+        with open(root / 'annotations.csv', newline='') as f:
+            for row in csv.DictReader(f):
+                if row['class_name'] in ITEM_CLASSES and (root / row['file']).is_file():
+                    box = tuple(int(float(row[k])) for k in ('bbox_x0', 'bbox_y0', 'bbox_x1', 'bbox_y1'))
+                    refs.append((row['class_name'], str(root / row['file']), box))
+    except OSError:
+        pass
+    return tuple(refs)
+
+
+@lru_cache(maxsize=256)
+def _item_embedding(path_str, box):
+    image = cv2.imread(path_str, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError(f'Unreadable item image: {path_str}')
+    x0, y0, x1, y1 = box
+    pad = int(0.12 * max(x1 - x0, y1 - y0))   # keep a little of the surface, like a real photo
+    h, w = image.shape[:2]
+    crop = image[max(0, y0 - pad):min(h, y1 + pad), max(0, x0 - pad):min(w, x1 + pad)]
+    return _embed_bgr(crop if crop.size else image)
+
+
+def warm_items(base):
+    if scene_model() is None:
+        return
+    for _, path, box in item_references(str(base)):
+        try:
+            _item_embedding(path, box)
+        except ValueError:
+            pass
+
+
+def _variant(path):
+    """'ruid_v3_r2.jpg' -> 'v3'. RUID has 5 renders per variant, other classes 1."""
+    return Path(path).stem.split('_v')[-1].split('_')[0]
+
+
+def _variant_prototypes(refs):
+    """{(class, variant): unit vector}: the average of a variant's renders, so every variant
+    counts once whether it has 1 photo or 5 (RUID)."""
+    groups = {}
+    for cls, path, box in refs:
+        groups.setdefault((cls, _variant(path)), []).append(_item_embedding(path, box))
+    protos = {}
+    for key, vectors in groups.items():
+        mean = np.mean(vectors, axis=0)
+        protos[key] = mean / (np.linalg.norm(mean) + 1e-8)
+    return protos
+
+
+def _score_classes(query, refs, skip=None):
+    """[(score, class)] best first: a class scores the mean of its 3 most similar variants."""
+    by_class = {}
+    for (cls, variant), proto in _variant_prototypes(refs).items():
+        if (cls, variant) != skip:
+            by_class.setdefault(cls, []).append(float(query @ proto))
+    return sorted(((float(np.mean(sorted(v, reverse=True)[:3])), c) for c, v in by_class.items()), reverse=True)
+
+
+def classify_item(raw, base):
+    """Best-matching item class for a found-item photo, or None if the model isn't available.
+
+    Each class scores the mean of its 3 most similar variants. Returns
+    {class, title, category, priority, sensitive, similarity, lead, confident, runner_up}.
+    """
+    if scene_model() is None:
+        return None
+    refs = item_references(str(base))
+    if not refs:
+        return None
+    image = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError('Unreadable image')
+    query = _embed_bgr(_center_crop(image))
+    scored = _score_classes(query, refs)
+    (top, cls), (second, runner) = scored[0], scored[1]
+    title, category, priority, sensitive = ITEM_CLASSES[cls]
+    result = {'class': cls, 'title': title, 'category': category, 'priority': priority,
+              'sensitive': sensitive, 'similarity': top, 'lead': top - second,
+              'runner_up': runner, 'confident': top >= ITEM_MIN_SIMILARITY and top - second >= ITEM_MIN_MARGIN}
+    _log(f"item: {cls} {top:.2f} (next {runner} {second:.2f}) -> {'suggested' if result['confident'] else 'not sure'}")
+    return result
 
 
 # Named colors in HSV terms. Hue in OpenCV is 0-179.

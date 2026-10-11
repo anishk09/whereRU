@@ -1,0 +1,121 @@
+file,class_id,class_name,priority,variant,variant_name,size_class,shape,color,background,rotation_deg,bbox_x0,bbox_y0,bbox_x1,bbox_y1
+images/ruid/ruid_v1_r1.jpg,0,ruid,P1-critical,1,"RUID front, clean",M,portrait CR80,red header / white,lawn,26.9,158,111,374,370
+images/ruid/ruid_v1_r2.jpg,0,ruid,P1-critical,1,"RUID front, clean",M,portrait CR80,red header / white,gray laminate,-4.5,146,145,344,414
+images/ruid/ruid_v1_r3.jpg,0,ruid,P1-critical,1,"RUID front, clean",M,portrait CR80,red header / white,dark lab bench,-4.9,154,104,354,404
+images/ruid/ruid_v1_r4.jpg,0,ruid,P1-critical,1,"RUID front, clean",M,portrait CR80,red header / white,white laminate,-0.2,110,86,334,428
+images/ruid/ruid_v1_r5.jpg,0,ruid,P1-critical,1,"RUID front, clean",M,portrait CR80,red header / white,tile floor,22.5,144,94,376,406
+images/ruid/ruid_v2_r1.jpg,0,ruid,P1-critical,2,"RUID front, worn & scuffed",M,"portrait CR80, worn edges",red header / off-white,gray laminate,4.4,165,114,360,406
+images/ruid/ruid_v2_r2.jpg,0,ruid,P1-critical,2,"RUID front, worn & scuffed",M,"portrait CR80, worn edges",red header / off-white,wood desk,13.9,139,102,388,442
+images/ruid/ruid_v2_r3.jpg,0,ruid,P1-critical,2,"RUID front, worn & scuffed",M,"portrait CR80, worn edges",red header / off-white,tile floor,-26.5,135,123,386,418
+images/ruid/ruid_v2_r4.jpg,0,ruid,P1-critical,2,"RUID front, worn & scuffed",M,"portrait CR80, worn edges",red header / off-white,gray laminate,-13.3,132,106,359,391
+images/ruid/ruid_v2_r5.jpg,0,ruid,P1-critical,2,"RUID front, worn & scuffed",M,"portrait CR80, worn edges",red header / off-white,dark lab bench,-13.1,154,84,379,428
+images/ruid/ruid_v3_r1.jpg,0,ruid,P1-critical,3,RUID on red lanyard,L,portrait + lanyard,red lanyard,gray laminate,-6.5,150,0,360,370
+images/ruid/ruid_v3_r2.jpg,0,ruid,P1-critical,3,RUID on red lanyard,L,portrait + lanyard,red lanyard,concrete,2.2,117,0,366,428
+images/ruid/ruid_v3_r3.jpg,0,ruid,P1-critical,3,RUID on red lanyard,L,portrait + lanyard,red lanyard,tile floor,29.6,34,0,416,442
+images/ruid/ruid_v3_r4.jpg,0,ruid,P1-critical,3,RUID on red lanyard,L,portrait + lanyard,red lanyard,gray laminate,-8.3,151,0,397,470
+images/ruid/ruid_v3_r5.jpg,0,ruid,P1-critical,3,RUID on red lanyard,L,portrait + lanyard,red lanyard,white laminate,2.0,124,21,368,430
+images/ruid/ruid_v4_r1.jpg,0,ruid,P1-critical,4,RUID in clear badge sleeve,M,portrait in sleeve,red header / clear,gray laminate,-0.4,136,48,370,454
+images/ruid/ruid_v4_r2.jpg,0,ruid,P1-critical,4,RUID in clear badge sleeve,M,portrait in sleeve,red header / clear,lawn,-25.2,80,80,411,450
+images/ruid/ruid_v4_r3.jpg,0,ruid,P1-critical,4,RUID in clear badge sleeve,M,portrait in sleeve,red header / clear,gray carpet,24.6,72,30,438,454
+images/ruid/ruid_v4_r4.jpg,0,ruid,P1-critical,4,RUID in clear badge sleeve,M,portrait in sleeve,red header / clear,gray carpet,13.5,122,114,364,412
+images/ruid/ruid_v4_r5.jpg,0,ruid,P1-critical,4,RUID in clear badge sleeve,M,portrait in sleeve,red header / clear,gray laminate,2.9,148,32,406,404
+images/ruid/ruid_v5_r1.jpg,0,ruid,P1-critical,5,RUID back side,M,"portrait, back (mag stripe)",white / black stripe,white laminate,-12.4,136,96,374,437
+images/ruid/ruid_v5_r2.jpg,0,ruid,P1-critical,5,RUID back side,M,"portrait, back (mag stripe)",white / black stripe,library table,19.6,130,129,366,400
+images/ruid/ruid_v5_r3.jpg,0,ruid,P1-critical,5,RUID back side,M,"portrait, back (mag stripe)",white / black stripe,gray carpet,3.4,151,108,350,411
+images/ruid/ruid_v5_r4.jpg,0,ruid,P1-critical,5,RUID back side,M,"portrait, back (mag stripe)",white / black stripe,gray laminate,-28.3,124,132,358,398
+images/ruid/ruid_v5_r5.jpg,0,ruid,P1-critical,5,RUID back side,M,"portrait, back (mag stripe)",white / black stripe,white laminate,12.0,113,76,388,438
+images/ruid/ruid_v6_r1.jpg,0,ruid,P1-critical,6,RUID on keyring,M,portrait + punched slot + keys,red header / silver keys,white laminate,-4.3,108,65,343,382
+images/ruid/ruid_v6_r2.jpg,0,ruid,P1-critical,6,RUID on keyring,M,portrait + punched slot + keys,red header / silver keys,gray carpet,-6.1,147,0,386,412
+images/ruid/ruid_v6_r3.jpg,0,ruid,P1-critical,6,RUID on keyring,M,portrait + punched slot + keys,red header / silver keys,wood desk,-9.7,114,0,354,436
+images/ruid/ruid_v6_r4.jpg,0,ruid,P1-critical,6,RUID on keyring,M,portrait + punched slot + keys,red header / silver keys,gray carpet,-14.1,146,0,395,420
+images/ruid/ruid_v6_r5.jpg,0,ruid,P1-critical,6,RUID on keyring,M,portrait + punched slot + keys,red header / silver keys,tile floor,12.0,100,104,344,372
+images/ruid/ruid_v7_r1.jpg,0,ruid,P1-critical,7,RUID faculty card,M,portrait CR80,red header / white,gray carpet,-14.1,172,156,373,415
+images/ruid/ruid_v7_r2.jpg,0,ruid,P1-critical,7,RUID faculty card,M,portrait CR80,red header / white,dark lab bench,-27.0,98,92,370,390
+images/ruid/ruid_v7_r3.jpg,0,ruid,P1-critical,7,RUID faculty card,M,portrait CR80,red header / white,wood desk,-28.9,78,46,444,484
+images/ruid/ruid_v7_r4.jpg,0,ruid,P1-critical,7,RUID faculty card,M,portrait CR80,red header / white,gray laminate,-11.5,143,118,341,408
+images/ruid/ruid_v7_r5.jpg,0,ruid,P1-critical,7,RUID faculty card,M,portrait CR80,red header / white,dark lab bench,-4.2,143,90,390,403
+images/ruid/ruid_v8_r1.jpg,0,ruid,P1-critical,8,RUID staff on badge reel,M,portrait + badge reel,red reel,wood desk,-14.2,120,3,399,452
+images/ruid/ruid_v8_r2.jpg,0,ruid,P1-critical,8,RUID staff on badge reel,M,portrait + badge reel,red reel,gray laminate,9.4,130,16,360,438
+images/ruid/ruid_v8_r3.jpg,0,ruid,P1-critical,8,RUID staff on badge reel,M,portrait + badge reel,red reel,gray laminate,21.2,144,6,410,449
+images/ruid/ruid_v8_r4.jpg,0,ruid,P1-critical,8,RUID staff on badge reel,M,portrait + badge reel,red reel,gray laminate,7.6,154,12,393,477
+images/ruid/ruid_v8_r5.jpg,0,ruid,P1-critical,8,RUID staff on badge reel,M,portrait + badge reel,red reel,white laminate,-24.9,93,10,400,424
+images/water_bottle/water_bottle_v1.jpg,1,water_bottle,P3,1,"insulated steel, carry loop",L,straight cylinder,steel blue,tile floor,14.9,182,88,336,411
+images/water_bottle/water_bottle_v2.jpg,1,water_bottle,P3,2,slim flip-top,M,slim cylinder,mint,gray laminate,-70.1,102,172,414,338
+images/water_bottle/water_bottle_v3.jpg,1,water_bottle,P3,3,wide-mouth chunky,M,wide cylinder,coral,tile floor,77.6,121,190,382,326
+images/water_bottle/water_bottle_v4.jpg,1,water_bottle,P3,4,disposable plastic,S,tapered neck,clear/blue label,white laminate,101.5,132,204,382,296
+images/water_bottle/water_bottle_v5.jpg,1,water_bottle,P3,5,straw-lid tumbler,M,wide cylinder,lavender,tile floor,107.3,77,178,392,338
+images/water_bottle/water_bottle_v6.jpg,1,water_bottle,P3,6,sport squeeze bottle,S,tapered neck,yellow,wood desk,5.8,218,141,298,372
+images/water_bottle/water_bottle_v7.jpg,1,water_bottle,P3,7,glass with silicone sleeve,M,straight cylinder,clear/green sleeve,gray carpet,5.0,216,124,301,388
+images/water_bottle/water_bottle_v8.jpg,1,water_bottle,P3,8,64 oz jug with handle,XL,wide cylinder + handle,matte black,dark lab bench,96.1,79,135,434,336
+images/keys/keys_v1.jpg,2,keys,P1,1,single brass house key,S,round-head key,brass,wood desk,-5.1,142,171,338,302
+images/keys/keys_v2.jpg,2,keys,P1,2,two keys on split ring,M,ring + 2 keys,silver/brass,gray carpet,69.2,158,158,353,349
+images/keys/keys_v3.jpg,2,keys,P1,3,car fob + key,M,fob + key,black/silver,dark lab bench,75.2,168,154,342,350
+images/keys/keys_v4.jpg,2,keys,P1,4,three keys with color caps,M,ring + 3 capped keys,multi,tile floor,-12.1,164,174,357,368
+images/keys/keys_v5.jpg,2,keys,P1,5,keys on campus lanyard,L,lanyard + ring,red lanyard,gray laminate,-108.3,150,173,456,416
+images/keys/keys_v6.jpg,2,keys,P1,6,tiny mailbox key,XS,small bow key,silver,tile floor,-173.7,190,226,352,306
+images/keys/keys_v7.jpg,2,keys,P1,7,keys with charm,M,ring + keys + charm,silver/yellow charm,gray laminate,168.5,206,160,344,398
+images/keys/keys_v8.jpg,2,keys,P1,8,dorm access fob + key,M,teardrop fob + key,blue fob,dark lab bench,-40.7,188,150,356,320
+images/other_id_card/other_id_card_v1.jpg,3,other_id_card,P2,1,other-school student ID,M,CR80 landscape,navy header,white laminate,-17.0,99,134,414,379
+images/other_id_card/other_id_card_v2.jpg,3,other_id_card,P2,2,portrait ID on lanyard,M,portrait + lanyard,blue header,gray laminate,-9.5,148,0,406,433
+images/other_id_card/other_id_card_v3.jpg,3,other_id_card,P2,3,ID in clear badge sleeve,M,landscape in sleeve,green header,gray laminate,-8.8,100,128,414,370
+images/other_id_card/other_id_card_v4.jpg,3,other_id_card,P2,4,ID on retractable badge reel,M,portrait + reel,purple header,lawn,-10.7,156,31,344,419
+images/other_id_card/other_id_card_v5.jpg,3,other_id_card,P2,5,ID card back (mag stripe),M,"landscape, back side",white/black stripe,tile floor,-4.2,110,158,402,354
+images/other_id_card/other_id_card_v6.jpg,3,other_id_card,P2,6,large temp visitor badge,L,oversized landscape,orange header,tile floor,7.3,70,126,443,386
+images/other_id_card/other_id_card_v7.jpg,3,other_id_card,P2,7,state driver license,M,landscape + hologram,teal header,concrete,-3.4,112,160,401,352
+images/other_id_card/other_id_card_v8.jpg,3,other_id_card,P2,8,"worn, bent ID",M,"landscape, faded/creased",maroon header,gray carpet,13.6,102,140,411,372
+images/earbuds/earbuds_v1.jpg,4,earbuds,P2,1,pill-shaped charging case,S,rounded rectangle,white,lawn,27.1,164,173,348,339
+images/earbuds/earbuds_v2.jpg,4,earbuds,P2,2,square charging case,S,squircle,black,white laminate,17.0,170,172,342,340
+images/earbuds/earbuds_v3.jpg,4,earbuds,P2,3,round puck case,S,circle,charcoal,dark lab bench,-19.7,178,179,334,334
+images/earbuds/earbuds_v4.jpg,4,earbuds,P2,4,case in silicone cover + carabiner,M,rounded rect + clip,pink cover,library table,39.9,76,164,350,348
+images/earbuds/earbuds_v5.jpg,4,earbuds,P2,5,loose stem earbuds (pair),XS,stem buds,white,lawn,34.0,168,116,388,328
+images/earbuds/earbuds_v6.jpg,4,earbuds,P2,6,loose round earbuds (pair),XS,round buds,black,wood desk,-17.5,166,190,362,361
+images/earbuds/earbuds_v7.jpg,4,earbuds,P2,7,"wired earbuds, tangled",S,buds + cable + 3.5mm plug,white,dark lab bench,10.8,126,100,386,436
+images/earbuds/earbuds_v8.jpg,4,earbuds,P2,8,large egg clamshell case,M,oval,navy,dark lab bench,-5.1,152,177,360,335
+images/headphones/headphones_v1.jpg,5,headphones,P2,1,"over-ear, large",L,over-ear,black,lawn,14.3,94,129,438,382
+images/headphones/headphones_v2.jpg,5,headphones,P2,2,"over-ear, white",L,over-ear,white,wood desk,15.6,102,134,430,378
+images/headphones/headphones_v3.jpg,5,headphones,P2,3,"on-ear, compact",M,on-ear (small round cups),rose gold,gray laminate,2.5,126,158,388,322
+images/headphones/headphones_v4.jpg,5,headphones,P2,4,kids' headphones,S,"on-ear, thick band",sky blue,wood desk,21.7,158,172,374,341
+images/headphones/headphones_v5.jpg,5,headphones,P2,5,"over-ear, folded",M,folded / collapsed,navy,concrete,7.2,138,146,371,364
+images/headphones/headphones_v6.jpg,5,headphones,P2,6,neckband wireless,S,U-shaped neckband,graphite,wood desk,20.6,104,72,377,374
+images/headphones/headphones_v7.jpg,5,headphones,P2,7,gaming headset with boom mic,L,over-ear + mic boom,black/red,concrete,-1.4,84,134,426,402
+images/headphones/headphones_v8.jpg,5,headphones,P2,8,padded-band over-ear,L,over-ear + padded band,beige,dark lab bench,-12.2,83,134,414,372
+images/phone/phone_v1.jpg,6,phone,P1,1,"large smartphone, screen up",L,tall slab,black,dark lab bench,-5.6,158,78,355,436
+images/phone/phone_v2.jpg,6,phone,P1,2,compact smartphone,S,short slab,silver,tile floor,3.4,192,144,320,368
+images/phone/phone_v3.jpg,6,phone,P1,3,phone in clear case,M,slab + bumper,blue,concrete,98.6,86,154,426,358
+images/phone/phone_v4.jpg,6,phone,P1,4,phone in rugged case,L,slab + thick corners,orange/black,gray laminate,-16.8,116,63,396,450
+images/phone/phone_v5.jpg,6,phone,P1,5,cracked screen,M,"slab, damaged",black,tile floor,-4.4,171,97,342,416
+images/phone/phone_v6.jpg,6,phone,P1,6,"phone back, triple camera",M,"slab, back side",lavender,white laminate,-24.6,131,92,382,421
+images/phone/phone_v7.jpg,6,phone,P1,7,folded flip phone,S,square folded,mint,gray carpet,-10.8,162,152,350,360
+images/phone/phone_v8.jpg,6,phone,P1,8,phone with wallet case,M,slab + card pocket,tan,white laminate,23.2,126,83,388,429
+images/umbrella/umbrella_v1.jpg,7,umbrella,P3,1,"compact folding, black",M,folded compact,black,library table,-8.2,210,96,308,402
+images/umbrella/umbrella_v2.jpg,7,umbrella,P3,2,"compact folding, polka dot",M,folded compact,navy w/ white dots,white laminate,-8.6,208,97,308,402
+images/umbrella/umbrella_v3.jpg,7,umbrella,P3,3,compact with sleeve beside it,M,folded + cover,red,wood desk,-0.1,219,104,378,394
+images/umbrella/umbrella_v4.jpg,7,umbrella,P3,4,"long stick, J-hook",XL,closed stick + J handle,black,lawn,-26.2,104,82,344,449
+images/umbrella/umbrella_v5.jpg,7,umbrella,P3,5,"long stick, plaid",XL,closed stick + J handle,beige plaid,white laminate,-28.5,105,94,347,434
+images/umbrella/umbrella_v6.jpg,7,umbrella,P3,6,"mini compact, yellow",S,short folded compact,yellow,library table,-7.0,224,136,292,366
+images/umbrella/umbrella_v7.jpg,7,umbrella,P3,7,"golf umbrella, two-tone",XL,oversized stick,green/white panels,dark lab bench,24.4,166,64,352,496
+images/umbrella/umbrella_v8.jpg,7,umbrella,P3,8,"compact, rainbow stripes",M,folded compact,rainbow,wood desk,-26.1,172,110,344,395
+images/wallet/wallet_v1.jpg,8,wallet,P1,1,leather bifold,M,square-ish bifold,brown,tile floor,28.1,134,142,379,370
+images/wallet/wallet_v2.jpg,8,wallet,P1,2,thick trifold,M,"trifold, thick edge",black,gray carpet,-6.5,154,172,358,341
+images/wallet/wallet_v3.jpg,8,wallet,P1,3,slim cardholder,S,slim sleeve + card,tan,gray laminate,21.3,171,162,342,327
+images/wallet/wallet_v4.jpg,8,wallet,P1,4,zip-around clutch,L,"long rectangle, zip",blush pink,white laminate,17.0,130,166,382,346
+images/wallet/wallet_v5.jpg,8,wallet,P1,5,wristlet with strap,L,pouch + wrist loop,black,concrete,1.3,80,128,360,321
+images/wallet/wallet_v6.jpg,8,wallet,P1,6,kiss-lock coin purse,XS,rounded pouch + clasp,navy,tile floor,-24.9,184,178,340,329
+images/wallet/wallet_v7.jpg,8,wallet,P1,7,long snap wallet,L,long rectangle + flap,maroon,wood desk,16.9,118,160,392,350
+images/wallet/wallet_v8.jpg,8,wallet,P1,8,nylon velcro wallet,M,"bifold, sporty",gray/green trim,wood desk,8.7,146,165,366,348
+images/eyeglasses/eyeglasses_v1.jpg,9,eyeglasses,P2,1,round wire frames,S,round,black metal,concrete,3.8,110,190,401,322
+images/eyeglasses/eyeglasses_v2.jpg,9,eyeglasses,P2,2,thick rectangular frames,M,rectangle,black acetate,library table,6.0,75,188,434,324
+images/eyeglasses/eyeglasses_v3.jpg,9,eyeglasses,P2,3,cat-eye tortoiseshell,M,cat-eye,tortoise,white laminate,2.1,80,192,430,315
+images/eyeglasses/eyeglasses_v4.jpg,9,eyeglasses,P2,4,aviator sunglasses,M,aviator teardrop,gold / dark green lens,white laminate,-3.3,80,202,435,333
+images/eyeglasses/eyeglasses_v5.jpg,9,eyeglasses,P2,5,classic wayfarer sunglasses,M,trapezoid,black / dark lens,concrete,-10.7,80,174,436,338
+images/eyeglasses/eyeglasses_v6.jpg,9,eyeglasses,P2,6,rimless readers,S,rimless oval,clear / silver,gray carpet,3.7,114,213,398,299
+images/eyeglasses/eyeglasses_v7.jpg,9,eyeglasses,P2,7,kids' glasses,XS,round-square,clear blue,concrete,6.0,140,204,370,308
+images/eyeglasses/eyeglasses_v8.jpg,9,eyeglasses,P2,8,oversized square sunglasses,L,oversized square,brown gradient,concrete,5.8,39,156,470,356
+images/backpack/backpack_v1.jpg,10,backpack,P2,1,standard school backpack,L,rounded-top rectangle,navy,gray carpet,5.7,138,95,377,416
+images/backpack/backpack_v2.jpg,10,backpack,P2,2,large laptop backpack,XL,"tall, squared top",black,lawn,-7.2,110,62,398,451
+images/backpack/backpack_v3.jpg,10,backpack,P2,3,small daypack,M,rounded-top rectangle,red,gray laminate,9.4,154,124,361,388
+images/backpack/backpack_v4.jpg,10,backpack,P2,4,drawstring gym bag,M,"trapezoid, cords",heather gray,library table,-9.4,122,51,367,419
+images/backpack/backpack_v5.jpg,10,backpack,P2,5,roll-top commuter pack,L,"rectangle, rolled top",olive,gray carpet,-11.2,124,84,386,436
+images/backpack/backpack_v6.jpg,10,backpack,P2,6,crossbody sling bag,S,"teardrop, diagonal strap",teal,gray carpet,7.8,96,68,428,427
+images/backpack/backpack_v7.jpg,10,backpack,P2,7,mini backpack,S,"round, small",lilac,dark lab bench,-0.5,184,166,328,346
+images/backpack/backpack_v8.jpg,10,backpack,P2,8,hiking pack w/ bottle pockets,XL,tall + side mesh pockets,gray/orange,white laminate,-4.9,110,73,384,433

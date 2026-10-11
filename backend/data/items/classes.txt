@@ -1,0 +1,11 @@
+ruid
+water_bottle
+keys
+other_id_card
+earbuds
+headphones
+phone
+umbrella
+wallet
+eyeglasses
+backpack

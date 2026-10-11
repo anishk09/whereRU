@@ -116,8 +116,21 @@ def analyze(listing_id):
         result=fallback(listing)
         color=vision.dominant_color(images[0]) if images else None
         if color: result['attributes']['color']=color
-        result['uncertainty']=('On-device analysis: color estimated from the center of the photo. '
-            'Category and details come from your description and need your review.')
+        item=None
+        if images:
+            try: item=vision.classify_item(images[0],Path(current_app.config['CLASSROOM_CATALOG']).parent)
+            except ValueError: item=None
+        if item and item['confident']:
+            result['title']=f"{color.capitalize()} {item['title'].lower()}" if color and item['class'] not in ('ruid','other_id_card') else item['title']
+            result['category']=item['category']
+            result['priority']=item['priority']
+            result['sensitive']=item['sensitive']
+            result['uncertainty']=(f"On-device recognition: looks like {item['title'].lower()} "
+                f"(similarity {item['similarity']:.2f}, next guess {item['runner_up'].replace('_',' ')}). "
+                'Color estimated from the photo. Check everything before saving.')
+        else:
+            result['uncertainty']=('On-device analysis: color estimated from the center of the photo. '
+                'The item type was not clear enough to suggest, so add it yourself.')
     else: result=fallback(listing);mode='demo'
     aid=save_analysis(listing,'ITEM',result,mode)
     return jsonify(id=aid,mode=mode,suggestion=result,notice=notice,requires_review=True)

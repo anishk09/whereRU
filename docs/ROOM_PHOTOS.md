@@ -104,3 +104,22 @@ Both can be set in `.env`. Without PyTorch the app uses feature matching only.
 
 With the scene model installed, every scan compares against all rooms by overall look, then runs
 the slower detail matching only on the 4 closest rooms, so adding rooms barely slows scans down.
+
+## Item recognition (found-item photos)
+
+`data/items/` is the team's synthetic "campus lost items" set: 120 images, 11 classes, with the
+Rutgers ID (RUID) as the priority class. Names are fictional, photos are silhouettes, there are
+no ID numbers and no real seal, so no image is a usable ID. See `data/items/README.md`.
+
+With PyTorch installed, a found-item photo is compared with these examples using the same
+DINOv2 model as room scanning. Each variant counts once, and a class scores the mean of its 3
+closest variants. If the best class is clear enough (`ITEM_MIN_SIMILARITY`, `ITEM_MIN_MARGIN` in
+`.env`), the app pre-fills the item name and category. Wallets, phones, keys and ID cards are
+marked sensitive, so they stay restricted.
+
+```bash
+python tools/test_item_photo.py --eval              # accuracy on unseen variants of the set
+python tools/test_item_photo.py ~/Downloads/keys.jpg   # try real phone photos
+```
+
+The examples are illustrations, so check real photos before relying on the numbers.
