@@ -1,0 +1,23 @@
+# dependencies and builds
+node_modules/
+dist/
+.vite/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# secrets: never commit API keys
+.env
+.env.*
+!.env.example
+
+# local data and uploads
+*.sqlite
+*.db
+private_uploads/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
