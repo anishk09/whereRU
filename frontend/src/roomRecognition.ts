@@ -1,3 +1,5 @@
+import * as api from "./api";
+
 // Classroom location data and recognition adapters.
 // The demo provider returns sample results. Swap in a Gemini provider later
 // by implementing RoomRecognizer and changing activeRecognizer below.
@@ -66,6 +68,8 @@ export const sourceLabel: Record<LocationSource, string> = {
 export type RoomCandidate = {
   location: RoomLocation;
   features: string[];
+  /** False when the result came from the real backend. */
+  demo?: boolean;
 };
 
 export type ItemDescription = {
@@ -73,6 +77,7 @@ export type ItemDescription = {
   category: string;
   color: string;
   description: string;
+  demo?: boolean;
 };
 
 export interface RoomRecognizer {
@@ -119,7 +124,7 @@ export const demoRecognizer: RoomRecognizer = {
   async recognizeRoom(_photo, campusHint) {
     await wait(1400);
     const campus = campusHint ?? "College Ave";
-    return demoRooms[campus].map((room) => ({ location: toLocation(campus, room.code, room.room, "room-scan"), features: room.features }));
+    return demoRooms[campus].map((room) => ({ location: toLocation(campus, room.code, room.room, "room-scan"), features: room.features, demo: true }));
   },
   async readPlacard() {
     await wait(900);
@@ -128,11 +133,74 @@ export const demoRecognizer: RoomRecognizer = {
   },
   async describeItem() {
     await wait(1000);
-    return { title: "Blue water bottle", category: "Water bottle", color: "Navy blue", description: "Insulated bottle with a silver lid and a small sticker" };
+    return { title: "Blue water bottle", category: "Water bottle", color: "Navy blue", description: "Insulated bottle with a silver lid and a small sticker", demo: true };
   },
 };
 
-export const activeRecognizer: RoomRecognizer = demoRecognizer;
+const categoryLabels: Record<string, string> = {
+  bottle: "Water bottle", electronics: "Electronics", clothing: "Clothing", bag: "Bag", keys: "Keys",
+  wallet: "Wallet or ID", id_card: "Wallet or ID", financial_card: "Wallet or ID", cash: "Wallet or ID", other: "",
+};
+
+function campusOf(value: string): CampusId {
+  return (campuses as string[]).includes(value) ? (value as CampusId) : "College Ave";
+}
+
+/**
+ * Uses the Flask backend (backend/) for real photos when it is running, and the demo data
+ * otherwise (Figma preview, sample-photo buttons, or offline). Any backend error also falls
+ * back to the demo result so a live demo never dead-ends.
+ */
+export const backendRecognizer: RoomRecognizer = {
+  isDemo: false,
+  async recognizeRoom(photo, campusHint) {
+    if (!photo || !(await api.isOnline())) return demoRecognizer.recognizeRoom(photo, campusHint);
+    try {
+      const result = await api.recognizeRoomPhoto(photo, campusHint);
+      return result.candidates.map((candidate) => ({
+        location: {
+          campus: campusOf(candidate.campus),
+          code: candidate.room_id.split("-")[0] || candidate.building,
+          building: candidate.building,
+          room: candidate.room,
+          source: "room-scan" as const,
+        },
+        features: candidate.evidence,
+        demo: false,
+      }));
+    } catch (error) {
+      console.warn("Room recognition failed, using demo result", error);
+      return demoRecognizer.recognizeRoom(photo, campusHint);
+    }
+  },
+  async readPlacard(photo) {
+    // The backend has no sign reading without Gemini. Real photos fall through to
+    // "couldn't read the sign", which offers manual entry.
+    if (photo && (await api.isOnline())) return null;
+    return demoRecognizer.readPlacard(photo);
+  },
+  async describeItem(photo) {
+    if (!photo || !(await api.isOnline())) return demoRecognizer.describeItem(photo);
+    try {
+      const { suggestion } = await api.analyzeItemPhoto(photo);
+      const color = suggestion.attributes.color ?? "";
+      const label = categoryLabels[suggestion.category] ?? "";
+      const genericTitle = !suggestion.title || suggestion.title === "Found item";
+      return {
+        title: genericTitle ? (color ? `${color[0].toUpperCase()}${color.slice(1)} item` : "") : suggestion.title,
+        category: label,
+        color: color ? `${color[0].toUpperCase()}${color.slice(1)}` : "",
+        description: suggestion.description,
+        demo: false,
+      };
+    } catch (error) {
+      console.warn("Item analysis failed, using demo result", error);
+      return demoRecognizer.describeItem(photo);
+    }
+  },
+};
+
+export const activeRecognizer: RoomRecognizer = backendRecognizer;
 
 export const acceptedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 

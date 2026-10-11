@@ -3,6 +3,7 @@ import CampusMap, { campusViews, type CampusName } from "./CampusMap";
 import { campusPlaces, type ListingProperties, type PlaceType } from "./mapData";
 import { BrandIcon, Button, Icon, Wordmark, type IconName } from "./ui";
 import LocationPicker, { DemoTag, LocationSummary, PhotoButtons } from "./LocationPicker";
+import * as api from "./api";
 import { activeRecognizer, formatLocation, shortLocation, sourceLabel, type RoomLocation } from "./roomRecognition";
 
 type Screen =
@@ -158,7 +159,7 @@ function NameScreen({ go, firstName, setFirstName, lastName, setLastName }: {
       <label className="result-field"><span>Last name</span><input autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} /></label>
     </div>
     <div className="safe-card"><Icon name="shield" /><p><strong>Your identity stays private.</strong><br />Only your first name is shown to other users.</p></div>
-    <div className="bottom-action">{(!firstName.trim() || !lastName.trim()) && <p className="action-hint">Enter your first and last name to continue.</p>}<Button disabled={!firstName.trim() || !lastName.trim()} onClick={() => go("home")}>Continue <Icon name="chevron" size={18} /></Button></div>
+    <div className="bottom-action">{(!firstName.trim() || !lastName.trim()) && <p className="action-hint">Enter your first and last name to continue.</p>}<Button disabled={!firstName.trim() || !lastName.trim()} onClick={() => { api.updateName(`${firstName.trim()} ${lastName.trim()}`.trim()).catch(() => undefined); go("home"); }}>Continue <Icon name="chevron" size={18} /></Button></div>
   </main>;
 }
 
@@ -203,17 +204,19 @@ function Home({ go, firstName, lastName }: { go: (screen: Screen) => void; first
 
 type FoundReport = {
   photoUrl: string | null;
+  photoFile: File | null;
   sample: boolean;
   title: string;
   category: string;
   color: string;
   description: string;
   hideDetails: boolean;
+  aiDemo: boolean;
   location: RoomLocation | null;
   foundAt: string;
 };
 
-const emptyFoundReport: FoundReport = { photoUrl: null, sample: false, title: "", category: "", color: "", description: "", hideDetails: true, location: null, foundAt: "" };
+const emptyFoundReport: FoundReport = { photoUrl: null, photoFile: null, sample: false, title: "", category: "", color: "", description: "", hideDetails: true, aiDemo: true, location: null, foundAt: "" };
 
 function nowLabel() {
   return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date());
@@ -223,19 +226,20 @@ function Capture({ go, report, setReport }: { go: (screen: Screen) => void; repo
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState("");
   const hasPhoto = Boolean(report.photoUrl) || report.sample;
-  const setPhoto = (url: string | null, sample: boolean) => {
+  const setPhoto = (url: string | null, sample: boolean, file: File | null = null) => {
     setError("");
-    setReport((current) => ({ ...current, photoUrl: url, sample, foundAt: current.foundAt || nowLabel() }));
+    setReport((current) => ({ ...current, photoUrl: url, photoFile: file, sample, foundAt: current.foundAt || nowLabel() }));
   };
   const usePhoto = async () => {
     setAnalyzing(true);
-    const result = await activeRecognizer.describeItem(null);
+    const result = await activeRecognizer.describeItem(report.photoFile);
     setReport((current) => ({
       ...current,
       title: current.title || result.title,
       category: current.category || result.category,
       color: current.color || result.color,
       description: current.description || result.description,
+      aiDemo: result.demo !== false,
     }));
     setAnalyzing(false);
     go("locate");
@@ -259,7 +263,7 @@ function Capture({ go, report, setReport }: { go: (screen: Screen) => void; repo
         <Button onClick={usePhoto}>Use this photo <Icon name="chevron" size={18} /></Button>
         <Button variant="secondary" onClick={() => setPhoto(null, false)}><Icon name="refresh" size={18} /> Retake</Button>
       </div> : <>
-        <PhotoButtons cameraLabel="Take photo" onPhoto={(_file, url) => setPhoto(url, false)} onError={setError} />
+        <PhotoButtons cameraLabel="Take photo" onPhoto={(file, url) => setPhoto(url, false, file)} onError={setError} />
         <button type="button" className="text-button sample on-dark" onClick={() => setPhoto(null, true)}>Use a sample photo</button>
       </>}
     </div>
@@ -284,9 +288,27 @@ function Confirm({ go, report, setReport }: { go: (screen: Screen) => void; repo
   const set = (key: "title" | "category" | "color" | "description") => (event: ChangeEvent<HTMLInputElement>) => setReport((current) => ({ ...current, [key]: event.target.value }));
   const location = report.location;
   const ready = Boolean(report.title.trim() && location);
+  const [sending, setSending] = useState(false);
+  const notify = async () => {
+    setSending(true);
+    try {
+      await api.publishFoundReport({
+        title: report.title.trim(),
+        description: report.hideDetails ? `${report.color} ${report.category}`.trim() : report.description,
+        private_description: report.hideDetails ? report.description : "",
+        category: api.toApiCategory(report.category || report.title),
+        campus: location?.campus,
+        location: location ? formatLocation(location) : "",
+      });
+    } catch (error) {
+      console.warn("Could not publish to the backend; continuing in demo mode", error);
+    }
+    setSending(false);
+    go("finderStatus");
+  };
   return <main className="simple-page with-bottom">
     <BackHeader title="Review report" onBack={() => go("locate")} action={<span className="flow-count">3 of 3</span>} />
-    <div className="ai-banner"><span><Icon name="sparkles" size={20} /></span><div><strong>Check the details</strong><p>Everything below is editable before anyone is notified.</p></div><DemoTag>Demo AI</DemoTag></div>
+    <div className="ai-banner"><span><Icon name="sparkles" size={20} /></span><div><strong>Check the details</strong><p>Everything below is editable before anyone is notified.</p></div>{report.aiDemo ? <DemoTag>Demo AI</DemoTag> : <span className="demo-tag live"><Icon name="check" size={12} />On-device</span>}</div>
     <section className="form-section"><h2>Item</h2>
       <div className="review-photo">{report.photoUrl ? <img src={report.photoUrl} alt="Found item" /> : <div className="mini-bottle" />}<button type="button" className="text-button" onClick={() => go("capture")}>Replace photo</button></div>
       <label className="result-field"><span>Item</span><input value={report.title} onChange={set("title")} /></label>
@@ -304,7 +326,7 @@ function Confirm({ go, report, setReport }: { go: (screen: Screen) => void; repo
     <div className="toggle-card"><Toggle on={report.hideDetails} setOn={(hideDetails) => setReport((current) => ({ ...current, hideDetails }))} label="Hide identifying details from public description" /><p>Stickers and damage stay private and are used to verify the owner.</p></div>
     <div className="bottom-action">
       {!ready && <p className="action-hint">Add an item name and location to continue.</p>}
-      <Button disabled={!ready} onClick={() => go("finderStatus")}><Icon name="bell" size={19} /> Notify matching listings</Button>
+      <Button disabled={!ready || sending} onClick={notify}><Icon name="bell" size={19} /> {sending ? "Notifying…" : "Notify matching listings"}</Button>
     </div>
   </main>;
 }
@@ -430,6 +452,8 @@ function formatTimelineTime(value: string) {
 function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveItems: SensitiveItem[] }) {
   const [step, setStep] = useState(1);
   const [posted, setPosted] = useState(false);
+  const [posting, setPosting] = useState(false);
+  const [liveMatches, setLiveMatches] = useState<api.ApiMatch[] | null>(null);
   const [photoAdded, setPhotoAdded] = useState(false);
   const [itemName, setItemName] = useState("Blue water bottle");
   const [itemDescription, setItemDescription] = useState("");
@@ -526,6 +550,34 @@ function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveI
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
+
+  const postLost = async () => {
+    setPosting(true);
+    try {
+      const firstHigh = places.find((place) => place.high);
+      const id = await api.createLostReport({
+        title: itemName.trim(),
+        description: `${color} ${category}`.trim(),
+        private_description: itemDescription,
+        category: api.toApiCategory(category || itemName),
+        campus: lostLocation?.campus,
+        location: lostLocation ? formatLocation(lostLocation) : firstHigh?.name ?? "",
+        visibility: value === "Valuable or sensitive" ? "PRIVATE" : "PUBLIC",
+      });
+      if (id) setLiveMatches((await api.myMatches()).filter((match) => match.lost_id === id));
+    } catch (error) {
+      console.warn("Could not post to the backend; showing demo matches", error);
+    }
+    setPosting(false);
+    setPosted(true);
+  };
+
+  if (posted && liveMatches && liveMatches.length > 0) return <main className="simple-page with-nav"><BackHeader title="Possible matches" onBack={() => setPosted(false)} /><div className="match-heading"><p className="eyebrow">LISTING POSTED · {liveMatches.length} POSSIBLE {liveMatches.length === 1 ? "MATCH" : "MATCHES"}</p>{value === "Valuable or sensitive" && <Status>{timerStatus}</Status>}<h1>We found a few similar items</h1><p>Review the details carefully. A match doesn't mean the item is yours.</p></div>
+    {liveMatches.map((match, index) => <article className="match-card" key={match.id}><div className="match-image bottle-bg"><div className="mini-bottle" /></div><div className="match-info"><span className={`confidence ${index === 0 ? "high" : "medium"}`}>{index === 0 ? "Best match" : "Possible match"}</span><h3>{match.candidate.title}</h3><p><Icon name="map" size={15} /> {match.candidate.location || match.candidate.campus}</p><p className="match-reasons">{match.reasons.slice(0, 3).join(" · ")}</p><Button onClick={() => go("ownership")}>Check if it's mine</Button></div></article>)}
+    <div className="tip-card"><Icon name="shield" /><div><strong>Matches are suggestions</strong><p>We never label an item “yours” until ownership is verified.</p></div></div>
+    <Button variant="ghost" onClick={() => go("home")}>Back to home</Button>
+    <BottomNav screen="home" go={go} />
+  </main>;
 
   if (posted) return <main className="simple-page with-nav"><BackHeader title="Possible matches" onBack={() => setPosted(false)} /><div className="match-heading"><p className="eyebrow">LISTING POSTED · 2 POSSIBLE MATCHES</p>{value === "Valuable or sensitive" && <Status>{timerStatus}</Status>}<h1>We found a few similar items</h1><p>Review the details carefully. A match doesn't mean the item is yours.</p></div>
     <article className="match-card"><div className="match-image bottle-bg"><div className="mini-bottle" /></div><div className="match-info"><span className="confidence high">High match</span><h3>Blue water bottle</h3><p><Icon name="map" size={15} /> Hardenbergh Hall · Today</p><Button onClick={() => go("ownership")}>Check if it's mine</Button></div></article>
@@ -646,7 +698,7 @@ function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveI
     <div className="bottom-action">
       {step === 3 && !method && <p className="action-hint">Choose an option to continue.</p>}
       {step === 3 && method === "room" && !lostLocation && <p className="action-hint">Confirm a room to continue.</p>}
-      {step < totalSteps ? <Button onClick={next} disabled={step === 3 && (!method || (method === "room" && !lostLocation))}>Continue <Icon name="chevron" size={18} /></Button> : <Button onClick={() => setPosted(true)}><Icon name="search" size={19} /> Post lost listing</Button>}
+      {step < totalSteps ? <Button onClick={next} disabled={step === 3 && (!method || (method === "room" && !lostLocation))}>Continue <Icon name="chevron" size={18} /></Button> : <Button disabled={posting} onClick={postLost}><Icon name="search" size={19} /> {posting ? "Posting…" : "Post lost listing"}</Button>}
     </div>
   </main>;
 }
@@ -823,11 +875,15 @@ export default function App() {
     setSensitiveItems((current) => current.filter((item) => item.id !== id));
   };
   const go = (next: Screen) => {
-    if (next === "capture" && !["locate", "confirm"].includes(screen)) setFoundReportState(emptyFoundReport);
+    if (next === "capture" && !["locate", "confirm"].includes(screen)) {
+      setFoundReportState(emptyFoundReport);
+      api.startNewFoundReport();
+    }
     setScreen(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const completeEmailVerification = () => {
+    api.signIn(email).catch((error) => console.warn("Backend sign-in failed; continuing in demo mode", error));
     const names = nameFromEmail(email);
     setFirstName(names.first);
     setLastName(names.last);

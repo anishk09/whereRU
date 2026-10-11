@@ -829,3 +829,6 @@ h3 { font-size: 16px; font-weight: 700; }
 }
 .picker-tabs button { white-space: nowrap; }
 .recommended { display: inline-block; margin-bottom: 5px; padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; background: var(--scarlet-gradient); }
+.demo-tag.live { color: #0f5132; background: #d9f2e3; border-color: #a8dcbd; }
+.dark .demo-tag.live { color: #8fe0b0; background: rgba(143, 224, 176, .12); border-color: rgba(143, 224, 176, .3); }
+.match-reasons { color: var(--muted); font-size: 11px; line-height: 1.4; margin: 2px 0 8px; }
