@@ -372,6 +372,7 @@ function ReportDetail({ reportId, go, onBack, startFoundFromLost }: { reportId: 
     <section className="detail-card"><div><span>Description</span><p>{safeReport.publicDescription || "No public description provided."}</p></div><div><span>Approximate location</span><p>{safeReport.location?.approximateLabel || "Location unavailable"}</p></div><div><span>Submitted</span><p>{new Date(safeReport.createdAt).toLocaleString()}</p></div><div><span>{safeReport.type === "lost" ? "Last seen" : "Found"}</span><p>{new Date(safeReport.observedAt).toLocaleString()}</p></div>{safeReport.updatedAt !== safeReport.createdAt && <div><span>Last updated</span><p>{new Date(safeReport.updatedAt).toLocaleString()}</p></div>}{safeReport.relatedLostReportId && <div><span>Related lost report</span><p>{safeReport.relatedLostReportId} · potential relationship only</p></div>}{relatedFoundReports.length > 0 && <div><span>Potential found reports</span><p>{relatedFoundReports.map((candidate) => candidate.id).join(", ")} · not verified matches</p></div>}</section>
     <div className="recovery-note"><Icon name={report.sensitive ? "shield" : "bag"} /><p><strong>{report.sensitive ? "Use an official staffed return point." : "Keep recovery public and safe."}</strong><br />Never post private identifiers or meet in an isolated location.</p></div>
     {!owner && myClaim && <ClaimStatusCard claim={myClaim} report={report} />}
+    {!owner && myClaim && ["approved", "handoff", "returned"].includes(myClaim.status) && <ClaimChat claim={myClaim} report={report} />}
     {owner ? <div className="detail-actions">
       <p className="helper-text">This is your report. Claim actions are disabled for your own listing.</p>
       {reportClaims.length > 0 && <Button onClick={() => go("finderStatus")}>Review {reportClaims.length} {reportClaims.length === 1 ? "claim" : "claims"}</Button>}
@@ -382,6 +383,57 @@ function ReportDetail({ reportId, go, onBack, startFoundFromLost }: { reportId: 
       <Button variant="ghost" onClick={() => setFlagged(true)}>{flagged ? "Listing flagged for demo review" : "Report suspicious listing"}</Button>
     </div> : null}
   </main>;
+}
+
+/** Chat between the finder and the claimant, available once the claim is approved. */
+function ClaimChat({ claim, report }: { claim: Claim; report: ItemReport }) {
+  const { currentUserId, users, notifyUser } = useReports();
+  const [messages, setMessages] = useState<api.ChatMessage[]>([]);
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState("");
+  const [offline, setOffline] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+  const otherId = currentUserId === claim.claimantId ? report.reporterId : claim.claimantId;
+  const other = users.find((user) => user.id === otherId);
+  const otherName = other ? other.firstName || "them" : currentUserId === claim.claimantId ? "the finder" : "the owner";
+  useEffect(() => {
+    let active = true;
+    const load = () => api.getClaimChat(claim.id).then((list) => {
+      if (!active) return;
+      if (list === null) { setOffline(true); return; }
+      setOffline(false);
+      setMessages((current) => current.length === list.length && current[current.length - 1]?.id === list[list.length - 1]?.id ? current : list);
+    }).catch(() => active && setOffline(true));
+    load();
+    const timer = window.setInterval(load, 2000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [claim.id]);
+  useEffect(() => { listRef.current?.scrollTo({ top: listRef.current.scrollHeight }); }, [messages.length]);
+  const send = async () => {
+    const text = draft.trim();
+    if (!text) return;
+    setDraft("");
+    try {
+      setMessages(await api.sendClaimChat(claim.id, currentUserId, text));
+      setError("");
+      notifyUser(otherId, report.id, `Message about the ${report.itemName.toLowerCase()}`, text.length > 90 ? `${text.slice(0, 90)}…` : text);
+    } catch (sendError) {
+      setDraft(text);
+      setError(sendError instanceof Error ? sendError.message : "Message not sent.");
+    }
+  };
+  return <section className="claim-chat">
+    <div className="claim-chat-head"><Icon name="user" size={18} /><div><strong>Chat with {otherName}</strong><small>Agree on a public place and time. Never share passwords or codes.</small></div></div>
+    <div className="claim-chat-list" ref={listRef} aria-live="polite">
+      {messages.length === 0 && <p className="claim-chat-empty">{offline ? "Chat needs the demo server running." : "No messages yet. Say hi and suggest where to meet."}</p>}
+      {messages.map((message) => <div className={`chat-bubble ${message.sender === currentUserId ? "mine" : ""}`} key={message.id}><p>{message.text}</p><small>{new Date(message.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</small></div>)}
+    </div>
+    {error && <div className="camera-error" role="alert">{error}</div>}
+    <form className="claim-chat-form" onSubmit={(event) => { event.preventDefault(); send(); }}>
+      <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={`Message ${otherName}`} maxLength={500} aria-label="Message" disabled={offline} />
+      <button type="submit" disabled={!draft.trim() || offline} aria-label="Send message"><Icon name="chevron" size={18} /></button>
+    </form>
+  </section>;
 }
 
 /** What the claimant sees about their own claim, updated live as the finder acts on it. */
@@ -603,7 +655,8 @@ function FinderStatus({ go, report, claims, onUpdateClaim }: { go: (screen: Scre
       const answer = getClaimAnswer(claim.id);
       return <div className="demo-next" key={claim.id}><p className="eyebrow">SIMULATED CLAIM · {claim.status}</p><h3>Compare private details</h3><p><strong>Finder's hidden report detail:</strong><br />{report.privateDetails || "No hidden finder detail was recorded."}</p><p><strong>Claimant's private answer:</strong><br />{answer || "Private answer unavailable after refresh — ask the claimant to resubmit."}</p>
         {claim.status === "submitted" && <div className="detail-actions"><Button variant="secondary" onClick={() => { try { onUpdateClaim(claim.id, "rejected"); setActionError(""); } catch (error) { setActionError(error instanceof Error ? error.message : "Unable to reject claim."); } }}>Reject claim</Button><Button disabled={!answer} onClick={() => { try { onUpdateClaim(claim.id, "approved"); go("handoff"); } catch (error) { setActionError(error instanceof Error ? error.message : "Unable to approve claim."); } }}>Approve claim</Button></div>}
-        {claim.status === "approved" && <Button onClick={() => go("handoff")}>Arrange handoff</Button>}
+        {["approved", "handoff"].includes(claim.status) && <Button onClick={() => go("handoff")}>Arrange handoff</Button>}
+        {["approved", "handoff", "returned"].includes(claim.status) && <ClaimChat claim={claim} report={report} />}
       </div>;
     })}
     {report.type === "found" && reportClaims.length === 0 && <div className="demo-next"><p className="eyebrow">INTERACTIVE DEMO</p><h3>Preview a claim event</h3><p>This creates a labeled in-app demo claim from a different simulated user.</p><Button variant="secondary" onClick={() => { switchUser("demo-maya"); go("ownerNotice"); }}>Preview demo notification <Icon name="chevron" size={18} /></Button></div>}
@@ -694,6 +747,7 @@ function Handoff({ go, report, claim, onUpdateClaim }: { go: (screen: Screen) =>
     <BackHeader title="Item pickup" onBack={() => setReadyForPickup(false)} />
     <div className="verified-hero"><div className="result-icon green"><Icon name="check" size={30} /></div><h1>Simulated pickup plan</h1><p>No real drop-off or custody confirmation has been made.</p></div>
     <article className="meeting-card selected"><span><Icon name="map" /></span><div><strong>{dropLocation}</strong><p>Demo selection only; confirm details directly before traveling.</p></div><Icon name="check" size={18} /></article>
+    <ClaimChat claim={claim} report={report} />
     {actionError && <div className="camera-error" role="alert">{actionError}</div>}
     <div className="bottom-action"><Button onClick={completeReturn}>I picked it up</Button></div>
   </main>;
@@ -714,7 +768,7 @@ function Handoff({ go, report, claim, onUpdateClaim }: { go: (screen: Screen) =>
         <button className={`meeting-card ${meeting === "College Ave Student Center" ? "selected" : ""}`} aria-pressed={meeting === "College Ave Student Center"} onClick={() => setMeeting("College Ave Student Center")}><span><Icon name="map" /></span><div><strong>College Ave Student Center</strong><p>Confirm a public meeting point and current hours yourself</p></div>{meeting === "College Ave Student Center" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
         <button className={`meeting-card ${meeting === "Alexander Library" ? "selected" : ""}`} aria-pressed={meeting === "Alexander Library"} onClick={() => setMeeting("Alexander Library")}><span><Icon name="map" /></span><div><strong>Alexander Library</strong><p>Confirm a staffed meeting point and current hours yourself</p></div>{meeting === "Alexander Library" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
       </section>
-      <div className="message-preview"><span className="person-avatar scarlet">D</span><div><small>Demo plan</small><p>No message has been sent. Confirm a time and exact public meeting point outside this prototype.</p></div></div>
+      <ClaimChat claim={claim} report={report} />
       <div className="bottom-action dual"><Button onClick={completeReturn}>Mark as returned</Button><Button variant="ghost" onClick={() => setProblemReported(true)} className={problemReported ? "reported" : ""}>Report a problem</Button></div>
     </> : <>
       <section className="meeting-section"><h2>Choose a drop-off location</h2><p>Leave the item with staff and keep the receipt.</p>
@@ -722,6 +776,7 @@ function Handoff({ go, report, claim, onUpdateClaim }: { go: (screen: Screen) =>
         <button className={`meeting-card ${dropLocation === "Confirmed official lost-and-found office" ? "selected" : ""}`} aria-pressed={dropLocation === "Confirmed official lost-and-found office"} onClick={() => setDropLocation("Confirmed official lost-and-found office")}><span><Icon name="shield" /></span><div><strong>Confirmed official lost-and-found office</strong><p>Locate and confirm an appropriate office before traveling</p></div>{dropLocation === "Confirmed official lost-and-found office" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
         <button className="meeting-card" disabled><span><Icon name="lock" /></span><div><strong>Where RU? Locker (coming soon)</strong><p>Secure self-service pickup</p></div></button>
       </section>
+      <ClaimChat claim={claim} report={report} />
       <div className="bottom-action"><Button onClick={beginPickup}>I dropped it off</Button></div>
     </>}
   </main>;

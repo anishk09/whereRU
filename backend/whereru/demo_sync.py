@@ -3,9 +3,12 @@
 Enabled only when DEMO_LOGIN=true and APP_ENV is not production (same switch as the demo login).
 Seed or reset it with: python tools/seed_demo.py
 """
+import json
 import os
 import re
 import secrets
+import threading
+from datetime import datetime, timezone
 from pathlib import Path
 from flask import Blueprint, current_app, jsonify, request, send_file
 from werkzeug.exceptions import BadRequest, NotFound
@@ -95,3 +98,51 @@ def view_photo(name):
     response = send_file(path, mimetype='image/jpeg', conditional=False)
     response.headers['Cache-Control'] = 'private, max-age=86400'
     return response
+
+
+# Chat between the finder and the claimant once a claim is approved. One small JSON file of
+# messages per demo, keyed by claim id; append-only, so both phones can post at once.
+_chat_lock = threading.Lock()
+CLAIM_ID = re.compile(r'^[A-Za-z0-9_-]{1,80}$')
+
+
+def chat_path():
+    return Path(current_app.instance_path) / 'demo_chat.json'
+
+
+def _read_chat():
+    try:
+        return json.loads(chat_path().read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+@bp.get('/api/demo/chat/<claim_id>')
+def get_chat(claim_id):
+    require_enabled()
+    if not CLAIM_ID.match(claim_id):
+        raise NotFound('Not found')
+    return jsonify(messages=_read_chat().get(claim_id, []))
+
+
+@bp.post('/api/demo/chat/<claim_id>')
+def post_chat(claim_id):
+    require_enabled()
+    if not CLAIM_ID.match(claim_id):
+        raise NotFound('Not found')
+    p = payload()
+    sender, text = p.get('from'), p.get('text')
+    if not isinstance(sender, str) or not sender.strip() or len(sender) > 80:
+        raise BadRequest('from is required')
+    if not isinstance(text, str) or not text.strip():
+        raise BadRequest('text is required')
+    message = dict(id=secrets.token_hex(8), sender=sender.strip(), text=text.strip()[:500],
+                   at=datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z')
+    with _chat_lock:
+        chats = _read_chat()
+        thread = chats.setdefault(claim_id, [])
+        if len(thread) >= 300:
+            raise BadRequest('This chat is full')
+        thread.append(message)
+        demo_store.write(chat_path(), chats)
+    return jsonify(message=message, messages=chats[claim_id]), 201

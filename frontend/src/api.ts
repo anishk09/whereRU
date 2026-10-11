@@ -258,3 +258,16 @@ export async function uploadDemoPhoto(photo: Blob): Promise<string | null> {
     return null;
   }
 }
+
+export type ChatMessage = { id: string; sender: string; text: string; at: string };
+
+/** Messages between the finder and the claimant of one claim (shared demo only). */
+export async function getClaimChat(claimId: string): Promise<ChatMessage[] | null> {
+  if (!(await isOnline())) return null;
+  return (await request<{ messages: ChatMessage[] }>("GET", `/api/demo/chat/${encodeURIComponent(claimId)}`, undefined, 8000)).messages;
+}
+
+export async function sendClaimChat(claimId: string, sender: string, text: string): Promise<ChatMessage[]> {
+  await ensureSession();
+  return (await request<{ messages: ChatMessage[] }>("POST", `/api/demo/chat/${encodeURIComponent(claimId)}`, { from: sender, text }, 10000)).messages;
+}
