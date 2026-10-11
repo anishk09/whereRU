@@ -95,6 +95,8 @@ export type ItemDescription = {
   category: string;
   color: string;
   description: string;
+  /** Set when the backend couldn't analyze the photo; shown to the finder. */
+  error?: string;
   demo?: boolean;
 };
 
@@ -219,7 +221,8 @@ export const backendRecognizer: RoomRecognizer = {
       // The server is up but analysis failed (e.g. rate limit). Leave the fields for the finder
       // instead of filling in made-up sample details.
       console.warn("Item analysis failed", error);
-      return { title: "", category: "", color: "", description: "", demo: false };
+      const reason = error instanceof Error ? error.message : "the server didn't answer";
+      return { title: "", category: "", color: "", description: "", demo: false, error: `Couldn't analyze the photo (${reason}). Fill in the details below.` };
     }
   },
 };

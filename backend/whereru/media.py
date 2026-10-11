@@ -4,6 +4,12 @@ import warnings
 from pathlib import Path
 from flask import Blueprint,current_app,g,jsonify,request,send_file
 from PIL import Image,ImageOps,UnidentifiedImageError
+try:  # iPhone/Mac photos are often HEIC; accept them when pillow-heif is installed.
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+    PHOTO_FORMATS=('JPEG','PNG','WEBP','HEIF')
+except ImportError:
+    PHOTO_FORMATS=('JPEG','PNG','WEBP')
 from werkzeug.exceptions import BadRequest,NotFound,Conflict
 from .core import login_required,rate_limit,payload,boolean
 from .db import get_db,atomic
@@ -18,7 +24,7 @@ def normalize_image(stream):
         with warnings.catch_warnings():
             warnings.simplefilter('error',Image.DecompressionBombWarning)
             with Image.open(io.BytesIO(raw)) as image:
-                if image.format not in ('JPEG','PNG','WEBP'): raise BadRequest('JPEG, PNG, or WebP required')
+                if image.format not in PHOTO_FORMATS: raise BadRequest('Use a JPEG, PNG or WebP photo' + ('' if 'HEIF' in PHOTO_FORMATS else ' (HEIC needs pillow-heif on the server)'))
                 if image.width*image.height>20_000_000: raise BadRequest('Image exceeds 20 megapixels')
                 image.load();image=ImageOps.exif_transpose(image).convert('RGB');image.thumbnail((2000,2000))
                 # Reconstruct pixels so EXIF, embedded thumbnails and metadata are not retained.

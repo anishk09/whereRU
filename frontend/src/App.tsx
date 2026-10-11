@@ -347,6 +347,7 @@ type FoundReport = {
   relatedLostReportId?: string;
   photoFile: File | null;
   aiDemo: boolean;
+  aiNote?: string;
 };
 
 const emptyFoundReport: FoundReport = { photoUrl: null, photoPreviewUrl: null, photoFile: null, aiDemo: true, sample: false, title: "", category: "", color: "", description: "", hideDetails: true, location: null, foundAt: "" };
@@ -425,6 +426,7 @@ function Capture({ go, report, setReport }: { go: (screen: Screen) => void; repo
       color: current.color || result.color,
       description: current.description || result.description,
       aiDemo: result.demo !== false,
+      aiNote: result.error,
     }));
     setAnalyzing(false);
     go("locate");
@@ -484,7 +486,7 @@ function Confirm({ go, report, setReport, onSubmit }: { go: (screen: Screen) => 
   const ready = Boolean(report.title.trim() && location && validObservedAt);
   return <main className="simple-page with-bottom">
     <BackHeader title="Review report" onBack={() => go("locate")} action={<span className="flow-count">3 of 3</span>} />
-    <div className="ai-banner"><span><Icon name="sparkles" size={20} /></span><div><strong>Check the details</strong><p>Everything below is editable before the report is saved.</p></div>{report.aiDemo ? <DemoTag>Demo AI</DemoTag> : <span className="demo-tag live"><Icon name="check" size={12} />On-device</span>}</div>
+    <div className="ai-banner"><span><Icon name="sparkles" size={20} /></span><div><strong>Check the details</strong><p>{report.aiNote || "Everything below is editable before the report is saved."}</p></div>{report.aiDemo ? <DemoTag>Demo AI</DemoTag> : <span className="demo-tag live"><Icon name="check" size={12} />On-device</span>}</div>
     <section className="form-section"><h2>Item</h2>
       <div className="review-photo">{report.photoPreviewUrl ? <img src={report.photoPreviewUrl} alt="Found item" /> : <span className="detail-category-icon">{categoryIcon(normalizeCategory(report.category))}</span>}<button type="button" className="text-button" onClick={() => go("capture")}>{report.photoPreviewUrl ? "Replace photo" : "Add photo"}</button></div>
       <label className="result-field"><span>Item</span><input value={report.title} onChange={set("title")} /></label>
