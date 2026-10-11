@@ -161,7 +161,7 @@ export default function LocationPicker({ value, onChange, context }: {
       {phase === "idle" && <>
         <div className="scan-explainer">
           <div className="scan-visual" aria-hidden="true"><span className="board" /><span className="row r1" /><span className="row r2" /><span className="row r3" /><span className="scan-line" /></div>
-          <div><span className="recommended">Recommended</span><strong>{context === "found" ? "Photograph the room where you found it" : "Photograph the room you think you lost it in"}</strong><p>Stand near the back and capture the front wall, boards, and seating. We compare the layout against known classrooms.</p></div>
+          <div><span className="recommended">Demo scanner</span><strong>{context === "found" ? "Photograph the room where you found it" : "Photograph the room you think you lost it in"}</strong><p>Room recognition is simulated. Use the generated suggestions only as a prompt, then confirm the location yourself.</p></div>
         </div>
         <button type="button" className="geo-chip" onClick={useLocation}><Icon name="locate" size={16} /> {campusHint ? `Near ${campusHint}` : "Use my location to narrow buildings"}</button>
         {geoMessage && <p className="location-message" role="status">{geoMessage}</p>}
@@ -171,7 +171,7 @@ export default function LocationPicker({ value, onChange, context }: {
       </>}
       {phase === "analyzing" && <div className="picker-analyzing" aria-live="polite" aria-busy="true">
         {photoUrl ? <img src={photoUrl} alt="Room photo being analyzed" /> : <div className="sample-room" aria-hidden="true" />}
-        <div><span className="spinner" /> Comparing seating, boards, and windows…</div>
+        <div><span className="spinner" /> Generating simulated room suggestions…</div>
       </div>}
       {phase === "results" && <div className="candidate-list">
         <div className="candidate-head"><h3>Possible classroom matches</h3>{candidates.some((candidate) => candidate.demo !== false) ? <DemoTag /> : <span className="demo-tag live"><Icon name="check" size={12} />On-device match</span>}</div>
@@ -187,18 +187,18 @@ export default function LocationPicker({ value, onChange, context }: {
         </button>)}
         <div className="none-match"><p>None of these?</p><div><button type="button" onClick={() => reset("placard")}>Scan the placard</button><button type="button" onClick={() => reset("manual")}>Choose manually</button><button type="button" onClick={() => reset("scan")}>Retake</button></div></div>
       </div>}
-      {phase === "none" && <div className="none-match solo"><p><strong>We couldn't match this room.</strong> It may not be in our classroom index yet.</p><div><button type="button" onClick={() => reset("placard")}>Scan the placard</button><button type="button" onClick={() => reset("manual")}>Choose manually</button></div></div>}
+      {phase === "none" && <div className="none-match solo"><p><strong>No simulated suggestion was generated.</strong> Choose the room manually instead.</p><div><button type="button" onClick={() => reset("placard")}>Scan the placard</button><button type="button" onClick={() => reset("manual")}>Choose manually</button></div></div>}
     </div>}
 
     {method === "placard" && <div className="picker-panel">
       {phase === "idle" && <>
-        <div className="scan-explainer placard"><div className="placard-visual" aria-hidden="true"><small>BUILDING</small><strong>A2</strong></div><div><strong>Photograph the room number sign</strong><p>Usually beside the door. Make sure the building and room number are readable.</p></div></div>
+        <div className="scan-explainer placard"><div className="placard-visual" aria-hidden="true"><small>BUILDING</small><strong>A2</strong></div><div><strong>Photograph the room number sign</strong><p>Placard reading is simulated in this demo. Confirm the building and room manually before saving.</p></div></div>
         <PhotoButtons cameraLabel="Scan placard" onPhoto={(file, url) => readPlacard(file, url)} onError={setError} />
         <button type="button" className="text-button sample" onClick={() => readPlacard(null, null)}>Use a sample placard photo</button>
       </>}
-      {phase === "analyzing" && <div className="picker-analyzing" aria-live="polite" aria-busy="true">{photoUrl ? <img src={photoUrl} alt="Placard photo being read" /> : <div className="sample-placard" aria-hidden="true">A2</div>}<div><span className="spinner" /> Reading the sign…</div></div>}
+      {phase === "analyzing" && <div className="picker-analyzing" aria-live="polite" aria-busy="true">{photoUrl ? <img src={photoUrl} alt="Placard photo being read" /> : <div className="sample-placard" aria-hidden="true">A2</div>}<div><span className="spinner" /> Generating a simulated placard result…</div></div>}
       {phase === "results" && placardRead && <><div className="candidate-head"><h3>Check what we read</h3><DemoTag /></div>{typedFields("placard")}</>}
-      {phase === "none" && <div className="none-match solo"><p><strong>We couldn't read the sign.</strong> Try again with less glare, or choose the room.</p><div><button type="button" onClick={() => reset("placard")}>Retake</button><button type="button" onClick={() => reset("manual")}>Choose manually</button></div></div>}
+      {phase === "none" && <div className="none-match solo"><p><strong>No simulated placard result was generated.</strong> Choose the room manually instead.</p><div><button type="button" onClick={() => reset("placard")}>Retake</button><button type="button" onClick={() => reset("manual")}>Choose manually</button></div></div>}
     </div>}
 
     {method === "manual" && <div className="picker-panel">{typedFields("manual")}</div>}

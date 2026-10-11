@@ -76,8 +76,8 @@ export function shortLocation(location: RoomLocation) {
 }
 
 export const sourceLabel: Record<LocationSource, string> = {
-  "room-scan": "Room scan",
-  placard: "Placard",
+  "room-scan": "Simulated room scan",
+  placard: "Simulated placard read",
   manual: "Chosen manually",
 };
 

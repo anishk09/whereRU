@@ -1,16 +1,19 @@
-import { useEffect, useState, type ChangeEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import CampusMap, { campusViews, type CampusName } from "./CampusMap";
-import { campusPlaces, type ListingProperties, type PlaceType } from "./mapData";
+import { campusPlaces, type ListingProperties, type MapListing, type PlaceType } from "./mapData";
 import { BrandIcon, Button, Icon, Wordmark, type IconName } from "./ui";
 import LocationPicker, { DemoTag, LocationSummary, PhotoButtons } from "./LocationPicker";
+import { activeRecognizer, campuses as campusOptions, formatLocation, sourceLabel, type CampusId, type RoomLocation } from "./roomRecognition";
 import * as api from "./api";
-import { activeRecognizer, formatLocation, shortLocation, sourceLabel, type RoomLocation } from "./roomRecognition";
+import { categoryIcon, ReportImage, reportCategories, reportStatusLabel, storeReportImage, toPublicReport, useReports, type Claim, type ItemReport, type PublicItemReport, type ReportCategory, type ReportLocation } from "./reports";
 
 type Screen =
   | "signin"
   | "code"
   | "name"
   | "home"
+  | "explore"
+  | "detail"
   | "capture"
   | "locate"
   | "confirm"
@@ -58,9 +61,13 @@ function BackHeader({ title, onBack, action }: { title: string; onBack: () => vo
 }
 
 const statusTone: Record<string, string> = {
+  "Active": "blue",
+  "Possible match": "amber",
+  "Claim under review": "amber",
   "Pinging": "blue",
   "Claim pending": "amber",
   "Verified": "green",
+  "Approved": "green",
   "Returned": "neutral",
   "Sent to official lost & found": "purple",
 };
@@ -130,52 +137,58 @@ function WelcomeMap() {
 function CodeScreen({ go, email, onVerified }: { go: (screen: Screen) => void; email: string; onVerified: () => void }) {
   const [code, setCode] = useState("");
   const [resent, setResent] = useState(false);
+  const validDemoCode = code === "123456";
   return <main className="simple-page auth-code">
     <BackHeader title="" onBack={() => go("signin")} />
     <div className="code-icon"><Icon name="bell" size={30} /></div>
-    <p className="eyebrow">Check your email</p>
+    <p className="eyebrow">Demo access code</p>
     <h1>Enter your 6-digit code</h1>
-    <p className="subtext">We sent a one-time code to {email}. Any six digits work in this demo.</p>
+    <p className="subtext">Demo only: no email was sent to {email}. Enter 123456 to continue; this does not verify your identity or university affiliation.</p>
     <input className="code-input" inputMode="numeric" autoComplete="one-time-code" aria-label="Six digit verification code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="000000" autoFocus />
-    {code.length !== 6 && <p className="form-hint">Enter the 6-digit code to continue.</p>}
-    <Button disabled={code.length !== 6} onClick={onVerified}>Verify code</Button>
-    <button className="text-link" aria-live="polite" onClick={() => setResent(true)}>{resent ? "Email code resent" : "Resend code to email"}</button>
+    {!validDemoCode && <p className="form-hint">{code.length === 6 ? "That is not the demo code." : "Enter the demo code 123456 to continue."}</p>}
+    <Button disabled={!validDemoCode} onClick={onVerified}>Continue in demo</Button>
+    <button className="text-link" aria-live="polite" onClick={() => setResent(true)}>{resent ? "Demo code: 123456" : "Show demo code again"}</button>
   </main>;
 }
 
-function NameScreen({ go, firstName, setFirstName, lastName, setLastName }: {
+function NameScreen({ go, firstName, setFirstName, lastName, setLastName, onContinue }: {
   go: (screen: Screen) => void;
   firstName: string;
   setFirstName: (name: string) => void;
   lastName: string;
   setLastName: (name: string) => void;
+  onContinue: () => void;
 }) {
   const hasFirstLetter = /\p{L}/u.test(firstName);
   const hasLastName = Boolean(lastName.trim());
   return <main className="simple-page with-bottom name-page">
     <BackHeader title="Your name" onBack={() => go("code")} />
-    <div className="verify-heading"><span><Icon name="user" size={27} /></span><p className="eyebrow">ONE LAST STEP</p><h1>What should we call you?</h1><p>Add your name so other students know who they are meeting.</p></div>
+    <div className="verify-heading"><span><Icon name="user" size={27} /></span><p className="eyebrow">ONE LAST STEP</p><h1>What should we call you?</h1><p>Choose the display name used in this local demo.</p></div>
     <div className="flow-form">
       <label className="result-field"><span>First name</span><input autoComplete="given-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} /></label>
       <label className="result-field"><span>Last name</span><input autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} /></label>
     </div>
-    <div className="safe-card"><Icon name="shield" /><p><strong>Your identity stays private.</strong><br />Only your first name is shown to other users.</p></div>
-    <div className="bottom-action">{(!hasFirstLetter || !hasLastName) && <p className="action-hint">{hasFirstLetter ? "Enter your last name" : "Enter your first name"}</p>}<Button disabled={!hasFirstLetter || !hasLastName} onClick={() => { api.updateName(`${firstName.trim()} ${lastName.trim()}`.trim()).catch(() => undefined); go("home"); }}>Continue <Icon name="chevron" size={18} /></Button></div>
+    <div className="safe-card"><Icon name="shield" /><p><strong>This does not verify your identity.</strong><br />The name remains in the current app session.</p></div>
+    <div className="bottom-action">{(!hasFirstLetter || !hasLastName) && <p className="action-hint">{hasFirstLetter ? "Enter your last name" : "Enter your first name"}</p>}<Button disabled={!hasFirstLetter || !hasLastName} onClick={onContinue}>Continue <Icon name="chevron" size={18} /></Button></div>
   </main>;
 }
 
-const activeItems = [
-  { emoji: "◒", title: "Blue water bottle", place: "Hardenbergh Hall · Today, 11:46 AM", status: "Claim pending" },
-  { emoji: "⌁", title: "AirPods case", place: "Academic Resource Center · Yesterday", status: "Pinging" },
-];
+function relativeTime(value: string) {
+  const hours = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 3_600_000));
+  if (hours < 1) return "Just now";
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
-type ItemData = (typeof activeItems)[number];
-
-function ItemCard({ item, onClick, large = false }: { item: ItemData; onClick?: () => void; large?: boolean }) {
-  const content = <><span className="item-thumb">{item.emoji}</span><span className="item-info"><strong>{item.title}</strong><small>{item.place}</small><Status>{item.status}</Status></span>{onClick && <Icon name="chevron" size={19} />}</>;
+function ReportCard({ report, onClick, large = false }: { report: PublicItemReport | ItemReport; onClick?: () => void; large?: boolean }) {
+  const restricted = "restrictedProjection" in report && report.restrictedProjection;
+  const content = restricted
+    ? <><span className="item-thumb">{categoryIcon(report.category)}</span><span className="item-info"><strong>{report.category}</strong><small>{report.location?.campus || "Campus hidden"} · Details hidden for safety</small></span>{onClick && <Icon name="chevron" size={19} />}</>
+    : <><span className="item-thumb"><ReportImage src={report.photoUrl} alt="" fallback={categoryIcon(report.category)} /></span><span className="item-info"><span><span className={`report-type-badge ${report.type}`}>{report.type}</span>{report.sample && <span className="sample-report-label">Demo sample</span>}</span><strong>{report.itemName}</strong><small>{report.location?.approximateLabel || "Location unavailable"} · {relativeTime(report.observedAt)}</small><Status>{reportStatusLabel(report.status)}</Status></span>{onClick && <Icon name="chevron" size={19} />}</>;
   return onClick
-    ? <button className={`item-card ${large ? "large" : ""}`} onClick={onClick}>{content}</button>
-    : <article className={`item-card ${large ? "large" : ""}`}>{content}</article>;
+    ? <button className={`item-card report-card ${large ? "large" : ""}`} onClick={onClick}>{content}</button>
+    : <article className={`item-card report-card ${large ? "large" : ""}`}>{content}</article>;
 }
 
 function greetingForHour(hour: number) {
@@ -189,12 +202,13 @@ function firstLetter(value: string) {
   return Array.from(value).find((character) => /\p{L}/u.test(character))?.toUpperCase() || "";
 }
 
-function Home({ go, firstName, lastName }: { go: (screen: Screen) => void; firstName: string; lastName: string }) {
+function Home({ go, openReport, reports, firstName, lastName, demo }: { go: (screen: Screen) => void; openReport: (id: string) => void; reports: PublicItemReport[]; firstName: string; lastName: string; demo: boolean }) {
   const displayName = firstName.trim();
   const hasName = /\p{L}/u.test(displayName);
   const greeting = greetingForHour(new Date().getHours());
   const greetingText = hasName ? `${greeting}, ${displayName}${greeting === "Up late" ? "?" : ""}` : greeting;
   const initials = hasName ? `${firstLetter(firstName)}${firstLetter(lastName)}` : "";
+  const activeReports = reports.filter((report) => !["returned", "closed"].includes(report.status));
   return <main className="tab-page">
     <header className="home-header"><Brand /><button className="avatar" aria-label={hasName ? `Open ${displayName}'s profile` : "Open profile"} onClick={() => go("profile")}>{initials || <Icon name="user" size={18} />}</button></header>
     <section className="welcome"><p className="eyebrow">{greetingText}</p><h1>What are we looking for?</h1></section>
@@ -202,53 +216,208 @@ function Home({ go, firstName, lastName }: { go: (screen: Screen) => void; first
       <button className="action-card found" onClick={() => go("capture")}><span className="action-icon"><Icon name="camera" size={29} /></span><span><strong>I found<br />something</strong><small>Help it ask Where RU?</small></span><Icon name="chevron" size={18} /></button>
       <button className="action-card lost" onClick={() => go("lost")}><span className="action-icon"><Icon name="search" size={29} /></span><span><strong>I lost<br />something</strong><small>Find your item</small></span><Icon name="chevron" size={18} /></button>
     </section>
-    <section className="section priority-requests">
-      <div className="section-heading"><div><h2>Priority requests</h2><p>Available to trusted helpers</p></div><span className="reputation-badge"><Icon name="shield" size={12} /> Trusted Helper</span></div>
+    {demo && <section className="section priority-requests">
+      <div className="section-heading"><div><h2>Priority requests</h2><p>Demo-only restricted role preview</p></div><span className="reputation-badge"><Icon name="shield" size={12} /> Demo helper view</span></div>
       <article className="priority-request-card">
         <span className="sensitive-item-icon"><Icon name="lock" /></span>
-        <span className="item-info"><span className="sensitive-label">Sensitive listing</span><strong>Black laptop sleeve</strong><small>Last seen near ARC · Limited details</small></span>
-        <span className="countdown"><Icon name="clock" size={14} /> 18h left</span>
+        <span className="item-info"><span className="sensitive-label">Demo role preview</span><strong>Restricted requests</strong><small>Private listings appear only to authorized helpers.</small></span>
       </article>
-    </section>
+    </section>}
     <section className="section">
-      <div className="section-heading"><h2>Active items</h2><button onClick={() => go("items")}>See all</button></div>
-      <div className="stack">{activeItems.map((item, i) => <ItemCard item={item} key={item.title} onClick={() => go(i === 0 ? "finderStatus" : "map")} />)}</div>
+      <div className="section-heading"><h2>Active items</h2><button onClick={() => go("explore")}>See all</button></div>
+      <div className="stack">{activeReports.slice(0, 3).map((report) => <ReportCard report={report} key={report.id} onClick={() => openReport(report.id)} />)}</div>
+      {activeReports.length === 0 && <div className="empty-note"><Icon name="bag" /><p>No active reports yet.</p></div>}
     </section>
-    <div className="tip-card"><Icon name="shield" /><div><strong>Your privacy comes first</strong><p>Names are only shared after ownership is verified.</p></div></div>
+    <div className="tip-card"><Icon name="shield" /><div><strong>Your privacy comes first</strong><p>This prototype does not publicly expose claimant names or private evidence.</p></div></div>
+  </main>;
+}
+
+const campusFilterOptions: Array<{ label: string; value: CampusId | "all" }> = [
+  { label: "All", value: "all" },
+  { label: "College Avenue", value: "College Ave" },
+  { label: "Busch", value: "Busch" },
+  { label: "Livingston", value: "Livingston" },
+  { label: "Cook/Douglass", value: "Cook/Douglass" },
+];
+
+type ExploreState = {
+  query: string;
+  type: "all" | "lost" | "found";
+  campus: CampusId | "all";
+  category: ReportCategory | "all";
+  sort: "newest" | "oldest";
+  scrollY: number;
+};
+
+const initialExploreState: ExploreState = { query: "", type: "all", campus: "all", category: "all", sort: "newest", scrollY: 0 };
+
+function Explore({ go, openReport, state, setState }: { go: (screen: Screen) => void; openReport: (id: string) => void; state: ExploreState; setState: (update: ExploreState | ((current: ExploreState) => ExploreState)) => void }) {
+  const { publicReports, notifications, currentUserId, markNotificationRead } = useReports();
+  const [showReportChooser, setShowReportChooser] = useState(false);
+  const { query, type, campus, category, sort } = state;
+  const patch = (updates: Partial<ExploreState>) => setState((current) => ({ ...current, ...updates }));
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => window.scrollTo({ top: state.scrollY }));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+  const visible = useMemo(() => {
+    const search = query.trim().toLowerCase();
+    return publicReports
+      .filter((report) => type === "all" || report.type === type)
+      .filter((report) => campus === "all" || report.location?.campus === campus)
+      .filter((report) => category === "all" || report.category === category)
+      .filter((report) => !search || [report.itemName, report.category, report.publicDescription, report.location?.approximateLabel].join(" ").toLowerCase().includes(search))
+      .sort((a, b) => sort === "newest" ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt));
+  }, [campus, category, publicReports, query, sort, type]);
+  const hasFilters = Boolean(query || type !== "all" || campus !== "all" || category !== "all");
+  const clearFilters = () => patch({ query: "", type: "all", campus: "all", category: "all" });
+  const userNotifications = notifications.filter((notification) => notification.userId === currentUserId && !notification.read);
+  return <main className="tab-page explore-page">
+    <header className="title-header explore-title"><div><h1>Explore</h1><p>Lost &amp; found across Rutgers</p></div><button className="report-action" onClick={() => setShowReportChooser(!showReportChooser)}><Icon name="plus" size={17} /> Report</button></header>
+    {userNotifications.map((notification) => <button className="catalog-notification" onClick={() => { markNotificationRead(notification.id); openReport(notification.reportId); }} key={notification.id}><Icon name="bell" size={18} /><span><strong>{notification.title}</strong><small>{notification.body} · Demo in-app event</small></span><Icon name="chevron" size={17} /></button>)}
+    {showReportChooser && <div className="report-chooser"><button onClick={() => go("capture")}><Icon name="camera" /><span><strong>I found something</strong><small>Photograph and report it safely</small></span></button><button onClick={() => go("lost")}><Icon name="search" /><span><strong>I lost something</strong><small>Create a lost-item listing</small></span></button></div>}
+    <label className="catalog-search"><Icon name="search" size={19} /><input aria-label="Search reports" value={query} onChange={(event) => patch({ query: event.target.value })} placeholder="Search items, categories, or places" />{query && <button aria-label="Clear search" onClick={() => patch({ query: "" })}><Icon name="x" size={16} /></button>}</label>
+    <div className="catalog-tabs" aria-label="Report type">{(["all", "lost", "found"] as const).map((value) => <button className={type === value ? "active" : ""} aria-pressed={type === value} onClick={() => patch({ type: value })} key={value}>{value[0].toUpperCase() + value.slice(1)}</button>)}</div>
+    <div className="catalog-filter-label"><span>Campus</span><label>Sort <select value={sort} onChange={(event) => patch({ sort: event.target.value as "newest" | "oldest" })}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label></div>
+    <div className="catalog-chips">{campusFilterOptions.map((option) => <button className={campus === option.value ? "active" : ""} aria-pressed={campus === option.value} onClick={() => patch({ campus: option.value })} key={option.value}>{option.label}</button>)}</div>
+    <p className="catalog-filter-label">Category</p>
+    <div className="catalog-chips category-chips"><button className={category === "all" ? "active" : ""} aria-pressed={category === "all"} onClick={() => patch({ category: "all" })}>All</button>{reportCategories.map((value) => <button className={category === value ? "active" : ""} aria-pressed={category === value} onClick={() => patch({ category: value })} key={value}>{value}</button>)}</div>
+    <div className="catalog-results"><div className="section-heading"><h2>{visible.length} {visible.length === 1 ? "report" : "reports"}</h2>{hasFilters && <button onClick={clearFilters}>Clear filters</button>}</div>
+      <div className="stack">{visible.map((report) => <ReportCard report={report} large key={report.id} onClick={() => openReport(report.id)} />)}</div>
+      {publicReports.length === 0 && <CatalogEmpty icon="bag" title="No reports yet" text="Start the Rutgers lost-and-found catalog by reporting an item." action="Report an item" onAction={() => setShowReportChooser(true)} />}
+      {publicReports.length > 0 && visible.length === 0 && <CatalogEmpty icon="search" title={query ? "No matching search results" : "No reports in these filters"} text="Try another campus or category, or clear the active filters." action="Clear filters" onAction={clearFilters} />}
+    </div>
+  </main>;
+}
+
+function CatalogEmpty({ icon, title, text, action, onAction }: { icon: IconName; title: string; text: string; action: string; onAction: () => void }) {
+  return <div className="catalog-empty"><span><Icon name={icon} /></span><h2>{title}</h2><p>{text}</p><Button variant="secondary" onClick={onAction}>{action}</Button></div>;
+}
+
+function ReportDetail({ reportId, go, onBack, startFoundFromLost }: { reportId: string | null; go: (screen: Screen) => void; onBack: () => void; startFoundFromLost: (report: PublicItemReport) => void }) {
+  const { reports, claims, currentUserId, closeReport, updateReport } = useReports();
+  const [flagged, setFlagged] = useState(false);
+  const report = reports.find((item) => item.id === reportId);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(report?.itemName ?? "");
+  const [editDescription, setEditDescription] = useState(report?.publicDescription ?? "");
+  useEffect(() => {
+    setEditing(false);
+    setEditName(report?.itemName ?? "");
+    setEditDescription(report?.publicDescription ?? "");
+  }, [report?.id]);
+  if (!report) return <main className="simple-page"><BackHeader title="Report unavailable" onBack={onBack} /><CatalogEmpty icon="lock" title="Restricted or unavailable report" text="This report may have been closed, removed, or is not available to your account." action="Go back" onAction={onBack} /></main>;
+  const owner = report.reporterId === currentUserId;
+  const safeReport = owner ? report : toPublicReport(report);
+  const reportClaims = claims.filter((claim) => claim.reportId === report.id);
+  const activeClaim = reportClaims.find((claim) => claim.claimantId === currentUserId && !["rejected", "returned"].includes(claim.status));
+  const relatedFoundReports = reports.filter((candidate) => candidate.relatedLostReportId === report.id && (owner || candidate.visibility === "public"));
+  const active = !["closed", "returned"].includes(report.status);
+  return <main className="simple-page report-detail-page">
+    <BackHeader title="Item details" onBack={onBack} action={<span className={`report-type-badge ${report.type}`}>{report.type}</span>} />
+    <div className="detail-photo"><ReportImage src={safeReport.photoUrl} alt={`Reported ${safeReport.itemName}`} fallback={<span>{categoryIcon(safeReport.category)}</span>} /></div>
+    <div className="detail-heading"><p className="eyebrow">{safeReport.sample ? `DEMO SAMPLE · ${safeReport.category}` : safeReport.category}</p><h1>{safeReport.itemName}</h1><Status>{reportStatusLabel(safeReport.status)}</Status></div>
+    {owner && editing && <section className="detail-edit"><label className="result-field"><span>Item name</span><input value={editName} onChange={(event) => setEditName(event.target.value)} /></label><label className="textarea-field"><span>Public description</span><textarea value={editDescription} onChange={(event) => setEditDescription(event.target.value)} /></label><Button disabled={!editName.trim()} onClick={() => { updateReport(report.id, { itemName: editName.trim(), publicDescription: editDescription.trim() }); setEditing(false); }}>Save changes</Button></section>}
+    {(report.sensitive || report.visibility !== "public") && !owner && <div className="private-note"><Icon name="shield" /><p><strong>Restricted details.</strong> Identifying features and the precise custody location stay private until a claim is reviewed.</p></div>}
+    <section className="detail-card"><div><span>Description</span><p>{safeReport.publicDescription || "No public description provided."}</p></div><div><span>Approximate location</span><p>{safeReport.location?.approximateLabel || "Location unavailable"}</p></div><div><span>Submitted</span><p>{new Date(safeReport.createdAt).toLocaleString()}</p></div><div><span>{safeReport.type === "lost" ? "Last seen" : "Found"}</span><p>{new Date(safeReport.observedAt).toLocaleString()}</p></div>{safeReport.updatedAt !== safeReport.createdAt && <div><span>Last updated</span><p>{new Date(safeReport.updatedAt).toLocaleString()}</p></div>}{safeReport.relatedLostReportId && <div><span>Related lost report</span><p>{safeReport.relatedLostReportId} · potential relationship only</p></div>}{relatedFoundReports.length > 0 && <div><span>Potential found reports</span><p>{relatedFoundReports.map((candidate) => candidate.id).join(", ")} · not verified matches</p></div>}</section>
+    <div className="recovery-note"><Icon name={report.sensitive ? "shield" : "bag"} /><p><strong>{report.sensitive ? "Use an official staffed return point." : "Keep recovery public and safe."}</strong><br />Never post private identifiers or meet in an isolated location.</p></div>
+    {owner ? <div className="detail-actions">
+      <p className="helper-text">This is your report. Claim actions are disabled for your own listing.</p>
+      {reportClaims.length > 0 && <Button onClick={() => go("finderStatus")}>Review {reportClaims.length} {reportClaims.length === 1 ? "claim" : "claims"}</Button>}
+      {active && <Button variant="secondary" onClick={() => setEditing(!editing)}>{editing ? "Cancel editing" : "Edit report"}</Button>}
+      {active && <Button variant="secondary" onClick={() => closeReport(report.id)}>Close report</Button>}
+    </div> : active ? <div className="detail-actions">
+      {report.type === "found" ? activeClaim ? <Button disabled>Claim submitted · under review</Button> : <Button onClick={() => go("ownership")}>This might be mine</Button> : <Button onClick={() => startFoundFromLost(toPublicReport(report))}>I may have found this</Button>}
+      <Button variant="ghost" onClick={() => setFlagged(true)}>{flagged ? "Listing flagged for demo review" : "Report suspicious listing"}</Button>
+    </div> : null}
   </main>;
 }
 
 type FoundReport = {
   photoUrl: string | null;
-  photoFile: File | null;
+  photoPreviewUrl: string | null;
   sample: boolean;
   title: string;
   category: string;
   color: string;
   description: string;
   hideDetails: boolean;
-  aiDemo: boolean;
   location: RoomLocation | null;
   foundAt: string;
+  relatedLostReportId?: string;
+  photoFile: File | null;
+  aiDemo: boolean;
 };
 
-const emptyFoundReport: FoundReport = { photoUrl: null, photoFile: null, sample: false, title: "", category: "", color: "", description: "", hideDetails: true, aiDemo: true, location: null, foundAt: "" };
+const emptyFoundReport: FoundReport = { photoUrl: null, photoPreviewUrl: null, photoFile: null, aiDemo: true, sample: false, title: "", category: "", color: "", description: "", hideDetails: true, location: null, foundAt: "" };
 
-function nowLabel() {
-  return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date());
+function normalizeCategory(value: string): ReportCategory {
+  const normalized = value.toLowerCase();
+  if (normalized.includes("wallet") || normalized.includes("id")) return "Wallets/IDs";
+  if (normalized.includes("key")) return "Keys";
+  if (normalized.includes("bag") || normalized.includes("backpack")) return "Bags";
+  if (normalized.includes("cloth") || normalized.includes("hoodie")) return "Clothing";
+  if (normalized.includes("bottle")) return "Bottles";
+  if (normalized.includes("school") || normalized.includes("notebook") || normalized.includes("calculator")) return "School Supplies";
+  if (normalized.includes("electronic") || normalized.includes("phone") || normalized.includes("laptop") || normalized.includes("airpod")) return "Electronics";
+  return "Other";
+}
+
+function roomToReportLocation(location: RoomLocation): ReportLocation {
+  const known = campusPlaces.find((place) => place.name === location.building);
+  const room = location.room.trim();
+  return {
+    campus: location.campus,
+    area: location.building,
+    building: location.building,
+    room: room || undefined,
+    source: room ? location.source : "manual-area",
+    placeType: room ? "classroom" : known?.placeType || "building",
+    approximateLabel: `Near ${location.building}`,
+    approximateCoordinates: known?.coordinates,
+    precise: { label: formatLocation(location), coordinates: known?.coordinates },
+  };
+}
+
+function localDateTimeValue(date = new Date()) {
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function localDateTimeToIso(value: string) {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
 }
 
 function Capture({ go, report, setReport }: { go: (screen: Screen) => void; report: FoundReport; setReport: (update: (current: FoundReport) => FoundReport) => void }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState("");
-  const hasPhoto = Boolean(report.photoUrl) || report.sample;
-  const setPhoto = (url: string | null, sample: boolean, file: File | null = null) => {
+  const hasPhoto = Boolean(report.photoPreviewUrl || report.photoUrl) || report.sample;
+  const setPhoto = (reference: string | null, preview: string | null, sample: boolean, file: File | null = null) => {
     setError("");
-    setReport((current) => ({ ...current, photoUrl: url, photoFile: file, sample, foundAt: current.foundAt || nowLabel() }));
+    setReport((current) => ({ ...current, photoUrl: reference, photoPreviewUrl: preview, photoFile: file, sample, foundAt: current.foundAt || localDateTimeValue() }));
+  };
+  const savePhoto = async (file: File, preview: string) => {
+    try {
+      const reference = await storeReportImage(file);
+      setPhoto(reference, preview, false, file);
+    } catch (photoError) {
+      setPhoto(null, preview, false, file);
+      setError(photoError instanceof Error ? `${photoError.message} The preview is not attached yet.` : "The photo could not be stored.");
+    }
   };
   const usePhoto = async () => {
+    if (report.photoPreviewUrl && !report.photoUrl) {
+      setError("Wait for the photo to finish saving locally, or choose another photo.");
+      return;
+    }
+    if (!report.sample && !report.photoFile) {
+      go("locate");
+      return;
+    }
     setAnalyzing(true);
-    const result = await activeRecognizer.describeItem(report.photoFile);
+    // Real photos go to the backend's on-device item recognizer; the sample uses demo data.
+    const result = await activeRecognizer.describeItem(report.sample ? null : report.photoFile);
     setReport((current) => ({
       ...current,
       title: current.title || result.title,
@@ -263,36 +432,44 @@ function Capture({ go, report, setReport }: { go: (screen: Screen) => void; repo
   if (analyzing) return <main className="camera-screen analyzing" aria-live="polite" aria-busy="true">
     <div className="scan-orbit"><Icon name="sparkles" size={34} /></div>
     <h1>Describing the item…</h1><p>Picking out the category, color, and details you can edit next.</p>
-    <DemoTag>Demo description</DemoTag>
+    {report.sample ? <DemoTag>Demo description</DemoTag> : <span className="demo-tag live"><Icon name="check" size={12} />On-device</span>}
   </main>;
   return <main className="camera-screen with-bottom">
     <BackHeader title="Found something" onBack={() => go("home")} action={<span className="camera-step">1/3</span>} />
     <div className="capture-copy"><p className="eyebrow">STEP 1 OF 3 · PHOTOGRAPH ITEM</p><h1>Photograph the item</h1><p>Fit the whole item in the frame, in good light.</p></div>
     <div className={`camera-frame ${hasPhoto ? "has-photo" : ""}`}>
       <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-      {report.photoUrl ? <img className="photo-preview" src={report.photoUrl} alt="Your photo of the found item" /> : <div className={`bottle ${report.sample ? "" : "ghost"}`}><span className="cap" /><span className="bottle-body"><span className="sticker">★</span></span></div>}
+      {report.photoPreviewUrl ? <img className="photo-preview" src={report.photoPreviewUrl} alt="Your photo of the found item" /> : <div className={`bottle ${report.sample ? "" : "ghost"}`}><span className="cap" /><span className="bottle-body"><span className="sticker">★</span></span></div>}
       <div className="camera-guide">{hasPhoto ? (report.sample ? "Sample photo" : "Looks good? Use it or retake") : "No photo yet"}</div>
     </div>
     {error && <div className="camera-error" role="alert">{error}</div>}
     <div className="bottom-action camera-actions">
       {hasPhoto ? <div className="photo-buttons">
         <Button onClick={usePhoto}>Use this photo <Icon name="chevron" size={18} /></Button>
-        <Button variant="secondary" onClick={() => setPhoto(null, false)}><Icon name="refresh" size={18} /> Retake</Button>
+        <Button variant="secondary" onClick={() => setPhoto(null, null, false)}><Icon name="refresh" size={18} /> Retake</Button>
       </div> : <>
-        <PhotoButtons cameraLabel="Take photo" onPhoto={(file, url) => setPhoto(url, false, file)} onError={setError} />
-        <button type="button" className="text-button sample on-dark" onClick={() => setPhoto(null, true)}>Use a sample photo</button>
+        <PhotoButtons cameraLabel="Take photo" onPhoto={savePhoto} onError={setError} />
+        <button type="button" className="text-button sample on-dark" onClick={() => setPhoto(null, null, true)}>Use a clearly labeled demo sample</button>
       </>}
     </div>
   </main>;
 }
 
 function Locate({ go, report, setReport }: { go: (screen: Screen) => void; report: FoundReport; setReport: (update: (current: FoundReport) => FoundReport) => void }) {
+  const [campus, setCampus] = useState<CampusId>("College Ave");
+  const [area, setArea] = useState("");
+  const useArea = () => {
+    const name = area.trim();
+    if (!name) return;
+    setReport((current) => ({ ...current, location: { campus, building: name, code: "", room: "", source: "manual" } }));
+  };
   return <main className="simple-page with-bottom">
     <BackHeader title="Identify location" onBack={() => go("capture")} action={<span className="flow-count">2 of 3</span>} />
     <p className="eyebrow">STEP 2 OF 3 · SCAN CLASSROOM</p>
     <h1 className="flow-title">Where did you find it?</h1>
     <p className="subtext">Scan the room to identify it. If that doesn't work, scan the door placard or choose the room.</p>
     <LocationPicker context="found" value={report.location} onChange={(location) => setReport((current) => ({ ...current, location }))} />
+    {!report.location && <div className="manual-area-card"><p className="or-divider">or use a broader place</p><label className="result-field"><span>Campus</span><select value={campus} onChange={(event) => setCampus(event.target.value as CampusId)}>{campusOptions.map((option) => <option key={option}>{option}</option>)}</select></label><label className="result-field"><span>Landmark, hallway, bus stop, or area</span><input value={area} onChange={(event) => setArea(event.target.value)} placeholder="e.g. College Ave Student Center" /></label><Button variant="secondary" disabled={!area.trim()} onClick={useArea}>Use this area</Button></div>}
     <div className="bottom-action">
       {!report.location && <p className="action-hint">Confirm a room to continue.</p>}
       <Button disabled={!report.location} onClick={() => go("confirm")}>Continue <Icon name="chevron" size={18} /></Button>
@@ -300,109 +477,106 @@ function Locate({ go, report, setReport }: { go: (screen: Screen) => void; repor
   </main>;
 }
 
-function Confirm({ go, report, setReport }: { go: (screen: Screen) => void; report: FoundReport; setReport: (update: (current: FoundReport) => FoundReport) => void }) {
+function Confirm({ go, report, setReport, onSubmit }: { go: (screen: Screen) => void; report: FoundReport; setReport: (update: (current: FoundReport) => FoundReport) => void; onSubmit: () => void }) {
   const set = (key: "title" | "category" | "color" | "description") => (event: ChangeEvent<HTMLInputElement>) => setReport((current) => ({ ...current, [key]: event.target.value }));
   const location = report.location;
-  const ready = Boolean(report.title.trim() && location);
-  const [sending, setSending] = useState(false);
-  const notify = async () => {
-    setSending(true);
-    try {
-      await api.publishFoundReport({
-        title: report.title.trim(),
-        description: report.hideDetails ? `${report.color} ${report.category}`.trim() : report.description,
-        private_description: report.hideDetails ? report.description : "",
-        category: api.toApiCategory(report.category || report.title),
-        campus: location?.campus,
-        location: location ? formatLocation(location) : "",
-      });
-    } catch (error) {
-      console.warn("Could not publish to the backend; continuing in demo mode", error);
-    }
-    setSending(false);
-    go("finderStatus");
-  };
+  const validObservedAt = Boolean(localDateTimeToIso(report.foundAt));
+  const ready = Boolean(report.title.trim() && location && validObservedAt);
   return <main className="simple-page with-bottom">
     <BackHeader title="Review report" onBack={() => go("locate")} action={<span className="flow-count">3 of 3</span>} />
-    <div className="ai-banner"><span><Icon name="sparkles" size={20} /></span><div><strong>Check the details</strong><p>Everything below is editable before anyone is notified.</p></div>{report.aiDemo ? <DemoTag>Demo AI</DemoTag> : <span className="demo-tag live"><Icon name="check" size={12} />On-device</span>}</div>
+    <div className="ai-banner"><span><Icon name="sparkles" size={20} /></span><div><strong>Check the details</strong><p>Everything below is editable before the report is saved.</p></div>{report.aiDemo ? <DemoTag>Demo AI</DemoTag> : <span className="demo-tag live"><Icon name="check" size={12} />On-device</span>}</div>
     <section className="form-section"><h2>Item</h2>
-      <div className="review-photo">{report.photoUrl ? <img src={report.photoUrl} alt="Found item" /> : <div className="mini-bottle" />}<button type="button" className="text-button" onClick={() => go("capture")}>Replace photo</button></div>
+      <div className="review-photo">{report.photoPreviewUrl ? <img src={report.photoPreviewUrl} alt="Found item" /> : <span className="detail-category-icon">{categoryIcon(normalizeCategory(report.category))}</span>}<button type="button" className="text-button" onClick={() => go("capture")}>{report.photoPreviewUrl ? "Replace photo" : "Add photo"}</button></div>
       <label className="result-field"><span>Item</span><input value={report.title} onChange={set("title")} /></label>
       <div className="field-row"><label className="result-field half"><span>Category</span><input value={report.category} onChange={set("category")} /></label><label className="result-field half"><span>Color</span><input value={report.color} onChange={set("color")} /></label></div>
       <label className="result-field"><span>Details</span><input value={report.description} onChange={set("description")} /></label>
     </section>
     <section className="form-section"><h2>Location</h2>
       {location ? <LocationSummary location={location} onChange={() => go("locate")} /> : <Button variant="secondary" onClick={() => go("locate")}>Identify location</Button>}
-      <p className="helper-text">Found at about {report.foundAt || nowLabel()}.</p>
+      <label className="result-field"><span>Date and time found</span><input type="datetime-local" max={localDateTimeValue()} value={report.foundAt} onChange={(event) => setReport((current) => ({ ...current, foundAt: event.target.value }))} /></label>
+      {!validObservedAt && <p className="form-hint">Choose when the item was found.</p>}
     </section>
     <section className="form-section"><div className="section-heading"><h2>Possible lost listing matches</h2><span className="private-label"><Icon name="shield" size={14} /> Anonymous</span></div>
-      <article className="class-match"><span className="time-box">11:42<small>AM</small></span><div><strong>{report.title || "Similar item"}</strong><p>{location ? shortLocation(location) : "Same building"} · Posted earlier today</p></div></article>
-      <p className="helper-text">Sample listing. Only students who posted matching lost listings are notified, and their identities stay hidden.</p>
+      {report.relatedLostReportId ? <article className="class-match"><span className="time-box"><Icon name="search" size={18} /></span><div><strong>Linked lost report</strong><p>Report {report.relatedLostReportId}</p></div></article> : <p className="helper-text">No match analysis has been run. Potential matches remain suggestions until reviewed.</p>}
     </section>
-    <div className="toggle-card"><Toggle on={report.hideDetails} setOn={(hideDetails) => setReport((current) => ({ ...current, hideDetails }))} label="Hide identifying details from public description" /><p>Stickers and damage stay private and are used to verify the owner.</p></div>
+    <div className="toggle-card"><Toggle on={report.hideDetails} setOn={(hideDetails) => setReport((current) => ({ ...current, hideDetails }))} label="Hide identifying details from public description" /><p>Stickers and damage stay private and can help the reporter review a claim.</p></div>
     <div className="bottom-action">
-      {!ready && <p className="action-hint">Add an item name and location to continue.</p>}
-      <Button disabled={!ready || sending} onClick={notify}><Icon name="bell" size={19} /> {sending ? "Notifying…" : "Notify matching listings"}</Button>
+      {!ready && <p className="action-hint">Add an item name, location, and valid event time to continue.</p>}
+      <Button disabled={!ready} onClick={onSubmit}><Icon name="plus" size={19} /> Post found report</Button>
     </div>
   </main>;
 }
 
-function FinderStatus({ go, report }: { go: (screen: Screen) => void; report: FoundReport }) {
-  const where = report.location ? shortLocation(report.location) : "HH A2";
-  const title = report.title || "Blue water bottle";
-  const at = report.foundAt || "11:46 AM";
+function FinderStatus({ go, report, claims, onUpdateClaim }: { go: (screen: Screen) => void; report?: ItemReport; claims: Claim[]; onUpdateClaim: (id: string, status: Claim["status"]) => void }) {
+  const { currentUserId, getClaimAnswer, switchUser } = useReports();
+  const [actionError, setActionError] = useState("");
+  if (!report) return <main className="simple-page"><BackHeader title="Item status" onBack={() => go("explore")} /><CatalogEmpty icon="lock" title="Report unavailable" text="This report is no longer available." action="Back to Explore" onAction={() => go("explore")} /></main>;
+  if (report.reporterId !== currentUserId) return <main className="simple-page"><BackHeader title="Claim review" onBack={() => go("detail")} /><CatalogEmpty icon="lock" title="Finder review only" text="Only the finder who posted this report can review its private ownership claims." action="Back to report" onAction={() => go("detail")} /></main>;
+  const where = report.location?.approximateLabel || "Location unavailable";
+  const reportClaims = claims.filter((claim) => claim.reportId === report.id);
   const timeline = [
-    ["Found", `Today, ${at}`, true],
-    ["Listings matched", "2 private reports", true],
-    ["Claim pending", "Waiting for private verification", true],
-    ["Verified", "Next step", false],
-    ["Returned", "", false],
-  ];
+    [report.type === "found" ? "Found report posted" : "Lost report posted", new Date(report.createdAt).toLocaleString(), true],
+    ["Possible match", report.status === "possible_match" ? "Potential related report found" : "No confirmed match", ["possible_match", "claim_under_review", "returned"].includes(report.status)],
+    ["Claim under review", reportClaims.length ? `${reportClaims.length} private claim${reportClaims.length === 1 ? "" : "s"}` : "No claims submitted", ["claim_under_review", "returned"].includes(report.status)],
+    ["Returned", report.status === "returned" ? "Recovery completed" : "Not completed", report.status === "returned"],
+  ] as const;
   return <main className="simple-page with-nav">
-    <BackHeader title="Item status" onBack={() => go("home")} />
-    <article className="status-hero"><div className="item-visual">{report.photoUrl ? <img src={report.photoUrl} alt="" /> : <div className="mini-bottle" />}</div><div><Status>Claim pending</Status><h1>{title}</h1><p>{where} · Today, {at}</p></div></article>
-    <div className="notice-card"><span><Icon name="bell" /></span><div><strong>Matching reports notified</strong><p>We privately notified 2 students who posted similar lost listings. You won't see who.</p></div></div>
+    <BackHeader title="Item status" onBack={() => go("detail")} />
+    <article className="status-hero"><div className="item-visual"><ReportImage src={report.photoUrl} alt="" fallback={<span className="detail-category-icon">{categoryIcon(report.category)}</span>} /></div><div><Status>{reportStatusLabel(report.status)}</Status><h1>{report.itemName}</h1><p>{where} · event {relativeTime(report.observedAt)}</p></div></article>
+    <div className="notice-card"><span><Icon name="bell" /></span><div><strong>{reportClaims.length ? "Claim activity recorded" : "Report is active"}</strong><p>{reportClaims.length ? "Private claim details are available for demo review below." : "No match or notification is claimed until an event is created."}</p></div></div>
     <section className="timeline">
-      {timeline.map(([label, detail, done], i) => <div className={`${done ? "done" : ""} ${i === 2 ? "current" : ""}`} key={label as string}><span className="timeline-dot">{done && i < 2 ? <Icon name="check" size={13} /> : i + 1}</span><div><strong>{label}</strong><p>{detail}</p></div></div>)}
+      {timeline.map(([label, detail, done], i) => <div className={`${done ? "done" : ""} ${i === 2 && report.status === "claim_under_review" ? "current" : ""}`} key={label}><span className="timeline-dot">{done ? <Icon name="check" size={13} /> : i + 1}</span><div><strong>{label}</strong><p>{detail}</p></div></div>)}
     </section>
-    <div className="demo-next"><p className="eyebrow">INTERACTIVE DEMO</p><h3>See what the owner receives</h3><p>Preview the private claim and verification flow.</p><Button variant="secondary" onClick={() => go("ownerNotice")}>Preview owner notification <Icon name="chevron" size={18} /></Button></div>
+    {actionError && <div className="camera-error" role="alert">{actionError}</div>}
+    {reportClaims.map((claim) => {
+      const answer = getClaimAnswer(claim.id);
+      return <div className="demo-next" key={claim.id}><p className="eyebrow">SIMULATED CLAIM · {claim.status}</p><h3>Compare private details</h3><p><strong>Finder's hidden report detail:</strong><br />{report.privateDetails || "No hidden finder detail was recorded."}</p><p><strong>Claimant's private answer:</strong><br />{answer || "Private answer unavailable after refresh — ask the claimant to resubmit."}</p>
+        {claim.status === "submitted" && <div className="detail-actions"><Button variant="secondary" onClick={() => { try { onUpdateClaim(claim.id, "rejected"); setActionError(""); } catch (error) { setActionError(error instanceof Error ? error.message : "Unable to reject claim."); } }}>Reject claim</Button><Button disabled={!answer} onClick={() => { try { onUpdateClaim(claim.id, "approved"); go("handoff"); } catch (error) { setActionError(error instanceof Error ? error.message : "Unable to approve claim."); } }}>Approve claim</Button></div>}
+        {claim.status === "approved" && <Button onClick={() => go("handoff")}>Arrange handoff</Button>}
+      </div>;
+    })}
+    {report.type === "found" && reportClaims.length === 0 && <div className="demo-next"><p className="eyebrow">INTERACTIVE DEMO</p><h3>Preview a claim event</h3><p>This creates a labeled in-app demo claim from a different simulated user.</p><Button variant="secondary" onClick={() => { switchUser("demo-maya"); go("ownerNotice"); }}>Preview demo notification <Icon name="chevron" size={18} /></Button></div>}
   </main>;
 }
 
-function OwnerNotice({ go, report }: { go: (screen: Screen) => void; report: FoundReport }) {
-  const title = (report.title || "Blue water bottle").toLowerCase();
-  const where = report.location ? formatLocation(report.location) : "Hardenbergh Hall A2";
-  const short = report.location ? shortLocation(report.location) : "HH A2";
-  const at = report.foundAt || "11:46 AM";
+function OwnerNotice({ go, report }: { go: (screen: Screen) => void; report?: ItemReport }) {
+  if (!report) return <main className="simple-page"><CatalogEmpty icon="lock" title="Report unavailable" text="The associated report could not be found." action="Back to Explore" onAction={() => go("explore")} /></main>;
+  const title = report.itemName.toLowerCase();
+  const where = report.location?.approximateLabel || "an approximate Rutgers location";
+  const at = new Date(report.observedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   return <main className="simple-page notice-page">
     <BackHeader title="Notification preview" onBack={() => go("finderStatus")} />
     <div className="phone-lock">
       <div className="lock-top"><span>{at.replace(/\s?[AP]M/, "")}</span><small>Today</small></div>
       <article className="push-card"><div className="push-head"><BrandIcon className="app-mini" /><Wordmark size="notification" /><small>now</small></div><h3>Where RU? Possible match</h3><p>Is this your {title}? It was found in <strong>{where}</strong>.</p></article>
     </div>
-    <p className="eyebrow center">IN-APP NOTIFICATION</p>
-    <article className="claim-card"><span className="claim-icon"><Icon name="search" /></span><h2>Is this yours?</h2><p>A {title} was found in <strong>{where}</strong> and may match the listing you posted.</p><div className="found-meta"><Icon name="clock" size={18} /><span><strong>Found today at {at}</strong><small>Matched against your lost listing</small></span></div><Button onClick={() => go("ownership")}>That's mine</Button><Button variant="ghost" onClick={() => go("home")}>Not mine</Button></article>
+    <p className="eyebrow center">DEMO IN-APP NOTIFICATION</p>
+    <p className="privacy-note"><Icon name="user" size={16} /> Switched to Maya (demo) to preview the owner's side.</p>
+    <article className="claim-card"><span className="claim-icon"><Icon name="search" /></span><h2>Could this be yours?</h2><p>A {title} was reported near <strong>{where}</strong>. This preview does not represent a verified match or real notification.</p><div className="found-meta"><Icon name="clock" size={18} /><span><strong>Observed at {at}</strong><small>Linked to report {report.id}</small></span></div><Button onClick={() => go("ownership")}>This might be mine</Button><Button variant="ghost" onClick={() => go("detail")}>Not mine</Button></article>
     <p className="privacy-note"><Icon name="shield" size={16} /> The finder won't know you received this.</p>
   </main>;
 }
 
-function Ownership({ go }: { go: (screen: Screen) => void }) {
+function Ownership({ go, report, claimantId, onSubmit }: { go: (screen: Screen) => void; report?: ItemReport; claimantId: string; onSubmit: (reportId: string, detail: string) => Claim }) {
   const [detail, setDetail] = useState("");
-  const [result, setResult] = useState<"form" | "more" | "rejected">("form");
   const [chips, setChips] = useState<string[]>([]);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
   const toggleChip = (chip: string) => setChips(chips.includes(chip) ? chips.filter((c) => c !== chip) : [...chips, chip]);
-  if (result === "rejected") return <ResultState tone="red" icon="x" title="Not approved" text="Too many attempts. Try again later. This protects the item and its owner." button="Back to home" onClick={() => go("home")} />;
+  if (!report) return <main className="simple-page"><CatalogEmpty icon="lock" title="Invalid claim" text="A claim must reference an available report." action="Back to Explore" onAction={() => go("explore")} /></main>;
+  if (report.reporterId === claimantId) return <main className="simple-page"><CatalogEmpty icon="lock" title="This is your listing" text="You cannot submit an ownership claim against your own report." action="Back to report" onAction={() => go("detail")} /></main>;
+  if (["closed", "returned"].includes(report.status)) return <main className="simple-page"><CatalogEmpty icon="lock" title="Claims unavailable" text="This report is no longer accepting ownership claims." action="Back to report" onAction={() => go("detail")} /></main>;
+  if (submitted) return <ResultState tone="green" icon="check" title="Claim submitted" text="Your private details are under review in this demo. Ownership has not been verified." button="Back to report" onClick={() => go("detail")} eyebrow="DEMO CLAIM" />;
   return <main className="simple-page with-bottom">
-    <BackHeader title="Private Verification" onBack={() => go("ownerNotice")} />
+    <BackHeader title="Private Verification" onBack={() => go("detail")} />
     <div className="verify-heading"><span><Icon name="shield" size={27} /></span><p className="eyebrow">PRIVATE VERIFICATION</p><h1>Tell us something only the owner would know.</h1><p>Only the finder sees this answer. It is never posted publicly.</p></div>
-    {result === "more" && <div className="warning-banner"><strong>Needs more detail</strong><p>Try mentioning a sticker, dent, engraving, or what's inside. You have one retry.</p></div>}
     <label className="textarea-field"><span>Private detail</span><textarea value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="For example: There's a small white cat sticker near the bottom…" /></label>
+    {error && <div className="camera-error" role="alert">{error}</div>}
     <p className="field-label">What kind of detail are you sharing? <small>Optional</small></p>
     <div className="chip-row">{["Sticker", "Engraving", "Contents", "Damage"].map((chip) => <button key={chip} aria-pressed={chips.includes(chip)} className={chips.includes(chip) ? "selected" : ""} onClick={() => toggleChip(chip)}>{chips.includes(chip) && <Icon name="check" size={14} />}{chip}</button>)}</div>
     <div className="bottom-action">
-      {result === "more" && <button className="reject-link" onClick={() => setResult("rejected")}>Demo Not approved state</button>}
       {detail.trim().length < 8 && <p className="action-hint">Enter at least 8 characters to continue.</p>}
-      <Button disabled={detail.trim().length < 8} onClick={() => result === "form" && detail.toLowerCase().includes("cat") ? go("handoff") : result === "more" ? go("handoff") : setResult("more")}>Check my answer</Button>
+      <Button disabled={detail.trim().length < 8} onClick={() => { try { onSubmit(report.id, detail.trim()); setSubmitted(true); setError(""); } catch (claimError) { setError(claimError instanceof Error ? claimError.message : "The claim could not be submitted."); } }}>Submit claim for review</Button>
     </div>
   </main>;
 }
@@ -411,46 +585,73 @@ function ResultState({ tone, icon, title, text, button, onClick, eyebrow = "PRIV
   return <main className="result-screen"><div className={`result-icon ${tone}`}><Icon name={icon} size={42} /></div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{text}</p><Button onClick={onClick}>{button}</Button></main>;
 }
 
-function Handoff({ go, itemValue = "Everyday item" }: { go: (screen: Screen) => void; itemValue?: "Everyday item" | "Valuable or sensitive" }) {
-  const recommendDropOff = itemValue === "Valuable or sensitive";
+function Handoff({ go, report, claim, onUpdateClaim }: { go: (screen: Screen) => void; report?: ItemReport; claim?: Claim; onUpdateClaim: (id: string, status: Claim["status"]) => void }) {
+  const { currentUserId } = useReports();
+  const recommendDropOff = Boolean(report?.sensitive);
   const [returned, setReturned] = useState(false);
   const [handoffMethod, setHandoffMethod] = useState<"meet" | "drop">(recommendDropOff ? "drop" : "meet");
   const [meeting, setMeeting] = useState("College Ave Student Center");
   const [dropLocation, setDropLocation] = useState("Student Center information desk");
   const [readyForPickup, setReadyForPickup] = useState(false);
   const [problemReported, setProblemReported] = useState(false);
-  if (returned) return <ResultState tone="green" icon="check" title="Found you!" text="Back where it belongs. Thanks for helping a fellow Scarlet Knight." button="Back to home" onClick={() => go("home")} eyebrow="HANDOFF COMPLETE" />;
+  const [actionError, setActionError] = useState("");
+  const beginPickup = () => {
+    try {
+      if (!claim) throw new Error("The approved claim is unavailable.");
+      onUpdateClaim(claim.id, "handoff");
+      setActionError("");
+      setReadyForPickup(true);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Unable to arrange the handoff.");
+    }
+  };
+  const completeReturn = () => {
+    try {
+      if (!claim) throw new Error("The approved claim is unavailable.");
+      if (claim.status === "approved") onUpdateClaim(claim.id, "handoff");
+      onUpdateClaim(claim.id, "returned");
+      setActionError("");
+      setReturned(true);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Unable to mark the item returned.");
+      setProblemReported(true);
+    }
+  };
+  if (returned) return <ResultState tone="green" icon="check" title="Return marked complete" text="This simulated handoff is now recorded as returned in the local demo." button="Back to home" onClick={() => go("home")} eyebrow="SIMULATED HANDOFF" />;
+  if (!report || report.reporterId !== currentUserId || !claim || claim.status !== "approved" && claim.status !== "handoff") return <main className="simple-page"><CatalogEmpty icon="lock" title="Return unavailable" text="Only the finder can arrange a return after approving a claim." action="Back to report" onAction={() => go("detail")} /></main>;
   if (readyForPickup) return <main className="simple-page with-bottom">
     <BackHeader title="Item pickup" onBack={() => setReadyForPickup(false)} />
-    <div className="verified-hero"><div className="result-icon green"><Icon name="check" size={30} /></div><h1>Ready for pickup at {dropLocation}</h1><p>The finder has confirmed that your item was dropped off.</p></div>
-    <article className="meeting-card selected"><span><Icon name="map" /></span><div><strong>{dropLocation}</strong><p>Bring identification and your verified claim details.</p></div><Icon name="check" size={18} /></article>
-    <div className="bottom-action"><Button onClick={() => setReturned(true)}>I picked it up</Button></div>
+    <div className="verified-hero"><div className="result-icon green"><Icon name="check" size={30} /></div><h1>Simulated pickup plan</h1><p>No real drop-off or custody confirmation has been made.</p></div>
+    <article className="meeting-card selected"><span><Icon name="map" /></span><div><strong>{dropLocation}</strong><p>Demo selection only; confirm details directly before traveling.</p></div><Icon name="check" size={18} /></article>
+    {actionError && <div className="camera-error" role="alert">{actionError}</div>}
+    <div className="bottom-action"><Button onClick={completeReturn}>I picked it up</Button></div>
   </main>;
   return <main className="simple-page with-bottom">
     <BackHeader title="Arrange a handoff" onBack={() => go("finderStatus")} />
-    <div className="verified-hero"><div className="result-icon green"><Icon name="check" size={30} /></div><Status>Verified</Status><h1>Verified</h1><p>The finder approved the private answer. First names can now be shared.</p></div>
+    <div className="verified-hero"><div className="result-icon green"><Icon name="check" size={30} /></div><Status>Approved</Status><h1>Simulated approval</h1><p>The listing owner reviewed the private answer in this frontend demo. This is not identity or ownership verification.</p></div>
     <section className="handoff-choice"><h2>How do you want to return it?</h2>
       <div className="method-cards">
         <button aria-pressed={handoffMethod === "meet"} className={handoffMethod === "meet" ? "selected" : ""} onClick={() => setHandoffMethod("meet")}><span className="method-icon"><Icon name="user" size={27} /></span><span><strong>Meet in person</strong><small>Choose a public campus meeting spot</small></span><span className="radio-dot">{handoffMethod === "meet" && <span />}</span></button>
         <button aria-pressed={handoffMethod === "drop"} className={handoffMethod === "drop" ? "selected" : ""} onClick={() => setHandoffMethod("drop")}><span className="method-icon"><Icon name="bag" size={27} /></span><span><strong>Drop it off</strong><small>Leave it at a staffed pickup location</small></span><span className="radio-dot">{handoffMethod === "drop" && <span />}</span></button>
       </div>
     </section>
+    {actionError && <div className="camera-error" role="alert">{actionError}</div>}
     {recommendDropOff && <div className="warning-banner"><strong>For your safety, we recommend dropping this at an official lost and found.</strong></div>}
-    <section className="identity-card"><p className="eyebrow">FIRST NAMES REVEALED</p><div className="people"><div><span className="person-avatar scarlet">M</span><strong>Maya</strong><small>Owner</small></div><span className="meet-line"><Icon name="chevron" /><Icon name="chevron" /></span><div><span className="person-avatar blue">J</span><strong>Jordan</strong><small>Finder</small></div></div></section>
+    <section className="identity-card"><p className="eyebrow">DEMO PARTICIPANTS</p><div className="people"><div><span className="person-avatar scarlet">C</span><strong>Claimant</strong><small>Simulated role</small></div><span className="meet-line"><Icon name="chevron" /><Icon name="chevron" /></span><div><span className="person-avatar blue">R</span><strong>Reporter</strong><small>Simulated role</small></div></div></section>
     {handoffMethod === "meet" ? <>
       <section className="meeting-section"><h2>Choose a public meeting spot</h2><p>Meet in a staffed, well-lit campus location.</p>
-        <button className={`meeting-card ${meeting === "College Ave Student Center" ? "selected" : ""}`} aria-pressed={meeting === "College Ave Student Center"} onClick={() => setMeeting("College Ave Student Center")}><span><Icon name="map" /></span><div><strong>College Ave Student Center</strong><p>Information desk · Open until 11 PM</p></div>{meeting === "College Ave Student Center" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
-        <button className={`meeting-card ${meeting === "Alexander Library" ? "selected" : ""}`} aria-pressed={meeting === "Alexander Library"} onClick={() => setMeeting("Alexander Library")}><span><Icon name="map" /></span><div><strong>Alexander Library</strong><p>Security desk · Open until 2 AM</p></div>{meeting === "Alexander Library" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
+        <button className={`meeting-card ${meeting === "College Ave Student Center" ? "selected" : ""}`} aria-pressed={meeting === "College Ave Student Center"} onClick={() => setMeeting("College Ave Student Center")}><span><Icon name="map" /></span><div><strong>College Ave Student Center</strong><p>Confirm a public meeting point and current hours yourself</p></div>{meeting === "College Ave Student Center" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
+        <button className={`meeting-card ${meeting === "Alexander Library" ? "selected" : ""}`} aria-pressed={meeting === "Alexander Library"} onClick={() => setMeeting("Alexander Library")}><span><Icon name="map" /></span><div><strong>Alexander Library</strong><p>Confirm a staffed meeting point and current hours yourself</p></div>{meeting === "Alexander Library" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
       </section>
-      <div className="message-preview"><span className="person-avatar scarlet">M</span><div><small>Maya · just now</small><p>Hi! I can meet at {meeting === "Alexander Library" ? "the Alexander Library security desk" : "the student center info desk"} at 3:30.</p></div></div>
-      <div className="bottom-action dual"><Button onClick={() => setReturned(true)}>Mark as returned</Button><Button variant="ghost" onClick={() => setProblemReported(true)} className={problemReported ? "reported" : ""}>Report a problem</Button></div>
+      <div className="message-preview"><span className="person-avatar scarlet">D</span><div><small>Demo plan</small><p>No message has been sent. Confirm a time and exact public meeting point outside this prototype.</p></div></div>
+      <div className="bottom-action dual"><Button onClick={completeReturn}>Mark as returned</Button><Button variant="ghost" onClick={() => setProblemReported(true)} className={problemReported ? "reported" : ""}>Report a problem</Button></div>
     </> : <>
       <section className="meeting-section"><h2>Choose a drop-off location</h2><p>Leave the item with staff and keep the receipt.</p>
-        <button className={`meeting-card ${dropLocation === "Student Center information desk" ? "selected" : ""}`} aria-pressed={dropLocation === "Student Center information desk"} onClick={() => setDropLocation("Student Center information desk")}><span><Icon name="map" /></span><div><strong>Student Center information desk</strong><p>Staffed campus pickup location</p></div>{dropLocation === "Student Center information desk" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
-        <button className={`meeting-card ${dropLocation === "Official Rutgers lost and found" ? "selected" : ""}`} aria-pressed={dropLocation === "Official Rutgers lost and found"} onClick={() => setDropLocation("Official Rutgers lost and found")}><span><Icon name="shield" /></span><div><strong>Official Rutgers lost and found</strong><p>Recommended for valuable or sensitive items</p></div>{dropLocation === "Official Rutgers lost and found" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
+        <button className={`meeting-card ${dropLocation === "Student Center information desk" ? "selected" : ""}`} aria-pressed={dropLocation === "Student Center information desk"} onClick={() => setDropLocation("Student Center information desk")}><span><Icon name="map" /></span><div><strong>Student Center information desk</strong><p>Demo option; confirm acceptance and current hours directly</p></div>{dropLocation === "Student Center information desk" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
+        <button className={`meeting-card ${dropLocation === "Confirmed official lost-and-found office" ? "selected" : ""}`} aria-pressed={dropLocation === "Confirmed official lost-and-found office"} onClick={() => setDropLocation("Confirmed official lost-and-found office")}><span><Icon name="shield" /></span><div><strong>Confirmed official lost-and-found office</strong><p>Locate and confirm an appropriate office before traveling</p></div>{dropLocation === "Confirmed official lost-and-found office" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
         <button className="meeting-card" disabled><span><Icon name="lock" /></span><div><strong>Where RU? Locker (coming soon)</strong><p>Secure self-service pickup</p></div></button>
       </section>
-      <div className="bottom-action"><Button onClick={() => setReadyForPickup(true)}>I dropped it off</Button></div>
+      <div className="bottom-action"><Button onClick={beginPickup}>I dropped it off</Button></div>
     </>}
   </main>;
 }
@@ -465,20 +666,34 @@ function formatTimelineTime(value: string) {
   return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(2025, 0, 1, hours, minutes));
 }
 
-function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveItems: SensitiveItem[] }) {
+type LostSubmission = {
+  clientSubmissionId: string;
+  itemName: string;
+  itemDescription: string;
+  category: string;
+  color: string;
+  observedAt: string;
+  sensitive: boolean;
+  photoUrl: string | null;
+  location: ReportLocation | null;
+  visibility: "public" | "trusted-only";
+};
+
+function Lost({ go, openReport, onSubmit, sensitiveItems }: { go: (screen: Screen) => void; openReport: (id: string) => void; onSubmit: (submission: LostSubmission) => string; sensitiveItems: SensitiveItem[] }) {
+  const { reports, currentUserId } = useReports();
   const [step, setStep] = useState(1);
   const [posted, setPosted] = useState(false);
-  const [posting, setPosting] = useState(false);
-  const [liveMatches, setLiveMatches] = useState<api.ApiMatch[] | null>(null);
-  const [photoAdded, setPhotoAdded] = useState(false);
-  const [itemName, setItemName] = useState("Blue water bottle");
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [submissionKey] = useState(() => `lost-${Date.now()}-${Math.random()}`);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState("");
+  const [itemName, setItemName] = useState("");
   const [itemDescription, setItemDescription] = useState("");
-  const [category, setCategory] = useState("Water bottle");
-  const [color, setColor] = useState("Navy blue");
-  const [rememberedAt, setRememberedAt] = useState("Today, around 12:10 PM");
+  const [category, setCategory] = useState("");
+  const [color, setColor] = useState("");
+  const [rememberedAt, setRememberedAt] = useState(localDateTimeValue());
   const [value, setValue] = useState("Everyday item");
-  const [timer, setTimer] = useState("24h");
-  const [timerEnd, setTimerEnd] = useState("Delete the listing");
   const [method, setMethod] = useState<"retrace" | "room" | null>(null);
   const [lostLocation, setLostLocationState] = useState<RoomLocation | null>(null);
   const setLostLocation = (location: RoomLocation | null) => {
@@ -489,12 +704,7 @@ function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveI
       return [{ id: -1, time: "Today", sortMinutes: -1, name: formatLocation(location), source: "Known room", high: true }, ...rest];
     });
   };
-  const [locationHistory, setLocationHistory] = useState(true);
-  const [places, setPlaces] = useState<TimelinePlace[]>([
-    { id: 1, time: "11:00 AM", sortMinutes: 660, name: "Alexander Library", source: "Location", high: false },
-    { id: 2, time: "12:10 PM", sortMinutes: 730, name: "Hardenbergh Hall, A2", source: "Class", high: true },
-    { id: 3, time: "1:30 PM", sortMinutes: 810, name: "Busch Dining Hall", source: "Location", high: true },
-  ]);
+  const [places, setPlaces] = useState<TimelinePlace[]>([]);
   const [manualPlace, setManualPlace] = useState("");
   const [manualRoom, setManualRoom] = useState("");
   const [manualTime, setManualTime] = useState(currentTimeValue);
@@ -507,12 +717,26 @@ function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveI
     const selected = row?.querySelector<HTMLElement>(".selected");
     if (row && selected) row.scrollLeft = selected.offsetLeft - row.offsetLeft - 8;
   }, [step, value]);
-  const timerStatus = `Trusted helpers only, ${timer} left`;
   const selectRegisteredItem = (item: SensitiveItem) => {
     setItemName(item.name);
     setItemDescription(item.description);
-    setPhotoAdded(item.photoAdded);
     setValue("Valuable or sensitive");
+  };
+  const saveLostPhoto = async (file: File, preview: string) => {
+    setPhotoPreviewUrl(preview);
+    setPhotoError("");
+    try {
+      setPhotoUrl(await storeReportImage(file));
+    } catch (error) {
+      setPhotoUrl(null);
+      setPhotoError(error instanceof Error ? `${error.message} The preview is not attached yet.` : "The photo could not be stored.");
+    }
+  };
+  const removeLostPhoto = () => {
+    if (photoPreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(photoPreviewUrl);
+    setPhotoPreviewUrl(null);
+    setPhotoUrl(null);
+    setPhotoError("");
   };
   const changePriority = (id: number, high: boolean) => setPlaces(places.map((place) => place.id === id ? { ...place, high } : place));
   const removePlace = (id: number) => setPlaces(places.filter((place) => place.id !== id));
@@ -566,39 +790,44 @@ function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveI
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
-
-  const postLost = async () => {
-    setPosting(true);
-    try {
-      const firstHigh = places.find((place) => place.high);
-      const id = await api.createLostReport({
-        title: itemName.trim(),
-        description: `${color} ${category}`.trim(),
-        private_description: itemDescription,
-        category: api.toApiCategory(category || itemName),
-        campus: lostLocation?.campus,
-        location: lostLocation ? formatLocation(lostLocation) : firstHigh?.name ?? "",
-        visibility: value === "Valuable or sensitive" ? "PRIVATE" : "PUBLIC",
-      });
-      if (id) setLiveMatches((await api.myMatches()).filter((match) => match.lost_id === id));
-    } catch (error) {
-      console.warn("Could not post to the backend; showing demo matches", error);
-    }
-    setPosting(false);
+  const submit = () => {
+    const observedAt = localDateTimeToIso(rememberedAt);
+    if (submittedId || !itemName.trim() || !category || !observedAt) return;
+    const priorityPlace = places.find((place) => place.high);
+    const knownPlace = priorityPlace && campusPlaces.find((place) => priorityPlace.name.toLowerCase().includes(place.name.toLowerCase()));
+    const location = lostLocation ? roomToReportLocation(lostLocation) : priorityPlace ? {
+      campus: knownPlace?.campus ?? "College Ave",
+      area: priorityPlace.name,
+      source: "timeline" as const,
+      placeType: knownPlace?.placeType ?? "building" as PlaceType,
+      approximateLabel: `Around ${priorityPlace.name}`,
+      approximateCoordinates: knownPlace?.coordinates,
+      precise: { label: priorityPlace.name },
+    } : null;
+    const id = onSubmit({
+      clientSubmissionId: submissionKey,
+      itemName: itemName.trim(),
+      itemDescription: itemDescription.trim(),
+      category,
+      color: color.trim(),
+      observedAt,
+      sensitive: value === "Valuable or sensitive",
+      photoUrl,
+      location,
+      visibility: value === "Valuable or sensitive" ? "trusted-only" : "public",
+    });
+    setSubmittedId(id);
     setPosted(true);
   };
 
-  if (posted && liveMatches && liveMatches.length > 0) return <main className="simple-page with-nav"><BackHeader title="Possible matches" onBack={() => setPosted(false)} /><div className="match-heading"><p className="eyebrow">LISTING POSTED · {liveMatches.length} POSSIBLE {liveMatches.length === 1 ? "MATCH" : "MATCHES"}</p>{value === "Valuable or sensitive" && <Status>{timerStatus}</Status>}<h1>We found a few similar items</h1><p>Review the details carefully. A match doesn't mean the item is yours.</p></div>
-    {liveMatches.map((match, index) => <article className="match-card" key={match.id}><div className="match-image bottle-bg"><div className="mini-bottle" /></div><div className="match-info"><span className={`confidence ${index === 0 ? "high" : "medium"}`}>{index === 0 ? "Best match" : "Possible match"}</span><h3>{match.candidate.title}</h3><p><Icon name="map" size={15} /> {match.candidate.location || match.candidate.campus}</p><p className="match-reasons">{match.reasons.slice(0, 3).join(" · ")}</p><Button onClick={() => go("ownership")}>Check if it's mine</Button></div></article>)}
-    <div className="tip-card"><Icon name="shield" /><div><strong>Matches are suggestions</strong><p>We never label an item “yours” until ownership is verified.</p></div></div>
-    <Button variant="ghost" onClick={() => go("home")}>Back to home</Button>
-    <BottomNav screen="home" go={go} />
-  </main>;
-
-  if (posted) return <main className="simple-page with-nav"><BackHeader title="Possible matches" onBack={() => setPosted(false)} /><div className="match-heading"><p className="eyebrow">LISTING POSTED · 2 POSSIBLE MATCHES</p>{value === "Valuable or sensitive" && <Status>{timerStatus}</Status>}<h1>We found a few similar items</h1><p>Review the details carefully. A match doesn't mean the item is yours.</p></div>
-    <article className="match-card"><div className="match-image bottle-bg"><div className="mini-bottle" /></div><div className="match-info"><span className="confidence high">High match</span><h3>Blue water bottle</h3><p><Icon name="map" size={15} /> Hardenbergh Hall · Today</p><Button onClick={() => go("ownership")}>Check if it's mine</Button></div></article>
-    <article className="match-card"><div className="match-image umbrella-bg">⌁</div><div className="match-info"><span className="confidence medium">Medium match</span><h3>Navy insulated bottle</h3><p><Icon name="map" size={15} /> Alexander Library · Yesterday</p><Button variant="secondary" onClick={() => go("ownership")}>View details</Button></div></article>
-    <div className="tip-card"><Icon name="shield" /><div><strong>Matches are suggestions</strong><p>We never label an item “yours” until ownership is verified.</p></div></div>
+  const possibleMatches = reports
+    .filter((report) => report.type === "found" && report.reporterId !== currentUserId && !["returned", "closed"].includes(report.status) && report.visibility !== "private" && report.category === normalizeCategory(category))
+    .map(toPublicReport)
+    .slice(0, 3);
+  if (posted) return <main className="simple-page with-nav"><BackHeader title="Possible matches" onBack={() => setPosted(false)} /><div className="match-heading"><p className="eyebrow">LISTING POSTED · {possibleMatches.length} POSSIBLE {possibleMatches.length === 1 ? "MATCH" : "MATCHES"}</p>{value === "Valuable or sensitive" && <Status>Trusted helpers only</Status>}<h1>{possibleMatches.length ? "Review possible matches" : "Your report is now active"}</h1><p>Suggestions are based on shared catalog data. A match never verifies ownership automatically.</p></div>
+    <div className="stack">{possibleMatches.map((report) => <ReportCard report={report} large key={report.id} onClick={() => openReport(report.id)} />)}</div>
+    {possibleMatches.length === 0 && <CatalogEmpty icon="search" title="No matches yet" text="Your report remains active and searchable. Check Explore again later." action="View my report" onAction={() => submittedId && openReport(submittedId)} />}
+    <div className="tip-card"><Icon name="shield" /><div><strong>Matches are suggestions</strong><p>A listing owner must explicitly review and approve a simulated claim.</p></div></div>
     <Button variant="ghost" onClick={() => go("home")}>Back to home</Button>
     <BottomNav screen="home" go={go} />
   </main>;
@@ -615,14 +844,11 @@ function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveI
       <div className="flow-form">
         <label className="result-field"><span>Item name</span><input value={itemName} onChange={(event) => setItemName(event.target.value)} /></label>
         <label className="textarea-field"><span>Private description</span><textarea value={itemDescription} onChange={(event) => setItemDescription(event.target.value)} /></label>
-        <label className="result-field"><span>Category</span><select value={category} onChange={(event) => setCategory(event.target.value)}><option>Water bottle</option><option>Electronics</option><option>Clothing</option><option>School supplies</option><option>Keys</option><option>Wallet or ID</option></select></label>
+        <label className="result-field"><span>Category</span><select value={category} onChange={(event) => setCategory(event.target.value)}><option value="" disabled>Choose a category</option>{reportCategories.map((option) => <option key={option}>{option}</option>)}</select></label>
         <label className="result-field"><span>Color</span><input value={color} onChange={(event) => setColor(event.target.value)} /></label>
-        <label className="result-field"><span>When do you last remember having it?</span><input value={rememberedAt} onChange={(event) => setRememberedAt(event.target.value)} /></label>
-        <button className={`photo-upload ${photoAdded ? "added" : ""}`} onClick={() => setPhotoAdded(!photoAdded)}>
-          <span><Icon name={photoAdded ? "check" : "camera"} /></span>
-          <div><strong>{photoAdded ? "Sample photo added" : "Add a photo"}</strong><small>Optional, helps improve matches</small></div>
-          <span className="photo-action">{photoAdded ? "Remove" : "Choose"}</span>
-        </button>
+        <label className="result-field"><span>When did you last have it?</span><input type="datetime-local" max={localDateTimeValue()} value={rememberedAt} onChange={(event) => setRememberedAt(event.target.value)} /></label>
+        {photoPreviewUrl ? <div className="lost-photo-preview"><img src={photoPreviewUrl} alt="Uploaded lost item" /><div><strong>Photo attached</strong><small>Stored locally on this device</small></div><button type="button" className="text-button" onClick={removeLostPhoto}>Remove</button></div> : <PhotoButtons cameraLabel="Take photo" uploadLabel="Choose photo" onPhoto={saveLostPhoto} onError={setPhotoError} />}
+        {photoError && <div className="camera-error" role="alert">{photoError}</div>}
       </div>
     </section>}
 
@@ -640,7 +866,7 @@ function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveI
           <span className="radio-dot">{value === name && <span />}</span>
         </button>)}
       </div>
-      {value === "Valuable or sensitive" && <div className="sensitive-note"><Icon name="shield" /><div><strong>Sensitive listings stay private at first.</strong><p>Only limited details appear until a potential match is safely verified.</p></div></div>}
+      {value === "Valuable or sensitive" && <div className="sensitive-note"><Icon name="shield" /><div><strong>Sensitive listings stay restricted.</strong><p>This local demo does not automatically release them or their identifying details.</p></div></div>}
     </section>}
 
     {step === 3 && <section className="flow-step">
@@ -652,8 +878,7 @@ function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveI
         <button aria-pressed={method === "room"} className={method === "room" ? "selected" : ""} onClick={() => setMethod("room")}><span className="method-icon"><Icon name="camera" size={27} /></span><span><strong>I know the room</strong><small>Scan the room, read the placard, or pick it</small></span><span className="radio-dot">{method === "room" && <span />}</span></button>
       </div>
       {method === "retrace" && <div className="method-panel">
-        <div className="location-toggle"><Toggle on={locationHistory} setOn={setLocationHistory} label="Use my location history" /><p>Only stored on your account. Delete anytime.</p></div>
-        <div className="source-note"><Icon name="shield" size={17} /><p>Class schedule details are used only for this lost listing.</p></div>
+        <div className="source-note"><Icon name="shield" size={17} /><p>No device history or class schedule is connected. Add only the places you choose below; this prototype does not read your real location history.</p></div>
         <div className="place-timeline">
           {places.map((place) => <div key={place.id}><span className="place-dot" /><time>{place.time}</time><div><strong>{place.name}</strong><small>{place.source}</small></div><button onClick={() => removePlace(place.id)} aria-label={`Remove ${place.name}`}><Icon name="x" size={17} /></button></div>)}
         </div>
@@ -681,20 +906,11 @@ function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveI
     </section>}
 
     {value === "Valuable or sensitive" && step === 5 && <section className="flow-step">
-      <p className="eyebrow">STEP 5 · VISIBILITY TIMER</p>
-      <h1>Give trusted helpers a head start.</h1>
-      <p className="subtext">Trusted helpers see this first. High-reputation users get priority.</p>
-      <div className="timer-hero"><span><Icon name="lock" size={27} /></span><div><strong>Private release window</strong><p>Your sensitive details stay hidden throughout.</p></div></div>
-      <p className="field-label">Visibility timer</p>
-      <div className="timer-options">{["1h", "3h", "6h", "12h", "24h", "48h", "72h", "1 week"].map((option) => <button aria-pressed={timer === option} className={timer === option ? "selected" : ""} onClick={() => setTimer(option)} key={option}>{option}<span className="radio-dot">{timer === option && <span />}</span></button>)}</div>
-      <p className="field-label timer-end-label">When the timer ends:</p>
-      <div className="timer-end-options">
-        {[
-          ["Delete the listing", "Remove it automatically from Where RU?"],
-          ["Open it to the public", "Sensitive details stay hidden"],
-        ].map(([option, note]) => <button aria-pressed={timerEnd === option} className={timerEnd === option ? "selected" : ""} onClick={() => setTimerEnd(option)} key={option}><span><strong>{option}</strong><small>{note}</small></span><span className="radio-dot">{timerEnd === option && <span />}</span></button>)}
-      </div>
-      <div className="timer-preview"><Status>{timerStatus}</Status><p>This status appears on your listing during the private window.</p></div>
+      <p className="eyebrow">STEP 5 · VISIBILITY</p>
+      <h1>Sensitive listings stay restricted.</h1>
+      <p className="subtext">Automatic expiration is unavailable in this local demo.</p>
+      <div className="timer-hero"><span><Icon name="lock" size={27} /></span><div><strong>No automatic public release</strong><p>Your listing remains restricted until you explicitly edit or close it.</p></div></div>
+      <div className="timer-preview"><Status>Trusted helpers only</Status><p>The demo will never reveal sensitive details when time passes.</p></div>
     </section>}
 
     {step === reviewStep && <section className="flow-step">
@@ -702,19 +918,20 @@ function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveI
       <h1>Ready to post?</h1>
       <p className="subtext">Check your listing. You can edit it anytime.</p>
       <article className="review-card">
-        <div className="review-item"><div className="review-thumb">{category === "Water bottle" ? <div className="mini-bottle" /> : <Icon name="lock" size={28} />}</div><div><span className="review-badge">{value}</span><h2>{itemName}</h2><p>{color} · {category}</p></div></div>
-        <div className="review-row"><span><Icon name="clock" size={18} /> Last remembered</span><strong>{rememberedAt}</strong></div>
+        <div className="review-item"><div className="review-thumb">{photoPreviewUrl ? <img src={photoPreviewUrl} alt="" /> : <span className="detail-category-icon">{categoryIcon(normalizeCategory(category))}</span>}</div><div><span className="review-badge">{value}</span><h2>{itemName}</h2><p>{color} · {category}</p></div></div>
+        <div className="review-row"><span><Icon name="clock" size={18} /> Last remembered</span><strong>{new Date(rememberedAt).toLocaleString()}</strong></div>
         <div className="review-row"><span><Icon name="map" size={18} /> Search method</span><strong>{method === "room" ? (lostLocation ? `${formatLocation(lostLocation)} · ${sourceLabel[lostLocation.source]}` : "Known room") : "Retraced steps"}</strong></div>
-        {value === "Valuable or sensitive" && <div className="review-row"><span><Icon name="lock" size={18} /> Visibility</span><strong>Trusted helpers · {timer}</strong></div>}
+        {value === "Valuable or sensitive" && <div className="review-row"><span><Icon name="lock" size={18} /> Visibility</span><strong>Trusted helpers only · no auto-release</strong></div>}
       </article>
       <section className="review-priority"><h2>High priority spots</h2>{places.filter((place) => place.high).map((place) => <div key={place.id}><span><Icon name="map" size={16} /></span><p><strong>{place.name}</strong><small>{place.time}</small></p></div>)}</section>
       <div className="safe-card"><Icon name="shield" /><p><strong>Your exact timeline stays private.</strong><br />Finders only see the details needed to identify a possible match.</p></div>
     </section>}
 
     <div className="bottom-action">
+      {step === 1 && !category && <p className="action-hint">Choose a category to continue.</p>}
       {step === 3 && !method && <p className="action-hint">Choose an option to continue.</p>}
       {step === 3 && method === "room" && !lostLocation && <p className="action-hint">Confirm a room to continue.</p>}
-      {step < totalSteps ? <Button onClick={next} disabled={step === 3 && (!method || (method === "room" && !lostLocation))}>Continue <Icon name="chevron" size={18} /></Button> : <Button disabled={posting} onClick={postLost}><Icon name="search" size={19} /> {posting ? "Posting…" : "Post lost listing"}</Button>}
+      {step < totalSteps ? <Button onClick={next} disabled={step === 1 && !category || step === 3 && (!method || (method === "room" && !lostLocation))}>Continue <Icon name="chevron" size={18} /></Button> : <Button disabled={!itemName.trim() || !category || !localDateTimeToIso(rememberedAt) || Boolean(submittedId)} onClick={submit}><Icon name="search" size={19} /> Post lost listing</Button>}
     </div>
   </main>;
 }
@@ -732,41 +949,47 @@ function PriorityGroup({ title, note, high, places, onMove }: { title: string; n
   </section>;
 }
 
-function Items({ go }: { go: (screen: Screen) => void }) {
+function Items({ openReport }: { openReport: (id: string) => void }) {
+  const { reports, claims, currentUserId } = useReports();
   const [tab, setTab] = useState("Found by me");
-  const lists: Record<string, typeof activeItems> = {
-    "Found by me": activeItems,
-    "Lost by me": [
-      { emoji: "▰", title: "Space gray MacBook Air", place: "Hardenbergh Hall · Today", status: "Trusted helpers only, 18h left" },
-      { emoji: "⌁", title: "Black umbrella", place: "Livingston Student Center · Mar 12", status: "Returned" },
-    ],
-    "Claims": [{ emoji: "◒", title: "Blue water bottle", place: "Hardenbergh Hall · Today", status: "Verified" }],
-  };
-  const itemAction = (item: ItemData) => {
-    if (item.status === "Verified") return () => go("handoff");
-    if (item.status === "Claim pending") return () => go("finderStatus");
-    if (item.status === "Pinging" || item.status.startsWith("Trusted helpers")) return () => go("map");
-    return undefined;
+  const claimedIds = new Set(claims.filter((claim) => claim.claimantId === currentUserId).map((claim) => claim.reportId));
+  const lists: Record<string, ItemReport[]> = {
+    "Found by me": reports.filter((report) => report.reporterId === currentUserId && report.type === "found" && !["returned", "closed"].includes(report.status)),
+    "Lost by me": reports.filter((report) => report.reporterId === currentUserId && report.type === "lost" && !["returned", "closed"].includes(report.status)),
+    "My claims": reports.filter((report) => claimedIds.has(report.id)),
+    "History": reports.filter((report) => report.reporterId === currentUserId && ["returned", "closed"].includes(report.status)),
   };
   return <main className="tab-page"><header className="title-header"><h1>My items</h1><p>Track finds, reports, and claims</p></header>
     <div className="tabs">{Object.keys(lists).map((name) => <button aria-pressed={tab === name} className={tab === name ? "active" : ""} onClick={() => setTab(name)} key={name}>{name}</button>)}</div>
-    <div className="stack item-list">{lists[tab].map((item) => <ItemCard item={item} large key={item.title} onClick={itemAction(item)} />)}</div>
-    <div className="empty-note"><Icon name="bag" /><p>Nothing lost yet. Keep it that way.</p></div>
+    <div className="stack item-list">{lists[tab].map((report) => <ReportCard report={report} large key={report.id} onClick={() => openReport(report.id)} />)}</div>
+    {lists[tab].length === 0 && <div className="empty-note"><Icon name="bag" /><p>No reports in this section.</p></div>}
   </main>;
 }
 
-function CampusMapScreen({ go, firstName, lastName, dark }: { go: (screen: Screen) => void; firstName: string; lastName: string; dark: boolean }) {
+function CampusMapScreen({ go, openReport, reports, firstName, lastName, dark }: { go: (screen: Screen) => void; openReport: (id: string) => void; reports: PublicItemReport[]; firstName: string; lastName: string; dark: boolean }) {
   const [campus, setCampus] = useState<CampusName>("College Ave");
   const [visibleListings, setVisibleListings] = useState<ListingProperties[]>([]);
-  const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
+  const initials = `${firstLetter(firstName)}${firstLetter(lastName)}`;
+  const mapListings = useMemo<MapListing[]>(() => reports
+    .filter((report) => report.location?.approximateCoordinates && report.status !== "closed")
+    .map((report) => ({
+      id: report.id,
+      title: report.itemName,
+      type: report.type,
+      status: report.status === "returned" ? "returned" : "active",
+      placeType: report.location!.placeType,
+      coordinates: report.location!.approximateCoordinates!,
+      hoursAgo: Math.max(0, Math.floor((Date.now() - new Date(report.observedAt).getTime()) / 3_600_000)),
+      weight: report.location!.placeType === "classroom" ? 1 : ["building", "library", "dining"].includes(report.location!.placeType) ? .8 : .4,
+    })), [reports]);
   return <main className="tab-page map-page">
-    <header className="title-header map-title"><div><h1>Campus map</h1><p>Potential lost-item activity nearby</p></div><button className="map-profile" aria-label={`Open ${firstName}'s profile`} onClick={() => go("profile")}>{initials}</button></header>
+    <header className="title-header map-title"><div><h1>Campus map</h1><p>Approximate activity areas · includes labeled demo samples</p></div><button className="map-profile" aria-label="Open profile" onClick={() => go("profile")}>{initials || <Icon name="user" size={18} />}</button></header>
     <div className="campus-filter" aria-label="Choose campus">{(Object.keys(campusViews) as CampusName[]).map((name) => <button aria-pressed={campus === name} className={campus === name ? "active" : ""} onClick={() => setCampus(name)} key={name}>{name}</button>)}</div>
-    <CampusMap campus={campus} dark={dark} onVisibleListingsChange={setVisibleListings} />
+    <CampusMap campus={campus} dark={dark} listings={mapListings} onVisibleListingsChange={setVisibleListings} onSelectReport={openReport} />
     <div className="map-summary"><span><Icon name="sparkles" size={18} /></span><p><strong>{visibleListings.length} possible items in this area</strong><small>Based on recent finds and active lost listings</small></p></div>
     <section className="section nearby-items">
       <div className="section-heading"><h2>Potential matches nearby</h2><button onClick={() => go("lost")}>Refine search</button></div>
-      {visibleListings.slice(0, 2).map((listing) => <article className="map-result-card" key={listing.id}><span className="map-result-icon">{listing.title.includes("AirPods") ? "◉" : "⌁"}</span><span><strong>{listing.title}</strong><small>Near a {listing.placeType.replace("_", " ")} · {listing.hoursAgo}h ago</small><em>{listing.weight >= 0.8 ? "High" : "Medium"} activity area</em></span><span className="distance">{listing.type === "lost" ? "Lost" : "Found"}</span></article>)}
+      {visibleListings.slice(0, 2).map((listing) => <button className="map-result-card" onClick={() => openReport(listing.id)} key={listing.id}><span className="map-result-icon">{listing.title.includes("AirPods") ? "◉" : "⌁"}</span><span><strong>{listing.title}</strong><small>Near a {listing.placeType.replace("_", " ")} · {listing.hoursAgo}h ago</small><em>{listing.weight >= 0.8 ? "High" : "Medium"} activity area</em></span><span className="distance">{listing.status === "returned" ? "Returned" : listing.type === "lost" ? "Lost" : "Found"}</span></button>)}
     </section>
     <div className="tip-card"><Icon name="shield" /><div><strong>Locations are approximate</strong><p>The map uses broad activity areas to protect student privacy.</p></div></div>
   </main>;
@@ -789,13 +1012,13 @@ function Profile({ go, email, firstName, lastName, theme, setTheme, demo, setDem
   homeCampus: string;
   setHomeCampus: (value: string) => void;
 }) {
+  const { currentUserId, switchUser, users } = useReports();
   const [addingItem, setAddingItem] = useState(false);
   const [registerPhotoAdded, setRegisterPhotoAdded] = useState(false);
   const [registerName, setRegisterName] = useState("");
   const [registerDescription, setRegisterDescription] = useState("");
   const [registerSerial, setRegisterSerial] = useState("");
   const campuses = ["College Avenue", "Busch", "Livingston", "Cook/Douglass"];
-  const isRutgersEmail = /@(rutgers\.edu|scarletmail\.rutgers\.edu)$/i.test(email);
   const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
   const saveSensitiveItem = () => {
     if (!registerName.trim()) return;
@@ -812,12 +1035,10 @@ function Profile({ go, email, firstName, lastName, theme, setTheme, demo, setDem
     setAddingItem(false);
   };
   return <main className="tab-page"><header className="title-header"><h1>Profile</h1><p>Privacy, preferences, and account</p></header>
-    <section className="profile-card"><span className="profile-avatar">{initials}</span><div><h2>{firstName} {lastName}</h2><p>{email}</p>{isRutgersEmail && <span>Rutgers verified</span>}</div></section>
+    <section className="profile-card"><span className="profile-avatar">{initials}</span><div><h2>{firstName} {lastName}</h2><p>{email}</p><span>Demo account · email not verified</span></div></section>
+    <p className="settings-label">DEMO PERSONA</p><div className="settings-card persona-switcher">{users.map((user) => <button aria-pressed={currentUserId === user.id} className={currentUserId === user.id ? "active" : ""} onClick={() => switchUser(user.id)} key={user.id}><span className="setting-icon"><Icon name={currentUserId === user.id ? "check" : "user"} /></span><span><strong>{user.firstName} {user.lastName}{user.id === "demo-maya" ? " (demo owner)" : ""}</strong><small>{user.email}</small></span></button>)}</div>
     <section className="reputation-card">
-      <div className="reputation-top"><span className="reputation-shield"><Icon name="shield" size={25} /></span><div><p className="eyebrow">CAMPUS REPUTATION</p><h2>Trusted Helper</h2></div><strong>860 <small>pts</small></strong></div>
-      <div className="reputation-progress"><span /></div>
-      <div className="reputation-stats"><div><strong>12</strong><small>Successful returns</small></div><div><strong>140</strong><small>Points to Champion</small></div></div>
-      <div className="level-path"><span>New Member</span><span>Community Helper</span><span className="active">Trusted Helper</span><span>Campus Champion</span></div>
+      <span className="reputation-shield"><Icon name="shield" size={25} /></span><div className="reputation-copy"><p className="eyebrow">DEMO ROLE PREVIEW</p><h2>Reputation unavailable</h2><p className="demo-caption">No reputation score, return history, or trusted-helper status has been verified.</p></div>
     </section>
 
     <div className="sensitive-section-heading"><div><h2>My sensitive items</h2><p>Register important items before they go missing.</p></div><button aria-label={addingItem ? "Close sensitive item form" : "Register a sensitive item"} onClick={() => setAddingItem(!addingItem)}><Icon name={addingItem ? "x" : "plus"} size={17} /></button></div>
@@ -844,7 +1065,7 @@ function Profile({ go, email, firstName, lastName, theme, setTheme, demo, setDem
 }
 
 function BottomNav({ screen, go }: { screen: Screen; go: (screen: Screen) => void }) {
-  const items: [IconName, string, Screen][] = [["home", "Home", "home"], ["camera", "Found", "capture"], ["map", "Map", "map"], ["user", "Profile", "profile"]];
+  const items: [IconName, string, Screen][] = [["home", "Home", "home"], ["search", "Explore", "explore"], ["map", "Map", "map"], ["user", "Profile", "profile"]];
   const activeScreen = screen === "items" ? "profile" : screen === "finderStatus" ? "home" : screen;
   return <nav className="bottom-nav" aria-label="Primary navigation">{items.map(([icon, label, target]) => <button type="button" aria-current={activeScreen === target ? "page" : undefined} className={activeScreen === target ? "active" : ""} onClick={() => go(target)} key={label}><span><Icon name={icon} size={22} /></span><small>{label}</small></button>)}</nav>;
 }
@@ -859,11 +1080,12 @@ function nameFromEmail(email: string) {
 }
 
 const initialSensitiveItems: SensitiveItem[] = [
-  { id: "macbook-air", name: "MacBook Air", description: "Small scratch beside the left USB port", serial: "C02SAMPLE123", photoAdded: true },
-  { id: "airpods-pro", name: "AirPods Pro", description: "Blue silicone case with initials AJ", serial: "", photoAdded: true },
+  { id: "demo-laptop", name: "Demo laptop", description: "Fictional sample item for form prefilling", serial: "", photoAdded: false },
+  { id: "demo-earbuds", name: "Demo earbuds", description: "Fictional sample item for form prefilling", serial: "", photoAdded: false },
 ];
 
 export default function App() {
+  const { reports, claims, publicReports, currentUserId, currentUser, updatePrimaryUser, createReport, updateReport, createClaim, updateClaim } = useReports();
   const [screen, setScreen] = useState<Screen>("signin");
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -871,6 +1093,11 @@ export default function App() {
   const [theme, setTheme] = useState<ThemePreference>("system");
   const [systemDark, setSystemDark] = useState(() => typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   const [foundReport, setFoundReportState] = useState<FoundReport>(emptyFoundReport);
+  const [foundSubmissionKey, setFoundSubmissionKey] = useState(() => `found-${Date.now()}`);
+  const [foundSubmissionId, setFoundSubmissionId] = useState<string | null>(null);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>("report-bottle-found");
+  const [detailReturnScreen, setDetailReturnScreen] = useState<Screen>("explore");
+  const [exploreState, setExploreState] = useState<ExploreState>(initialExploreState);
   const setFoundReport = (update: (current: FoundReport) => FoundReport) => setFoundReportState(update);
   const [demo, setDemo] = useState(true);
   const [notifications, setNotifications] = useState(true);
@@ -893,24 +1120,125 @@ export default function App() {
   const go = (next: Screen) => {
     if (next === "capture" && !["locate", "confirm"].includes(screen)) {
       setFoundReportState(emptyFoundReport);
+      setFoundSubmissionId(null);
+      setFoundSubmissionKey(`found-${Date.now()}-${Math.random()}`);
       api.startNewFoundReport();
     }
     setScreen(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  const openReport = (id: string) => {
+    setDetailReturnScreen(screen);
+    if (screen === "explore") setExploreState((current) => ({ ...current, scrollY: window.scrollY }));
+    setSelectedReportId(id);
+    setScreen("detail");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const selectedReport = reports.find((report) => report.id === selectedReportId);
+  const submitFoundReport = () => {
+    if (foundSubmissionId) {
+      setSelectedReportId(foundSubmissionId);
+      setScreen("finderStatus");
+      return;
+    }
+    const observedAt = localDateTimeToIso(foundReport.foundAt);
+    if (!foundReport.title.trim() || !foundReport.location || !observedAt) return;
+    const sensitive = ["Wallets/IDs", "Keys", "Electronics"].includes(normalizeCategory(foundReport.category));
+    const report = createReport({
+      type: "found",
+      itemName: foundReport.title.trim(),
+      category: normalizeCategory(foundReport.category),
+      color: foundReport.color.trim(),
+      publicDescription: foundReport.hideDetails ? `${foundReport.color.trim()} ${normalizeCategory(foundReport.category).toLowerCase()} reported found.`.trim() : foundReport.description.trim(),
+      privateDetails: foundReport.hideDetails ? foundReport.description.trim() : undefined,
+      photoUrl: foundReport.photoUrl,
+      location: roomToReportLocation(foundReport.location),
+      observedAt,
+      status: foundReport.relatedLostReportId ? "possible_match" : "active",
+      visibility: sensitive ? "trusted-only" : "public",
+      sensitive,
+      sample: foundReport.sample,
+      clientSubmissionId: foundSubmissionKey,
+      relatedLostReportId: foundReport.relatedLostReportId,
+    });
+    // Mirror to the Flask backend (matching engine, cross-device). Best effort: the app keeps working offline.
+    api.publishFoundReport({
+      title: report.itemName,
+      description: report.publicDescription,
+      private_description: report.privateDetails ?? "",
+      category: api.toApiCategory(foundReport.category || foundReport.title),
+      campus: report.location?.campus,
+      location: report.location?.precise?.label ?? report.location?.approximateLabel ?? "",
+    }).catch((error) => console.warn("Backend publish skipped:", error));
+    setFoundSubmissionId(report.id);
+    setSelectedReportId(report.id);
+    setScreen("finderStatus");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const submitLostReport = (submission: LostSubmission) => {
+    const report = createReport({
+      type: "lost",
+      itemName: submission.itemName,
+      category: normalizeCategory(submission.category),
+      color: submission.color,
+      publicDescription: `${submission.color} ${normalizeCategory(submission.category).toLowerCase()} reported lost.`.trim(),
+      privateDetails: submission.itemDescription || undefined,
+      photoUrl: submission.photoUrl,
+      location: submission.location,
+      observedAt: submission.observedAt,
+      status: "active",
+      visibility: submission.visibility,
+      sensitive: submission.sensitive,
+      sample: false,
+      clientSubmissionId: submission.clientSubmissionId,
+    });
+    api.createLostReport({
+      title: report.itemName,
+      description: report.publicDescription,
+      private_description: report.privateDetails ?? "",
+      category: api.toApiCategory(submission.category || submission.itemName),
+      campus: report.location?.campus,
+      location: report.location?.precise?.label ?? report.location?.approximateLabel ?? "",
+      visibility: submission.sensitive ? "PRIVATE" : "PUBLIC",
+    }).catch((error) => console.warn("Backend lost report skipped:", error));
+    setSelectedReportId(report.id);
+    return report.id;
+  };
+  const startFoundFromLost = (report: PublicItemReport) => {
+    setFoundReportState({
+      ...emptyFoundReport,
+      title: report.itemName,
+      category: report.category,
+      color: report.color,
+      description: "",
+      foundAt: localDateTimeValue(),
+      relatedLostReportId: report.id,
+    });
+    setFoundSubmissionId(null);
+    setFoundSubmissionKey(`found-${Date.now()}-${report.id}`);
+    setScreen("capture");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const activeClaim = claims.find((claim) => claim.reportId === selectedReportId && ["approved", "handoff", "returned"].includes(claim.status));
   const completeEmailVerification = () => {
-    api.signIn(email).catch((error) => console.warn("Backend sign-in failed; continuing in demo mode", error));
+    api.signIn(email).catch((error) => console.warn("Backend sign-in skipped; demo mode continues", error));
     const names = nameFromEmail(email);
     setFirstName(names.first);
     setLastName(names.last);
     go("name");
   };
-  const screens: Record<Screen, ReactNode> = {
-    signin: <SignIn go={go} email={email} setEmail={setEmail} />, code: <CodeScreen go={go} email={email} onVerified={completeEmailVerification} />, name: <NameScreen go={go} firstName={firstName} setFirstName={setFirstName} lastName={lastName} setLastName={setLastName} />, home: <Home go={go} firstName={firstName} lastName={lastName} />,
-    capture: <Capture go={go} report={foundReport} setReport={setFoundReport} />, locate: <Locate go={go} report={foundReport} setReport={setFoundReport} />, confirm: <Confirm go={go} report={foundReport} setReport={setFoundReport} />, finderStatus: <FinderStatus go={go} report={foundReport} />, ownerNotice: <OwnerNotice go={go} report={foundReport} />,
-    ownership: <Ownership go={go} />, handoff: <Handoff go={go} itemValue="Valuable or sensitive" />, lost: <Lost go={go} sensitiveItems={sensitiveItems} />, items: <Items go={go} />,
-    map: <CampusMapScreen go={go} firstName={firstName} lastName={lastName} dark={dark} />, profile: <Profile go={go} email={email} firstName={firstName} lastName={lastName} theme={theme} setTheme={setTheme} demo={demo} setDemo={setDemo} notifications={notifications} setNotifications={setNotifications} sensitiveItems={sensitiveItems} addSensitiveItem={addSensitiveItem} deleteSensitiveItem={deleteSensitiveItem} homeCampus={homeCampus} setHomeCampus={setHomeCampus} />,
+  const completeProfile = () => {
+    updatePrimaryUser({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() });
+    api.updateName(`${firstName.trim()} ${lastName.trim()}`.trim()).catch(() => {});
+    go("home");
   };
-  const navScreens: Screen[] = ["home", "items", "map", "profile", "finderStatus"];
+  const screens: Record<Screen, ReactNode> = {
+    signin: <SignIn go={go} email={email} setEmail={setEmail} />, code: <CodeScreen go={go} email={email} onVerified={completeEmailVerification} />, name: <NameScreen go={go} firstName={firstName} setFirstName={setFirstName} lastName={lastName} setLastName={setLastName} onContinue={completeProfile} />, home: <Home go={go} openReport={openReport} reports={[...publicReports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))} firstName={currentUser.firstName} lastName={currentUser.lastName} demo={demo} />,
+    explore: <Explore go={go} openReport={openReport} state={exploreState} setState={setExploreState} />, detail: <ReportDetail reportId={selectedReportId} go={go} onBack={() => go(detailReturnScreen === "detail" ? "explore" : detailReturnScreen)} startFoundFromLost={startFoundFromLost} />,
+    capture: <Capture go={go} report={foundReport} setReport={setFoundReport} />, locate: <Locate go={go} report={foundReport} setReport={setFoundReport} />, confirm: <Confirm go={go} report={foundReport} setReport={setFoundReport} onSubmit={submitFoundReport} />, finderStatus: <FinderStatus go={go} report={selectedReport} claims={claims} onUpdateClaim={updateClaim} />, ownerNotice: <OwnerNotice go={go} report={selectedReport} />,
+    ownership: <Ownership go={go} report={selectedReport} claimantId={currentUserId} onSubmit={createClaim} />, handoff: <Handoff go={go} report={selectedReport} claim={activeClaim} onUpdateClaim={updateClaim} />, lost: <Lost go={go} openReport={openReport} onSubmit={submitLostReport} sensitiveItems={sensitiveItems} />, items: <Items openReport={openReport} />,
+    map: <CampusMapScreen go={go} openReport={openReport} reports={publicReports} firstName={currentUser.firstName} lastName={currentUser.lastName} dark={dark} />, profile: <Profile go={go} email={currentUser.email} firstName={currentUser.firstName} lastName={currentUser.lastName} theme={theme} setTheme={setTheme} demo={demo} setDemo={setDemo} notifications={notifications} setNotifications={setNotifications} sensitiveItems={sensitiveItems} addSensitiveItem={addSensitiveItem} deleteSensitiveItem={deleteSensitiveItem} homeCampus={homeCampus} setHomeCampus={setHomeCampus} />,
+  };
+  const navScreens: Screen[] = ["home", "explore", "items", "map", "profile", "finderStatus"];
   return <div className={dark ? "app-root dark" : "app-root"}><div className="app-shell">{screens[screen]}{navScreens.includes(screen) && <BottomNav screen={screen} go={go} />}</div></div>;
 }

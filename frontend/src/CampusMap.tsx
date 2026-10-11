@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { AttributionControl, Map as MapLibre, NavigationControl, Popup, setWorkerUrl, type Map as MapLibreMap } from "maplibre-gl";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AttributionControl, Map as MapLibre, NavigationControl, Popup, setWorkerUrl, type GeoJSONSource, type Map as MapLibreMap } from "maplibre-gl";
 import mapWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import "maplibre-gl/dist/maplibre-gl.css";
-import listingData, { type ListingProperties } from "./mapData";
+import { toListingFeatureCollection, type ListingProperties, type MapListing } from "./mapData";
 
 export const campusViews = {
   "College Ave": { center: [-74.4518, 40.5020] as [number, number], zoom: 15.5 },
@@ -16,7 +16,9 @@ export type CampusName = keyof typeof campusViews;
 type CampusMapProps = {
   campus: CampusName;
   dark: boolean;
+  listings: MapListing[];
   onVisibleListingsChange: (listings: ListingProperties[]) => void;
+  onSelectReport: (id: string) => void;
 };
 
 const lightStyle = "https://tiles.openfreemap.org/styles/positron";
@@ -24,12 +26,12 @@ const darkStyle = "https://tiles.openfreemap.org/styles/dark";
 
 setWorkerUrl(mapWorkerUrl);
 
-function addListingLayers(map: MapLibreMap) {
+function addListingLayers(map: MapLibreMap, data: ReturnType<typeof toListingFeatureCollection>) {
   if (map.getSource("listings")) return;
 
   map.addSource("listings", {
     type: "geojson",
-    data: listingData,
+    data,
   });
 
   map.addLayer({
@@ -68,17 +70,32 @@ function addListingLayers(map: MapLibreMap) {
   });
 }
 
-export default function CampusMap({ campus, dark, onVisibleListingsChange }: CampusMapProps) {
+function visibleListings(map: MapLibreMap, data: ReturnType<typeof toListingFeatureCollection>) {
+  const bounds = map.getBounds();
+  return data.features
+    .filter((feature) => bounds.contains(feature.geometry.coordinates as [number, number]))
+    .map((feature) => feature.properties)
+    .sort((a, b) => b.weight - a.weight || a.hoursAgo - b.hoursAgo);
+}
+
+export default function CampusMap({ campus, dark, listings, onVisibleListingsChange, onSelectReport }: CampusMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const callbackRef = useRef(onVisibleListingsChange);
+  const selectRef = useRef(onSelectReport);
   const darkRef = useRef(dark);
   const styleReadyRef = useRef(false);
   const [mapUnavailable, setMapUnavailable] = useState(false);
+  const listingData = useMemo(() => toListingFeatureCollection(listings), [listings]);
+  const listingDataRef = useRef(listingData);
 
   useEffect(() => {
     callbackRef.current = onVisibleListingsChange;
   }, [onVisibleListingsChange]);
+
+  useEffect(() => {
+    selectRef.current = onSelectReport;
+  }, [onSelectReport]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -104,18 +121,14 @@ export default function CampusMap({ campus, dark, onVisibleListingsChange }: Cam
     map.addControl(new AttributionControl({ compact: true }), "bottom-right");
 
     const updateVisibleListings = () => {
-      const bounds = map.getBounds();
-      const listings = listingData.features
-        .filter((feature) => bounds.contains(feature.geometry.coordinates as [number, number]))
-        .map((feature) => feature.properties)
-        .sort((a, b) => b.weight - a.weight || a.hoursAgo - b.hoursAgo);
-      callbackRef.current(listings);
+      callbackRef.current(visibleListings(map, listingDataRef.current));
     };
 
+    map.on("load", updateVisibleListings);
     map.on("style.load", () => {
       styleReadyRef.current = true;
       setMapUnavailable(false);
-      addListingLayers(map);
+      addListingLayers(map, listingDataRef.current);
       updateVisibleListings();
     });
     map.on("moveend", updateVisibleListings);
@@ -126,7 +139,7 @@ export default function CampusMap({ campus, dark, onVisibleListingsChange }: Cam
       const feature = event.features?.[0];
       if (!feature?.properties) return;
       const properties = feature.properties as ListingProperties;
-      const coordinates = (feature.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
+      const coordinates = feature.geometry.type === "Point" ? feature.geometry.coordinates.slice() as [number, number] : event.lngLat.toArray();
       const placeType = properties.placeType.replace("_", " ");
       const popupContent = document.createElement("div");
       const title = document.createElement("strong");
@@ -138,6 +151,7 @@ export default function CampusMap({ campus, dark, onVisibleListingsChange }: Cam
         .setLngLat(coordinates)
         .setDOMContent(popupContent)
         .addTo(map);
+      selectRef.current(properties.id);
     });
     map.on("mouseenter", "listing-points", () => {
       map.getCanvas().style.cursor = "pointer";
@@ -153,18 +167,20 @@ export default function CampusMap({ campus, dark, onVisibleListingsChange }: Cam
   }, []);
 
   useEffect(() => {
+    listingDataRef.current = listingData;
+    const map = mapRef.current;
+    const source = map?.getSource("listings") as GeoJSONSource | undefined;
+    source?.setData(listingData);
+    if (!map) return;
+    callbackRef.current(visibleListings(map, listingData));
+  }, [listingData]);
+
+  useEffect(() => {
     const map = mapRef.current;
     const view = campusViews[campus];
-    const nearbyListings = listingData.features
-      .filter((feature) => {
-        const [longitude, latitude] = feature.geometry.coordinates;
-        return Math.abs(longitude - view.center[0]) < 0.012 && Math.abs(latitude - view.center[1]) < 0.009;
-      })
-      .map((feature) => feature.properties)
-      .sort((a, b) => b.weight - a.weight || a.hoursAgo - b.hoursAgo);
-    callbackRef.current(nearbyListings);
     if (!map) return;
     map.flyTo({ center: view.center, zoom: view.zoom, essential: true });
+    map.once("moveend", () => callbackRef.current(visibleListings(map, listingDataRef.current)));
   }, [campus]);
 
   useEffect(() => {
