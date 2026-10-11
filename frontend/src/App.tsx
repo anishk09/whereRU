@@ -45,7 +45,7 @@ type TimelinePlace = {
 function Brand({ size = "header", subtitle = false }: { size?: "header" | "welcome"; subtitle?: boolean }) {
   const isWelcome = size === "welcome";
   return <div className={`brand ${isWelcome ? "welcome-brand" : ""}`}>
-    <BrandIcon className={isWelcome ? "welcome-logo" : "brand-logo"} />
+    {!isWelcome && <BrandIcon className="brand-logo" />}
     <span className={isWelcome ? "welcome-brand-copy" : "brand-copy"}>
       <Wordmark size={size} />
       {subtitle && <small>Student-to-student lost &amp; found</small>}
@@ -70,8 +70,8 @@ function Status({ children }: { children: string }) {
   return <span className={`status status-${tone}`}><span />{children}</span>;
 }
 
-function Toggle({ on, setOn, label }: { on: boolean; setOn: (value: boolean) => void; label: string }) {
-  return <button type="button" className="toggle-row" aria-pressed={on} onClick={() => setOn(!on)}><span>{label}</span><span className={`toggle ${on ? "on" : ""}`} aria-hidden="true"><span /></span></button>;
+function Toggle({ on, setOn, label, icon }: { on: boolean; setOn: (value: boolean) => void; label: string; icon?: ReactNode }) {
+  return <button type="button" className="toggle-row" aria-pressed={on} onClick={() => setOn(!on)}>{icon}<span className="toggle-label">{label}</span><span className={`toggle ${on ? "on" : ""}`} aria-hidden="true"><span /></span></button>;
 }
 
 function SignIn({ go, email, setEmail }: { go: (screen: Screen) => void; email: string; setEmail: (email: string) => void }) {
@@ -89,7 +89,6 @@ function SignIn({ go, email, setEmail }: { go: (screen: Screen) => void; email: 
       <Brand size="welcome" subtitle />
       <div className="welcome-copy">
         <h1>Help it find its way home.</h1>
-        <span>Snap the item, scan the room, and we privately reach the students who were just there.</span>
       </div>
       <WelcomeMap />
       <div className="welcome-form">
@@ -151,6 +150,8 @@ function NameScreen({ go, firstName, setFirstName, lastName, setLastName }: {
   lastName: string;
   setLastName: (name: string) => void;
 }) {
+  const hasFirstLetter = /\p{L}/u.test(firstName);
+  const hasLastName = Boolean(lastName.trim());
   return <main className="simple-page with-bottom name-page">
     <BackHeader title="Your name" onBack={() => go("code")} />
     <div className="verify-heading"><span><Icon name="user" size={27} /></span><p className="eyebrow">ONE LAST STEP</p><h1>What should we call you?</h1><p>Add your name so other students know who they are meeting.</p></div>
@@ -159,7 +160,7 @@ function NameScreen({ go, firstName, setFirstName, lastName, setLastName }: {
       <label className="result-field"><span>Last name</span><input autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} /></label>
     </div>
     <div className="safe-card"><Icon name="shield" /><p><strong>Your identity stays private.</strong><br />Only your first name is shown to other users.</p></div>
-    <div className="bottom-action">{(!firstName.trim() || !lastName.trim()) && <p className="action-hint">Enter your first and last name to continue.</p>}<Button disabled={!firstName.trim() || !lastName.trim()} onClick={() => { api.updateName(`${firstName.trim()} ${lastName.trim()}`.trim()).catch(() => undefined); go("home"); }}>Continue <Icon name="chevron" size={18} /></Button></div>
+    <div className="bottom-action">{(!hasFirstLetter || !hasLastName) && <p className="action-hint">{hasFirstLetter ? "Enter your last name" : "Enter your first name"}</p>}<Button disabled={!hasFirstLetter || !hasLastName} onClick={() => { api.updateName(`${firstName.trim()} ${lastName.trim()}`.trim()).catch(() => undefined); go("home"); }}>Continue <Icon name="chevron" size={18} /></Button></div>
   </main>;
 }
 
@@ -177,11 +178,26 @@ function ItemCard({ item, onClick, large = false }: { item: ItemData; onClick?: 
     : <article className={`item-card ${large ? "large" : ""}`}>{content}</article>;
 }
 
+function greetingForHour(hour: number) {
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 17) return "Good afternoon";
+  if (hour >= 17 && hour < 22) return "Good evening";
+  return "Up late";
+}
+
+function firstLetter(value: string) {
+  return Array.from(value).find((character) => /\p{L}/u.test(character))?.toUpperCase() || "";
+}
+
 function Home({ go, firstName, lastName }: { go: (screen: Screen) => void; firstName: string; lastName: string }) {
-  const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
+  const displayName = firstName.trim();
+  const hasName = /\p{L}/u.test(displayName);
+  const greeting = greetingForHour(new Date().getHours());
+  const greetingText = hasName ? `${greeting}, ${displayName}${greeting === "Up late" ? "?" : ""}` : greeting;
+  const initials = hasName ? `${firstLetter(firstName)}${firstLetter(lastName)}` : "";
   return <main className="tab-page">
-    <header className="home-header"><Brand /><button className="avatar" aria-label={`Open ${firstName}'s profile`} onClick={() => go("profile")}>{initials}</button></header>
-    <section className="welcome"><p className="eyebrow">Good afternoon, {firstName}</p><h1>What are we looking for?</h1></section>
+    <header className="home-header"><Brand /><button className="avatar" aria-label={hasName ? `Open ${displayName}'s profile` : "Open profile"} onClick={() => go("profile")}>{initials || <Icon name="user" size={18} />}</button></header>
+    <section className="welcome"><p className="eyebrow">{greetingText}</p><h1>What are we looking for?</h1></section>
     <section className="action-grid">
       <button className="action-card found" onClick={() => go("capture")}><span className="action-icon"><Icon name="camera" size={29} /></span><span><strong>I found<br />something</strong><small>Help it ask Where RU?</small></span><Icon name="chevron" size={18} /></button>
       <button className="action-card lost" onClick={() => go("lost")}><span className="action-icon"><Icon name="search" size={29} /></span><span><strong>I lost<br />something</strong><small>Find your item</small></span><Icon name="chevron" size={18} /></button>
@@ -820,7 +836,7 @@ function Profile({ go, email, firstName, lastName, theme, setTheme, demo, setDem
     </section>}
     <p className="settings-label">MY ACTIVITY</p><div className="settings-card"><button onClick={() => go("items")}><span className="setting-icon"><Icon name="bag" /></span><span><strong>My items</strong><small>Finds, lost listings, and claims</small></span><Icon name="chevron" size={18} /></button></div>
     <p className="settings-label">CAMPUS</p><div className="settings-card"><button onClick={() => setHomeCampus(campuses[(campuses.indexOf(homeCampus) + 1) % campuses.length])}><span className="setting-icon"><Icon name="map" /></span><span><strong>Home campus</strong><small>{homeCampus}</small></span><Icon name="chevron" size={18} /></button></div>
-    <p className="settings-label">PREFERENCES</p><div className="settings-card toggles"><div><span className="setting-icon"><Icon name="bell" /></span><Toggle on={notifications} setOn={setNotifications} label="Notifications" /></div><div className="theme-setting"><span className="setting-icon"><Icon name="moon" /></span><div><strong>Theme</strong><div className="theme-control">{(["system", "light", "dark"] as ThemePreference[]).map((option) => <button className={theme === option ? "active" : ""} aria-pressed={theme === option} onClick={() => setTheme(option)} key={option}>{option[0].toUpperCase() + option.slice(1)}</button>)}</div></div></div><div><span className="setting-icon"><Icon name="settings" /></span><Toggle on={demo} setOn={setDemo} label="Demo mode" /></div></div>
+    <p className="settings-label">PREFERENCES</p><div className="settings-card toggles"><Toggle on={notifications} setOn={setNotifications} label="Notifications" icon={<span className="setting-icon"><Icon name="bell" /></span>} /><div className="theme-setting"><span className="setting-icon"><Icon name="moon" /></span><div><strong>Theme</strong><div className="theme-control">{(["system", "light", "dark"] as ThemePreference[]).map((option) => <button className={theme === option ? "active" : ""} aria-pressed={theme === option} onClick={() => setTheme(option)} key={option}>{option[0].toUpperCase() + option.slice(1)}</button>)}</div></div></div><Toggle on={demo} setOn={setDemo} label="Demo mode" icon={<span className="setting-icon"><Icon name="settings" /></span>} /></div>
     <p className="demo-caption">Demo mode loads sample items and keeps every flow available offline.</p>
     <button className="signout" onClick={() => go("signin")}><Icon name="logout" /> Sign out</button>
     <p className="project-note">Where RU? is an independent student project.<br />Not affiliated with or endorsed by Rutgers University.</p>
