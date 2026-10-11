@@ -21,7 +21,7 @@ def create_app(test_config=None):
         GEMINI_MODEL=os.getenv('GEMINI_MODEL','gemini-2.5-flash'),
         GEMINI_EMBEDDING_MODEL=os.getenv('GEMINI_EMBEDDING_MODEL','gemini-embedding-2'),
         CLASSROOM_CATALOG=str(root/'data/classrooms.json'),
-        MAX_CONTENT_LENGTH=10*1024*1024,MAX_FORM_MEMORY_SIZE=128*1024,
+        MAX_CONTENT_LENGTH=17*1024*1024,MAX_FORM_MEMORY_SIZE=128*1024,
         ALLOWED_ORIGINS=[x.strip() for x in os.getenv('ALLOWED_ORIGINS','').split(',') if x.strip()],
         COOKIE_SECURE=os.getenv('APP_ENV','development')=='production',TESTING=False)
     if test_config: app.config.update(test_config)

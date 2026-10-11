@@ -59,7 +59,7 @@ Feeds generally support `limit` (1–100, default 30) and `offset`. Public feed 
 
 ## Images
 
-POST `/api/listings/{id}/images` with multipart field `image`, cookie and CSRF header. JPEG/PNG/WebP, at most 8 MB and 20 megapixels; at most five per report. The backend re-encodes and strips metadata. Uploads are always private initially.
+POST `/api/listings/{id}/images` with multipart field `image`, cookie and CSRF header. JPEG/PNG/WebP, at most 16 MB and 60 megapixels (the app shrinks phone photos to about 1600 px before upload); at most five per report. The backend re-encodes and strips metadata. Uploads are always private initially.
 
 - GET `/api/images/{id}` — authorized JPEG bytes.
 - PATCH `/api/images/{id}` with `{"is_public":true}` — explicit sharing on a public report; sensitive images cannot be shared.
@@ -152,7 +152,7 @@ Only points after session consent and no more than 30 seconds in the future are 
 
 `POST /api/recognize-room` (signed in, CSRF header, `multipart/form-data`)
 
-- `image`: JPEG, PNG or WebP, at most 8 MB and 20 megapixels
+- `image`: JPEG, PNG or WebP, at most 16 MB and 60 megapixels (the app shrinks phone photos to about 1600 px before upload)
 - `campus` (optional): a hint only. The room is chosen among all catalog rooms; a winner on another campus is returned with a note in `conflicts`.
 
 The photo is validated, compared in memory and discarded. Limit: 60 scans per user per hour.

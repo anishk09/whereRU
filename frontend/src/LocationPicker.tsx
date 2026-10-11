@@ -171,14 +171,14 @@ export default function LocationPicker({ value, onChange, context }: {
       </>}
       {phase === "analyzing" && <div className="picker-analyzing" aria-live="polite" aria-busy="true">
         {photoUrl ? <img src={photoUrl} alt="Room photo being analyzed" /> : <div className="sample-room" aria-hidden="true" />}
-        <div><span className="spinner" /> Generating simulated room suggestions…</div>
+        <div><span className="spinner" /> Comparing with campus classrooms…</div>
       </div>}
       {phase === "results" && <div className="candidate-list">
         <div className="candidate-head"><h3>Possible classroom matches</h3>{candidates.some((candidate) => candidate.demo !== false) ? <DemoTag /> : <span className="demo-tag live"><Icon name="check" size={12} />On-device match</span>}</div>
         {candidates.some((candidate) => candidate.demo !== false)
           ? <p className="form-hint left">These are sample rooms because the room-recognition server isn't running. Pick the one that matches what you see.</p>
-          : candidates.length > 1 && !candidates[0].confident
-            ? <p className="form-hint left">These rooms look alike, so pick the one you're in. If it's neither, choose “None of these”.</p>
+          : !candidates[0].confident
+            ? <p className="form-hint left">Not a sure match. These are the closest rooms, so pick the one you're in. If it's none of them, retake from the front of the room or scan the placard.</p>
             : <p className="form-hint left">Matched against reference photos of campus classrooms. Confirm the room before continuing.</p>}
         {candidates.map((candidate, index) => <button type="button" className="candidate-card" key={`${candidate.location.code}-${candidate.location.room}`} onClick={() => onChange(candidate.location)}>
           <span className="candidate-rank">{index + 1}</span>
@@ -187,7 +187,7 @@ export default function LocationPicker({ value, onChange, context }: {
         </button>)}
         <div className="none-match"><p>None of these?</p><div><button type="button" onClick={() => reset("placard")}>Scan the placard</button><button type="button" onClick={() => reset("manual")}>Choose manually</button><button type="button" onClick={() => reset("scan")}>Retake</button></div></div>
       </div>}
-      {phase === "none" && <div className="none-match solo"><p><strong>No simulated suggestion was generated.</strong> Choose the room manually instead.</p><div><button type="button" onClick={() => reset("placard")}>Scan the placard</button><button type="button" onClick={() => reset("manual")}>Choose manually</button></div></div>}
+      {phase === "none" && <div className="none-match solo"><p><strong>Couldn't match this room.</strong> Retake a wide photo from the back of the room facing the front, or scan the placard or choose the room.</p><div><button type="button" onClick={() => reset("scan")}>Retake</button><button type="button" onClick={() => reset("placard")}>Scan the placard</button><button type="button" onClick={() => reset("manual")}>Choose manually</button></div></div>}
     </div>}
 
     {method === "placard" && <div className="picker-panel">

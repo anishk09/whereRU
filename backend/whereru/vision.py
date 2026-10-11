@@ -36,6 +36,8 @@ MIN_SIMILARITY = float(os.getenv('ROOM_MIN_SIMILARITY', '0.70'))
 MIN_MARGIN = float(os.getenv('ROOM_MIN_MARGIN', '0.06'))      # below this lead: no match
 CLEAR_MARGIN = float(os.getenv('ROOM_CLEAR_MARGIN', '0.10'))  # at or above: one confident match
 # Between MIN_MARGIN and CLEAR_MARGIN the top two rooms are shown as possible matches.
+# Below that, rooms at or above GUESS_SIMILARITY are offered as unconfirmed best guesses.
+GUESS_SIMILARITY = float(os.getenv('ROOM_GUESS_SIMILARITY', '0.55'))
 # Stress test 2026-10-11 (236 photos, 5 rooms + 24 decoy rooms): look-alike rooms (Physics vs
 # SEC, ARC vs Lucy Stone) lead by up to ~0.08, so a single confident pick needs 0.10. That cut
 # confident wrong answers from 5-9% to about 1%.
@@ -293,6 +295,12 @@ def match_rooms(query_raw, rooms, base, limit=3):
             # Detail matching is decisive (no false alarms in the stress test): drop close-call extras.
             accepted = {top_id: accepted[top_id]}
 
+    if not accepted and sims and sims[0][0] >= GUESS_SIMILARITY:
+        # Nothing cleared the bar: still offer the closest rooms as unconfirmed guesses so the
+        # finder can tap the right one instead of starting over (they always confirm anyway).
+        for sim, rid in sims[:2]:
+            if sim >= GUESS_SIMILARITY:
+                accepted[rid] = [f'Best guess, not sure (similarity {sim:.2f}). Check the room number.']
     ranked = sorted(accepted, key=lambda r: (len(accepted[r]), scores[r]['matches'], scores[r]['similarity'] or 0), reverse=True)
     report = ', '.join(
         f"{k}={v['matches']}" + (f"/{v['similarity']:.2f}" if v['similarity'] is not None else '')

@@ -18,14 +18,14 @@ bp=Blueprint('media',__name__)
 
 
 def normalize_image(stream):
-    raw=stream.read(8*1024*1024+1)
-    if len(raw)>8*1024*1024: raise BadRequest('Image must be at most 8 MB')
+    raw=stream.read(16*1024*1024+1)
+    if len(raw)>16*1024*1024: raise BadRequest('Image must be at most 16 MB')
     try:
         with warnings.catch_warnings():
             warnings.simplefilter('error',Image.DecompressionBombWarning)
             with Image.open(io.BytesIO(raw)) as image:
                 if image.format not in PHOTO_FORMATS: raise BadRequest('Use a JPEG, PNG or WebP photo' + ('' if 'HEIF' in PHOTO_FORMATS else ' (HEIC needs pillow-heif on the server)'))
-                if image.width*image.height>20_000_000: raise BadRequest('Image exceeds 20 megapixels')
+                if image.width*image.height>60_000_000: raise BadRequest('Image exceeds 60 megapixels')
                 image.load();image=ImageOps.exif_transpose(image).convert('RGB');image.thumbnail((2000,2000))
                 # Reconstruct pixels so EXIF, embedded thumbnails and metadata are not retained.
                 clean=Image.new('RGB',image.size);clean.paste(image)

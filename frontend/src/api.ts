@@ -40,6 +40,26 @@ async function request<T>(method: string, path: string, body?: unknown, timeoutM
   return data as T;
 }
 
+/** Phone photos are often 12-48 megapixels and several MB, which is slow over the demo tunnel
+ * and over the server's limits. Recognition only needs ~1600px, so shrink to a JPEG first.
+ * Falls back to the original file if this browser can't decode it. */
+export async function shrinkPhoto(photo: Blob, maxSide = 1600): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(photo);
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && photo.size < 1.5 * 1024 * 1024 && photo.type === "image/jpeg") { bitmap.close?.(); return photo; }
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
+    return blob ?? photo;
+  } catch {
+    return photo;
+  }
+}
+
 /** True when the Flask backend answers. A "yes" is remembered; a "no" is re-checked after a
  * few seconds, so starting the backend after the page loaded still works. */
 export async function isOnline(): Promise<boolean> {
@@ -149,7 +169,7 @@ export type ApiItemSuggestion = { title: string; description: string; category: 
 export async function analyzeItemPhoto(photo: File) {
   await ensureSession();
   const form = new FormData();
-  form.append("image", photo);
+  form.append("image", await shrinkPhoto(photo), "photo.jpg");
   return request<{ mode: string; suggestion: ApiItemSuggestion | null; message?: string }>("POST", "/api/analyze-item", form, 30000);
 }
 
@@ -161,7 +181,7 @@ export type ApiRoomResult = { mode: string; candidates: ApiRoomCandidate[]; mess
 export async function recognizeRoomPhoto(photo: File, campus: string | null) {
   await ensureSession();
   const form = new FormData();
-  form.append("image", photo);
+  form.append("image", await shrinkPhoto(photo), "photo.jpg");
   if (campus) form.append("campus", campus);
   return request<ApiRoomResult>("POST", "/api/recognize-room", form, 45000);
 }
@@ -240,7 +260,7 @@ export async function notifyIdOwner(words: string[]): Promise<boolean> {
 export async function sendItemFeedback(photo: File, label: string): Promise<string | null> {
   if (!label.trim() || !(await ensureSession())) return null;
   const form = new FormData();
-  form.append("image", photo);
+  form.append("image", await shrinkPhoto(photo), "photo.jpg");
   form.append("label", label.trim());
   return (await request<{ learned: string | null }>("POST", "/api/item-feedback", form, 20000)).learned;
 }
@@ -250,7 +270,7 @@ export async function sendItemFeedback(photo: File, label: string): Promise<stri
 export async function uploadDemoPhoto(photo: Blob): Promise<string | null> {
   if (!(await ensureSession())) return null;
   const form = new FormData();
-  form.append("image", photo, "photo.jpg");
+  form.append("image", await shrinkPhoto(photo, 1400), "photo.jpg");
   try {
     return (await request<{ url: string }>("POST", "/api/demo/photos", form, 30000)).url;
   } catch (error) {
