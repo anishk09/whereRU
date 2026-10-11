@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import CampusMap, { campusViews, type CampusName } from "./CampusMap";
-import { campusPlaces, type ListingProperties, type MapListing, type PlaceType } from "./mapData";
+import { campusPlaces, type MapListing, type PlaceType } from "./mapData";
+import { NEAR_RADIUS_METERS, OFF_CAMPUS_METERS, nearestCampusTo, reportsNear, walkMinutes } from "./nearby";
+import { useUserLocation } from "./useUserLocation";
 import { BrandIcon, Button, Icon, Wordmark, type IconName } from "./ui";
 import LocationPicker, { DemoTag, LocationSummary, PhotoButtons } from "./LocationPicker";
-import { activeRecognizer, nameOnCard, campuses as campusOptions, formatLocation, sourceLabel, type CampusId, type RoomLocation } from "./roomRecognition";
+import { activeRecognizer, nameOnCard, campuses as campusOptions, campusCenters, formatLocation, sourceLabel, type CampusId, type RoomLocation } from "./roomRecognition";
 import * as api from "./api";
 import { categoryIcon, ReportImage, reportCategories, reportStatusLabel, storeReportImage, toPublicReport, useReports, type Claim, type ItemReport, type PublicItemReport, type ReportCategory, type ReportLocation } from "./reports";
 
@@ -185,9 +187,19 @@ function NameScreen({ go, firstName, setFirstName, lastName, setLastName, onCont
   </main>;
 }
 
+/** Safe public line when details are hidden: "Navy blue Hydro Flask water bottle reported found." */
+function plainSummary(color: string, itemName: string, verb: "found" | "lost") {
+  const name = itemName.trim(), shade = color.trim();
+  const colorInName = shade.toLowerCase().split(/\s+/).some((word) => word && name.toLowerCase().includes(word));
+  const text = `${shade && !colorInName ? `${shade.toLowerCase()} ` : ""}${name || "Item"} reported ${verb}.`;
+  return text[0].toUpperCase() + text.slice(1);
+}
+
 function relativeTime(value: string) {
-  const hours = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 3_600_000));
-  if (hours < 1) return "Just now";
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60_000));
+  if (minutes < 2) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
@@ -259,15 +271,28 @@ type ExploreState = {
   category: ReportCategory | "all";
   sort: "newest" | "oldest";
   scrollY: number;
+  /** How many results are drawn; grows as you scroll so a busy campus stays fast. */
+  limit: number;
 };
 
-const initialExploreState: ExploreState = { query: "", type: "all", campus: "all", category: "all", sort: "newest", scrollY: 0 };
+const EXPLORE_PAGE = 30;
+const initialExploreState: ExploreState = { query: "", type: "all", campus: "all", category: "all", sort: "newest", scrollY: 0, limit: EXPLORE_PAGE };
 
 function Explore({ go, openReport, state, setState }: { go: (screen: Screen) => void; openReport: (id: string) => void; state: ExploreState; setState: (update: ExploreState | ((current: ExploreState) => ExploreState)) => void }) {
   const { publicReports, notifications, currentUserId, markNotificationRead } = useReports();
   const [showReportChooser, setShowReportChooser] = useState(false);
-  const { query, type, campus, category, sort } = state;
-  const patch = (updates: Partial<ExploreState>) => setState((current) => ({ ...current, ...updates }));
+  const { query, type, campus, category, sort, limit } = state;
+  // Filter changes start again from the first page; "show more" keeps the current filters.
+  const patch = (updates: Partial<ExploreState>) => setState((current) => ({ ...current, limit: EXPLORE_PAGE, ...updates }));
+  const showMore = () => setState((current) => ({ ...current, limit: current.limit + EXPLORE_PAGE }));
+  const moreRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const button = moreRef.current;
+    if (!button || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver((entries) => { if (entries.some((entry) => entry.isIntersecting)) showMore(); }, { rootMargin: "400px" });
+    observer.observe(button);
+    return () => observer.disconnect();
+  });
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => window.scrollTo({ top: state.scrollY }));
     return () => window.cancelAnimationFrame(frame);
@@ -306,7 +331,8 @@ function Explore({ go, openReport, state, setState }: { go: (screen: Screen) => 
     <p className="catalog-filter-label">Category</p>
     <div className="catalog-chips category-chips"><button className={category === "all" ? "active" : ""} aria-pressed={category === "all"} onClick={() => patch({ category: "all" })}>All</button>{reportCategories.map((value) => <button className={category === value ? "active" : ""} aria-pressed={category === value} onClick={() => patch({ category: value })} key={value}>{value}</button>)}</div>
     <div className="catalog-results"><div className="section-heading"><h2>{visible.length} {visible.length === 1 ? "report" : "reports"}</h2>{hasFilters && <button onClick={clearFilters}>Clear filters</button>}</div>
-      <div className="stack">{visible.map((report) => <ReportCard report={report} large key={report.id} onClick={() => openReport(report.id)} />)}</div>
+      <div className="stack">{visible.slice(0, limit).map((report) => <ReportCard report={report} large key={report.id} onClick={() => openReport(report.id)} />)}</div>
+      {visible.length > limit && <button ref={moreRef} type="button" className="show-more" onClick={showMore}>Show more <small>{visible.length - limit} left</small></button>}
       {publicReports.length === 0 && <CatalogEmpty icon="bag" title="No reports yet" text="Start the Rutgers lost-and-found catalog by reporting an item." action="Report an item" onAction={() => setShowReportChooser(true)} />}
       {publicReports.length > 0 && visible.length === 0 && <CatalogEmpty icon="search" title={query ? "No matching search results" : "No reports in these filters"} text="Try another campus or category, or clear the active filters." action="Clear filters" onAction={clearFilters} />}
     </div>
@@ -551,7 +577,7 @@ function FinderStatus({ go, report, claims, onUpdateClaim }: { go: (screen: Scre
   ] as const;
   return <main className="simple-page with-nav">
     <BackHeader title="Item status" onBack={() => go("detail")} />
-    <article className="status-hero"><div className="item-visual"><ReportImage src={report.photoUrl} alt="" fallback={<span className="detail-category-icon">{categoryIcon(report.category)}</span>} /></div><div><Status>{reportStatusLabel(report.status)}</Status><h1>{report.itemName}</h1><p>{where} · event {relativeTime(report.observedAt)}</p></div></article>
+    <article className="status-hero"><div className="item-visual"><ReportImage src={report.photoUrl} alt="" fallback={<span className="detail-category-icon">{categoryIcon(report.category)}</span>} /></div><div><Status>{reportStatusLabel(report.status)}</Status><h1>{report.itemName}</h1><p>{where} · event {relativeTime(report.observedAt).toLowerCase()}</p></div></article>
     <div className="notice-card"><span><Icon name="bell" /></span><div><strong>{reportClaims.length ? "Claim activity recorded" : "Report is active"}</strong><p>{reportClaims.length ? "Private claim details are available for demo review below." : "No match or notification is claimed until an event is created."}</p></div></div>
     <section className="timeline">
       {timeline.map(([label, detail, done], i) => <div className={`${done ? "done" : ""} ${i === 2 && report.status === "claim_under_review" ? "current" : ""}`} key={label}><span className="timeline-dot">{done ? <Icon name="check" size={13} /> : i + 1}</span><div><strong>{label}</strong><p>{detail}</p></div></div>)}
@@ -997,8 +1023,8 @@ function Items({ openReport }: { openReport: (id: string) => void }) {
 
 function CampusMapScreen({ go, openReport, reports, firstName, lastName, dark }: { go: (screen: Screen) => void; openReport: (id: string) => void; reports: PublicItemReport[]; firstName: string; lastName: string; dark: boolean }) {
   const [campus, setCampus] = useState<CampusName>("College Ave");
-  const [visibleListings, setVisibleListings] = useState<ListingProperties[]>([]);
   const initials = `${firstLetter(firstName)}${firstLetter(lastName)}`;
+  const location = useUserLocation();
   const mapListings = useMemo<MapListing[]>(() => reports
     .filter((report) => report.location?.approximateCoordinates && report.status !== "closed")
     .map((report) => ({
@@ -1011,14 +1037,33 @@ function CampusMapScreen({ go, openReport, reports, firstName, lastName, dark }:
       hoursAgo: Math.max(0, Math.floor((Date.now() - new Date(report.observedAt).getTime()) / 3_600_000)),
       weight: report.location!.placeType === "classroom" ? 1 : ["building", "library", "dining"].includes(report.location!.placeType) ? .8 : .4,
     })), [reports]);
+  // "Near you" is measured from the phone when location is on and it's on campus; otherwise from the chosen campus.
+  const nearestCampus = location.position ? nearestCampusTo(location.position, campusCenters) : null;
+  const onCampus = Boolean(nearestCampus && nearestCampus.meters <= OFF_CAMPUS_METERS);
+  const [originLng, originLat] = onCampus ? location.position! : campusViews[campus].center;
+  const near = useMemo(() => reportsNear(reports, [originLng, originLat]), [reports, originLng, originLat]);
+  const lostCount = near.filter(({ report }) => report.type === "lost").length;
+  const foundCount = near.length - lostCount;
+  const label = onCampus ? "near you" : `near ${campus}`;
+  const note = onCampus ? `within a ${walkMinutes(NEAR_RADIUS_METERS)} min walk`
+    : location.status === "on" ? `You're off campus, so this shows ${campus}`
+    : location.status === "asking" ? "Finding your location…"
+    : location.status === "denied" ? "Location is off for this site"
+    : location.status === "unavailable" ? "Your location isn't available"
+    : `within a ${walkMinutes(NEAR_RADIUS_METERS)} min walk of campus center`;
   return <main className="tab-page map-page">
     <header className="title-header map-title"><div><h1>Campus map</h1><p>Approximate activity areas · includes labeled demo samples</p></div><button className="map-profile" aria-label="Open profile" onClick={() => go("profile")}>{initials || <Icon name="user" size={18} />}</button></header>
     <div className="campus-filter" aria-label="Choose campus">{(Object.keys(campusViews) as CampusName[]).map((name) => <button aria-pressed={campus === name} className={campus === name ? "active" : ""} onClick={() => setCampus(name)} key={name}>{name}</button>)}</div>
-    <CampusMap campus={campus} dark={dark} listings={mapListings} onVisibleListingsChange={setVisibleListings} onSelectReport={openReport} />
-    <div className="map-summary"><span><Icon name="sparkles" size={18} /></span><p><strong>{visibleListings.length} possible items in this area</strong><small>Based on recent finds and active lost listings</small></p></div>
+    <CampusMap campus={campus} dark={dark} listings={mapListings} onSelectReport={openReport} />
+    <div className="map-summary near-you" aria-live="polite">
+      <span className="near-you-count"><b key={near.length} className="count-bump">{near.length}</b></span>
+      <p><strong>{near.length === 1 ? "open item" : "open items"} {label}</strong><small>{near.length ? `${lostCount} lost · ${foundCount} found · ` : ""}{note}</small>
+        {!onCampus && location.status !== "on" && location.status !== "asking" && <button type="button" className="near-you-action" onClick={location.enable}><Icon name="locate" size={14} />{location.status === "off" ? "Use my location" : "Try again"}</button>}</p>
+    </div>
     <section className="section nearby-items">
-      <div className="section-heading"><h2>Potential matches nearby</h2><button onClick={() => go("lost")}>Refine search</button></div>
-      {visibleListings.slice(0, 2).map((listing) => <button className="map-result-card" onClick={() => openReport(listing.id)} key={listing.id}><span className="map-result-icon">{listing.title.includes("AirPods") ? "◉" : "⌁"}</span><span><strong>{listing.title}</strong><small>Near a {listing.placeType.replace("_", " ")} · {listing.hoursAgo}h ago</small><em>{listing.weight >= 0.8 ? "High" : "Medium"} activity area</em></span><span className="distance">{listing.status === "returned" ? "Returned" : listing.type === "lost" ? "Lost" : "Found"}</span></button>)}
+      <div className="section-heading"><h2>{onCampus ? "Nearest to you" : "Nearest items"}</h2><button onClick={() => go("lost")}>Refine search</button></div>
+      {near.slice(0, 3).map(({ report, meters }) => <button className="map-result-card" onClick={() => openReport(report.id)} key={report.id}><span className="map-result-icon">{categoryIcon(report.category)}</span><span><strong>{report.itemName}</strong><small>{relativeTime(report.observedAt)} · {report.location?.approximateLabel ?? report.category}</small><em>{walkMinutes(meters)} min walk</em></span><span className={`distance ${report.type}`}>{report.type === "lost" ? "Lost" : "Found"}</span></button>)}
+      {near.length === 0 && <CatalogEmpty icon="map" title="Nothing open nearby" text={`No open lost or found items within a ${walkMinutes(NEAR_RADIUS_METERS)} min walk. Try another campus or browse everything.`} action="Browse all items" onAction={() => go("explore")} />}
     </section>
     <div className="tip-card"><Icon name="shield" /><div><strong>Locations are approximate</strong><p>The map uses broad activity areas to protect student privacy.</p></div></div>
   </main>;
@@ -1210,7 +1255,7 @@ export default function App() {
       itemName: foundReport.title.trim(),
       category: normalizeCategory(foundReport.category),
       color: foundReport.color.trim(),
-      publicDescription: foundReport.hideDetails ? `${foundReport.color.trim()} ${normalizeCategory(foundReport.category).toLowerCase()} reported found.`.trim() : foundReport.description.trim(),
+      publicDescription: foundReport.hideDetails ? plainSummary(foundReport.color, foundReport.title, "found") : foundReport.description.trim(),
       privateDetails: [foundReport.hideDetails ? foundReport.description.trim() : "", foundReport.cardName ? `Name on the card: ${foundReport.cardName}` : ""].filter(Boolean).join(" · ") || undefined,
       photoUrl: foundReport.photoUrl,
       location: roomToReportLocation(foundReport.location),
@@ -1256,7 +1301,7 @@ export default function App() {
       itemName: submission.itemName,
       category: normalizeCategory(submission.category),
       color: submission.color,
-      publicDescription: `${submission.color} ${normalizeCategory(submission.category).toLowerCase()} reported lost.`.trim(),
+      publicDescription: plainSummary(submission.color, submission.itemName, "lost"),
       privateDetails: submission.itemDescription || undefined,
       photoUrl: submission.photoUrl,
       location: submission.location,

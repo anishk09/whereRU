@@ -210,12 +210,16 @@ export type DemoCatalogState = {
   catalog: DemoCatalog | null;
   claim_answers: Record<string, string>;
   accepted?: boolean;
+  /** True when the phone already had this version; catalog is then null. */
+  unchanged?: boolean;
 };
 
-/** The shared catalog, or null when the backend isn't running. Throws ApiError 404 when demo sync is off. */
-export async function getDemoCatalog(): Promise<DemoCatalogState | null> {
+/** The shared catalog, or null when the backend isn't running. Throws ApiError 404 when demo sync is off.
+ * Pass the version this phone has to get a tiny "unchanged" answer instead of the whole catalog. */
+export async function getDemoCatalog(have?: { generation: string; version: number }): Promise<DemoCatalogState | null> {
   if (!(await isOnline())) return null;
-  return request<DemoCatalogState>("GET", "/api/demo/catalog", undefined, 8000);
+  const query = have ? `?generation=${encodeURIComponent(have.generation)}&version=${have.version}` : "";
+  return request<DemoCatalogState>("GET", `/api/demo/catalog${query}`, undefined, 8000);
 }
 
 /** Sends this phone's catalog; the server merges it and returns the shared result. */

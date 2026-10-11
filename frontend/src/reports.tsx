@@ -3,6 +3,7 @@ import type { CampusId, LocationSource } from "./roomRecognition";
 import type { PlaceType } from "./mapData";
 import { startDemoSync, type SyncCatalog } from "./demoSync";
 import { uploadDemoPhoto } from "./api";
+import { metersBetween } from "./nearby";
 
 export type ReportType = "lost" | "found";
 export type ReportStatus = "active" | "possible_match" | "claim_under_review" | "returned" | "closed";
@@ -384,12 +385,6 @@ function matchScore(lost: ItemReport, found: ItemReport) {
   if (!shared && !colorMatch) return 0;
   const sameBuilding = Boolean(lost.location?.building && found.location?.building && lost.location.building.toLowerCase() === found.location.building.toLowerCase());
   return 3 * shared + (colorMatch ? 1 : 0) + (sameBuilding ? 2 : 0) + (lost.location?.campus === found.location?.campus ? 1 : 0);
-}
-
-function metersBetween([lng1, lat1]: [number, number], [lng2, lat2]: [number, number]) {
-  const rad = Math.PI / 180, dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
-  return 2 * 6_371_000 * Math.asin(Math.sqrt(h));
 }
 
 /** "in Hill Center, the same building where you lost it" / "about 4 min walk from where you lost it". */

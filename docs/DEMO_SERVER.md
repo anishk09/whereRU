@@ -16,6 +16,7 @@ The persona sticks to that phone after the first visit. It can also be switched 
 ```bash
 ./demo.sh           # stops old servers, starts backend + app + tunnel, prints both phone links
 ./demo.sh --fresh   # same, with freshly seeded demo data
+./demo.sh --fresh --sim   # also run the campus simulator (see below)
 ```
 
 ## Set up by hand
@@ -65,6 +66,30 @@ python tools/seed_demo.py --owner-item "Wireless headphones" --owner-category El
   --owner-color Black --owner-detail "Left ear cushion is slightly torn" --owner-room ARC-103
 ```
 
+## Campus simulator (live background activity)
+
+`python tools/simulate_campus.py` (or `./demo.sh --sim`) makes the fake students act while you
+talk: every ~20 s someone posts a lost or found item somewhere on campus, and now and then one gets
+returned. Every phone sees it within a few seconds: the feed, Explore, the map and its
+"open items near you" counter all move.
+
+```bash
+python tools/simulate_campus.py              # ~every 20 s; --every 8 for busier
+python tools/simulate_campus.py --pause      # freeze it right before the live find
+python tools/simulate_campus.py --resume
+```
+
+It stays out of the story: nothing in the category of Jordan's or Maya's open items, nothing that
+names Maya's item, no claims on their reports and no notifications to them. It talks to the
+backend over HTTP (default `http://127.0.0.1:5001`, `--url` to change), standard library only.
+
+## Items near you (map screen)
+
+The map screen counts open lost and found items within a 5 minute walk (400 m). With location on
+("Use my location", remembered per phone) it measures from the phone; if the phone is off campus
+(over 3 km from every campus) or location is off, it measures from the center of the chosen campus
+and says so. The list under it shows the nearest three with walking time.
+
 ## Reset between run-throughs
 
 Run `python tools/seed_demo.py` again. No restart needed: open phones switch to the fresh data
@@ -78,11 +103,17 @@ within a few seconds. Options: `--reports 80` for a busier campus, `--fake-users
   record (newest `updatedAt` wins, notifications stay read), so two phones acting at once don't
   overwrite each other. Stored in `backend/instance/demo_catalog.json` (not committed).
 - Each seed starts a new *generation*; phones on an older one drop their local copy.
-- `frontend/src/demoSync.ts`: pushes local changes immediately and polls every 2.5 s. Off when the
-  backend isn't running, so the Figma preview still works on its own.
+- `frontend/src/demoSync.ts`: pushes local changes immediately and polls every 2.5 s. A poll from a
+  phone that is already up to date gets a tiny "unchanged" answer instead of the whole catalog. Off
+  when the backend isn't running, so the Figma preview still works on its own.
 - Claim proof answers are shared through the demo catalog so the finder's phone can review them.
   That is fine for a demo of fake people, not for real users.
-- Photos stay on the phone that took them; other phones show the category icon instead.
+- Photos upload to `/api/demo/photos` so the other phone sees them too.
+
+**Load tested** (real backend, simulator running): 5, 10 and 50 simulated phones polling and
+posting for 60 s each: no errors, no lost reports, 95% of requests under 30 ms. 5 and 10 real
+browser phones at once: no console errors, the near-you counter updated live. Explore draws 30
+results at a time (more load as you scroll), so it stays fast with 1,000+ reports.
 
 **After a Figma sync:** the hooks live in `frontend/src/reports.tsx` (`syncExport`, `syncReplace`,
 `initialPersona`, and the `startDemoSync` effect in `ReportProvider`). If a sync overwrites that

@@ -59,6 +59,34 @@ def test_endpoints(app, tmp_path):
     got = client.get('/api/demo/catalog').json
     assert got['generation'] == pushed.json['generation'] and got['catalog']['reports'][0]['id'] == 'x'
     assert client.post('/api/demo/catalog', json={'catalog': []}).status_code == 400
+    # A phone that already has this version gets a small "unchanged" answer.
+    same = client.get(f"/api/demo/catalog?generation={got['generation']}&version={got['version']}").json
+    assert same['unchanged'] and same['catalog'] is None
+    stale = client.get(f"/api/demo/catalog?generation={got['generation']}&version={got['version'] - 1}").json
+    assert not stale.get('unchanged') and stale['catalog']['reports']
+
+
+def test_simulator_adds_activity_but_leaves_the_story_alone(app, tmp_path):
+    import importlib.util, threading
+    from werkzeug.serving import make_server
+    app.config.update(DEMO_SYNC=True, DEMO_CATALOG=str(tmp_path / 'demo.json'))
+    subprocess.run([sys.executable, str(BACKEND / 'tools/seed_demo.py'), '--out', str(tmp_path / 'demo.json'), '--reports', '20'],
+                   check=True, capture_output=True)
+    server = make_server('127.0.0.1', 0, app); thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()
+    try:
+        spec = importlib.util.spec_from_file_location('sim', BACKEND / 'tools/simulate_campus.py')
+        sim = importlib.util.module_from_spec(spec); spec.loader.exec_module(sim)
+        sim.main(['--url', f'http://127.0.0.1:{server.server_port}', '--every', '0.01', '--count', '40', '--seed', '3', '--quiet'])
+    finally:
+        server.shutdown(); thread.join(timeout=5)
+    state = json.loads((tmp_path / 'demo.json').read_text())
+    reports = state['catalog']['reports']
+    simulated = [r for r in reports if r['id'].startswith('sim-')]
+    assert len(simulated) >= 25
+    assert not [r for r in simulated if r['reporterId'] in ('demo-jordan', 'demo-maya')]
+    maya_category = next(r['category'] for r in reports if r['id'] == 'maya-lost')
+    assert not [r for r in simulated if r['category'] == maya_category]
+    assert not state['catalog']['notifications'] or all(n['id'].startswith('jordan-note') for n in state['catalog']['notifications'])
 
 
 def test_endpoints_hidden_unless_enabled(app):

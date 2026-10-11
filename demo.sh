@@ -3,13 +3,22 @@
 #
 #   ./demo.sh           restart, keep the current demo data
 #   ./demo.sh --fresh   restart with freshly seeded demo data (tools/seed_demo.py)
+#   ./demo.sh --sim     also run the campus simulator (fake students posting live, ~every 20 s)
+#                       Options combine: ./demo.sh --fresh --sim
 #
 # Stops anything already on ports 5001/5173 and any running cloudflared first.
 # Press Ctrl+C to stop everything. Logs: /tmp/whereru-*.log
 set -u
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 FRESH=0
-[ "${1:-}" = "--fresh" ] && FRESH=1
+SIM=0
+for arg in "$@"; do
+  case "$arg" in
+    --fresh) FRESH=1 ;;
+    --sim) SIM=1 ;;
+    *) echo "Unknown option: $arg (use --fresh and/or --sim)"; exit 1 ;;
+  esac
+done
 PIDS=""
 
 stop_port() {
@@ -76,11 +85,20 @@ for _ in $(seq 1 30); do
 done
 [ -n "$URL" ] || { echo "!! Tunnel did not start. See /tmp/whereru-tunnel.log"; cleanup; }
 
+if [ "$SIM" = 1 ]; then
+  (cd "$ROOT/backend" && rm -f instance/simulator.paused && exec python tools/simulate_campus.py >/tmp/whereru-simulator.log 2>&1) &
+  PIDS="$PIDS $!"
+fi
+
 echo
 echo "Demo is running. Open on the phones (give the link ~10 seconds the first time):"
 echo "  Jordan (sender):   $URL/?as=jordan"
 echo "  Maya   (receiver): $URL/?as=maya"
 echo
 echo "Reset demo data any time (no restart):  cd backend && python tools/seed_demo.py"
+if [ "$SIM" = 1 ]; then
+  echo "Campus simulator is running (log: /tmp/whereru-simulator.log)."
+  echo "  Freeze it right before the live find:  cd backend && python tools/simulate_campus.py --pause   (--resume to restart)"
+fi
 echo "Press Ctrl+C to stop everything."
 wait

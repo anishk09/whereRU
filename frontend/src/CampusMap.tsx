@@ -17,7 +17,7 @@ type CampusMapProps = {
   campus: CampusName;
   dark: boolean;
   listings: MapListing[];
-  onVisibleListingsChange: (listings: ListingProperties[]) => void;
+  onVisibleListingsChange?: (listings: ListingProperties[]) => void;
   onSelectReport: (id: string) => void;
 };
 
@@ -121,7 +121,7 @@ export default function CampusMap({ campus, dark, listings, onVisibleListingsCha
     map.addControl(new AttributionControl({ compact: true }), "bottom-right");
 
     const updateVisibleListings = () => {
-      callbackRef.current(visibleListings(map, listingDataRef.current));
+      callbackRef.current?.(visibleListings(map, listingDataRef.current));
     };
 
     map.on("load", updateVisibleListings);
@@ -145,7 +145,7 @@ export default function CampusMap({ campus, dark, listings, onVisibleListingsCha
       const title = document.createElement("strong");
       const details = document.createElement("span");
       title.textContent = properties.title;
-      details.textContent = `${placeType} · ${properties.hoursAgo}h ago`;
+      details.textContent = `${placeType} · ${properties.hoursAgo < 1 ? "in the last hour" : `${properties.hoursAgo}h ago`}`;
       popupContent.append(title, details);
       new Popup({ closeButton: false, offset: 10 })
         .setLngLat(coordinates)
@@ -172,7 +172,7 @@ export default function CampusMap({ campus, dark, listings, onVisibleListingsCha
     const source = map?.getSource("listings") as GeoJSONSource | undefined;
     source?.setData(listingData);
     if (!map) return;
-    callbackRef.current(visibleListings(map, listingData));
+    callbackRef.current?.(visibleListings(map, listingData));
   }, [listingData]);
 
   useEffect(() => {
@@ -180,7 +180,7 @@ export default function CampusMap({ campus, dark, listings, onVisibleListingsCha
     const view = campusViews[campus];
     if (!map) return;
     map.flyTo({ center: view.center, zoom: view.zoom, essential: true });
-    map.once("moveend", () => callbackRef.current(visibleListings(map, listingDataRef.current)));
+    map.once("moveend", () => callbackRef.current?.(visibleListings(map, listingDataRef.current)));
   }, [campus]);
 
   useEffect(() => {

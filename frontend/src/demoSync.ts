@@ -73,8 +73,8 @@ export function startDemoSync(repository: SyncableRepository, onRemoteChange: ()
 
   const pull = async () => {
     if (disabled || stopped) return;
-    const state = await api.getDemoCatalog();
-    if (!state) return;
+    const state = await api.getDemoCatalog(generation && version >= 0 ? { generation, version } : undefined);
+    if (!state || state.unchanged) return;
     if (!state.generation) {
       // Nothing on the server yet: share this phone's catalog as the starting point.
       dirty = true;

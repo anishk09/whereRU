@@ -38,7 +38,13 @@ def public_state(state):
 @bp.get('/api/demo/catalog')
 def get_catalog():
     require_enabled()
-    return jsonify(public_state(demo_store.read(catalog_path())))
+    state = demo_store.read(catalog_path())
+    # Phones poll every few seconds; when they already have this version, skip resending the catalog.
+    if (state and request.args.get('generation') == state['generation']
+            and request.args.get('version') == str(state['version'])):
+        return jsonify(generation=state['generation'], version=state['version'], unchanged=True,
+                       catalog=None, claim_answers={}, personas=[])
+    return jsonify(public_state(state))
 
 
 @bp.post('/api/demo/catalog')
