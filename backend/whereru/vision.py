@@ -556,6 +556,114 @@ def classify_item(raw, base):
             'color': color}
 
 
+# ---------------------------------------------------------------- reading ID cards
+
+# Words printed on every card; never part of a name.
+CARD_WORDS = {'RUTGERS', 'STUDENT', 'FACULTY', 'STAFF', 'UNIVERSITY', 'STATE', 'NEW', 'JERSEY', 'THE', 'OF',
+              'ID', 'CARD', 'NJ', 'AFFILIATE', 'EMPLOYEE', 'VISITOR', 'LICENSE', 'DRIVER', 'CLASS', 'EXP'}
+
+
+def _ocr_apple(raw):
+    """macOS Vision framework text recognition (pip install pyobjc-framework-Vision)."""
+    import Vision
+    from Foundation import NSData
+    data = NSData.dataWithBytes_length_(raw, len(raw))
+    handler = Vision.VNImageRequestHandler.alloc().initWithData_options_(data, None)
+    request = Vision.VNRecognizeTextRequest.alloc().init()
+    request.setRecognitionLevel_(Vision.VNRequestTextRecognitionLevelAccurate)
+    request.setUsesLanguageCorrection_(False)
+    ok, _ = handler.performRequests_error_([request], None)
+    if not ok:
+        return []
+    return [str(obs.topCandidates_(1)[0].string()) for obs in (request.results() or [])]
+
+
+def _ocr_tesseract(raw):
+    """Tesseract CLI, trying a few rotations because cards are often photographed tilted."""
+    import shutil
+    import subprocess
+    import tempfile
+    if not shutil.which('tesseract'):
+        raise RuntimeError('tesseract not installed')
+    image = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_GRAYSCALE)
+    if image is None:
+        return []
+    scale = 1500 / max(image.shape)
+    image = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+    image = cv2.createCLAHE(2.0, (8, 8)).apply(image)
+    best, best_score = [], -1
+    h, w = image.shape
+    for angle in (0, -15, 15, -30, 30):
+        rotated = cv2.warpAffine(image, cv2.getRotationMatrix2D((w / 2, h / 2), angle, 1.0), (w, h),
+                                 borderMode=cv2.BORDER_REPLICATE)
+        with tempfile.NamedTemporaryFile(suffix='.png') as tmp:
+            cv2.imwrite(tmp.name, rotated)
+            out = subprocess.run(['tesseract', tmp.name, '-', '--psm', '11'], capture_output=True,
+                                 text=True, timeout=20).stdout
+        lines = [line for line in out.splitlines() if line.strip()]
+        # Rotated attempts tend to produce letter fragments; count only solid words.
+        score = sum(len(word) >= 3 for word in card_words(lines))
+        if score > best_score:
+            best, best_score = lines, score
+        if score >= 2:
+            break   # first angle that reads a plausible name wins
+    return best
+
+
+def read_card_text(raw):
+    """Text lines on an ID card photo, or None if no OCR engine is available."""
+    for engine in (_ocr_apple, _ocr_tesseract):
+        try:
+            return engine(raw)
+        except Exception:
+            continue
+    return None
+
+
+def card_words(lines):
+    """Upper-case name-like words: letters only (hyphen/apostrophe allowed), 2+ letters, not card text.
+    ID numbers and anything with digits are dropped and never stored."""
+    import re
+    words = []
+    for line in lines or []:
+        for token in re.findall(r"[A-Za-z][A-Za-z'\-]+", line):
+            word = token.upper().strip("'-")
+            near_card_word = len(word) >= 5 and any(_close(word, c) for c in CARD_WORDS if len(c) >= 5)
+            if len(word) >= 2 and word not in CARD_WORDS and not near_card_word and word not in words:
+                words.append(word)
+    return words[:20]
+
+
+def name_on_card(words):
+    """Best guess at the printed name: the first two solid name-like words (cards print FIRST then LAST)."""
+    solid = [w for w in words if len(w) >= 3]
+    return ' '.join(w.capitalize() for w in solid[:2]) if len(solid) >= 2 else None
+
+
+def _close(a, b):
+    """Exact match, or one letter off for longer names (OCR slips like OSEI/OSFI)."""
+    if a == b:
+        return True
+    if len(a) < 5 or abs(len(a) - len(b)) > 1:
+        return False
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1] <= 1
+
+
+def name_matches(words, full_name):
+    """True if both the first and the last name of full_name appear among the card words."""
+    parts = [p.upper() for p in str(full_name).replace('-', ' ').split() if len(p) >= 2]
+    if len(parts) < 2:
+        return False
+    first, last = parts[0], parts[-1]
+    return any(_close(first, w) for w in words) and any(_close(last, w) for w in words)
+
+
 # Named colors in HSV terms. Hue in OpenCV is 0-179.
 _HUES = [(0, 'red'), (10, 'orange'), (22, 'yellow'), (35, 'green'), (85, 'teal'),
          (100, 'blue'), (125, 'purple'), (150, 'pink'), (170, 'red')]

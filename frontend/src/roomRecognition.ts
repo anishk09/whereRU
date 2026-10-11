@@ -97,6 +97,9 @@ export type ItemDescription = {
   description: string;
   /** Set when the backend couldn't analyze the photo; shown to the finder. */
   error?: string;
+  /** Name-like words read from an ID card (never numbers), used only to notify its owner. */
+  cardWords?: string[];
+  cardName?: string | null;
   demo?: boolean;
 };
 
@@ -216,6 +219,8 @@ export const backendRecognizer: RoomRecognizer = {
         color: color ? `${color[0].toUpperCase()}${color.slice(1)}` : "",
         description: suggestion.description,
         demo: false,
+        cardWords: suggestion.card?.words ?? [],
+        cardName: suggestion.card?.name ?? null,
       };
     } catch (error) {
       // The server is up but analysis failed (e.g. rate limit). Leave the fields for the finder
@@ -236,4 +241,23 @@ export function validateImage(file: File | undefined): string | null {
   if (file.type && !acceptedImageTypes.includes(file.type)) return "That file type isn't supported. Use a JPG, PNG, WEBP, or HEIC photo.";
   if (file.size > 15 * 1024 * 1024) return "That photo is larger than 15 MB. Try a smaller one.";
   return null;
+}
+
+/** Same rule as the backend: first and last name both on the card (one letter of slack for 5+ letters). */
+export function nameOnCard(words: string[], firstName: string, lastName: string) {
+  const close = (a: string, b: string) => {
+    if (a === b) return true;
+    if (a.length < 5 || Math.abs(a.length - b.length) > 1) return false;
+    let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) cur.push(Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)));
+      prev = cur;
+    }
+    return prev[b.length] <= 1;
+  };
+  const first = firstName.trim().toUpperCase(), last = lastName.trim().split(/\s+/).pop()?.toUpperCase() ?? "";
+  if (first.length < 2 || last.length < 2) return false;
+  const upper = words.map((word) => word.toUpperCase());
+  return upper.some((word) => close(first, word)) && upper.some((word) => close(last, word));
 }

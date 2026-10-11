@@ -142,7 +142,8 @@ export function startNewFoundReport() {
   draftFoundId = null;
 }
 
-export type ApiItemSuggestion = { title: string; description: string; category: ApiCategory; attributes: { color: string | null }; priority?: string; sensitive?: boolean; uncertainty?: string };
+export type ApiCardText = { read: boolean; words: string[]; name: string | null };
+export type ApiItemSuggestion = { title: string; description: string; category: ApiCategory; attributes: { color: string | null }; priority?: string; sensitive?: boolean; uncertainty?: string; card?: ApiCardText };
 
 /** Suggests details for a found-item photo. The server compares it in memory and does not keep it. */
 export async function analyzeItemPhoto(photo: File) {
@@ -221,4 +222,11 @@ export async function getDemoCatalog(): Promise<DemoCatalogState | null> {
 export async function pushDemoCatalog(body: { generation: string | null; catalog: DemoCatalog; claim_answers: Record<string, string> }): Promise<DemoCatalogState | null> {
   if (!(await ensureSession())) return null;
   return request<DemoCatalogState>("POST", "/api/demo/catalog", body, 15000);
+}
+
+/** Privately notifies a registered user whose first and last name are on a found ID card.
+ * Returns whether someone was notified (never who). */
+export async function notifyIdOwner(words: string[]): Promise<boolean> {
+  if (!words.length || !(await ensureSession())) return false;
+  return (await request<{ notified: boolean }>("POST", "/api/id-owner", { words })).notified;
 }

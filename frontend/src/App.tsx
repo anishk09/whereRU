@@ -3,7 +3,7 @@ import CampusMap, { campusViews, type CampusName } from "./CampusMap";
 import { campusPlaces, type ListingProperties, type MapListing, type PlaceType } from "./mapData";
 import { BrandIcon, Button, Icon, Wordmark, type IconName } from "./ui";
 import LocationPicker, { DemoTag, LocationSummary, PhotoButtons } from "./LocationPicker";
-import { activeRecognizer, campuses as campusOptions, formatLocation, sourceLabel, type CampusId, type RoomLocation } from "./roomRecognition";
+import { activeRecognizer, nameOnCard, campuses as campusOptions, formatLocation, sourceLabel, type CampusId, type RoomLocation } from "./roomRecognition";
 import * as api from "./api";
 import { categoryIcon, ReportImage, reportCategories, reportStatusLabel, storeReportImage, toPublicReport, useReports, type Claim, type ItemReport, type PublicItemReport, type ReportCategory, type ReportLocation } from "./reports";
 
@@ -348,6 +348,8 @@ type FoundReport = {
   photoFile: File | null;
   aiDemo: boolean;
   aiNote?: string;
+  cardWords?: string[];
+  cardName?: string | null;
 };
 
 const emptyFoundReport: FoundReport = { photoUrl: null, photoPreviewUrl: null, photoFile: null, aiDemo: true, sample: false, title: "", category: "", color: "", description: "", hideDetails: true, location: null, foundAt: "" };
@@ -427,6 +429,8 @@ function Capture({ go, report, setReport }: { go: (screen: Screen) => void; repo
       description: current.description || result.description,
       aiDemo: result.demo !== false,
       aiNote: result.error,
+      cardWords: result.cardWords ?? [],
+      cardName: result.cardName ?? null,
     }));
     setAnalyzing(false);
     go("locate");
@@ -486,7 +490,7 @@ function Confirm({ go, report, setReport, onSubmit }: { go: (screen: Screen) => 
   const ready = Boolean(report.title.trim() && location && validObservedAt);
   return <main className="simple-page with-bottom">
     <BackHeader title="Review report" onBack={() => go("locate")} action={<span className="flow-count">3 of 3</span>} />
-    <div className="ai-banner"><span><Icon name="sparkles" size={20} /></span><div><strong>Check the details</strong><p>{report.aiNote || "Everything below is editable before the report is saved."}</p></div>{report.aiDemo ? <DemoTag>Demo AI</DemoTag> : <span className="demo-tag live"><Icon name="check" size={12} />On-device</span>}</div>
+    <div className="ai-banner"><span><Icon name="sparkles" size={20} /></span><div><strong>Check the details</strong><p>{report.aiNote || (report.cardName ? `Name on the card: ${report.cardName}. It stays private and is used only to notify the owner if they use Where RU?.` : "Everything below is editable before the report is saved.")}</p></div>{report.aiDemo ? <DemoTag>Demo AI</DemoTag> : <span className="demo-tag live"><Icon name="check" size={12} />On-device</span>}</div>
     <section className="form-section"><h2>Item</h2>
       <div className="review-photo">{report.photoPreviewUrl ? <img src={report.photoPreviewUrl} alt="Found item" /> : <span className="detail-category-icon">{categoryIcon(normalizeCategory(report.category))}</span>}<button type="button" className="text-button" onClick={() => go("capture")}>{report.photoPreviewUrl ? "Replace photo" : "Add photo"}</button></div>
       <label className="result-field"><span>Item</span><input value={report.title} onChange={set("title")} /></label>
@@ -1087,7 +1091,7 @@ const initialSensitiveItems: SensitiveItem[] = [
 ];
 
 export default function App() {
-  const { reports, claims, publicReports, currentUserId, currentUser, updatePrimaryUser, createReport, updateReport, createClaim, updateClaim } = useReports();
+  const { reports, claims, publicReports, currentUserId, currentUser, users, updatePrimaryUser, createReport, updateReport, createClaim, updateClaim, notifyUser } = useReports();
   const [screen, setScreen] = useState<Screen>("signin");
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -1152,7 +1156,7 @@ export default function App() {
       category: normalizeCategory(foundReport.category),
       color: foundReport.color.trim(),
       publicDescription: foundReport.hideDetails ? `${foundReport.color.trim()} ${normalizeCategory(foundReport.category).toLowerCase()} reported found.`.trim() : foundReport.description.trim(),
-      privateDetails: foundReport.hideDetails ? foundReport.description.trim() : undefined,
+      privateDetails: [foundReport.hideDetails ? foundReport.description.trim() : "", foundReport.cardName ? `Name on the card: ${foundReport.cardName}` : ""].filter(Boolean).join(" · ") || undefined,
       photoUrl: foundReport.photoUrl,
       location: roomToReportLocation(foundReport.location),
       observedAt,
@@ -1163,6 +1167,16 @@ export default function App() {
       clientSubmissionId: foundSubmissionKey,
       relatedLostReportId: foundReport.relatedLostReportId,
     });
+    // A found ID card: privately notify its owner if they use Where RU? (first and last name must match).
+    const cardWords = foundReport.cardWords ?? [];
+    if (cardWords.length >= 2) {
+      const owner = users.find((user) => user.id !== currentUserId && nameOnCard(cardWords, user.firstName, user.lastName));
+      if (owner) {
+        notifyUser(owner.id, report.id, "Your ID may have been found", "A student ID with your name was turned in. Open the listing to verify it's yours and arrange a safe return.");
+        notifyUser(currentUserId, report.id, "Owner notified privately", "The name on this ID matches a Where RU? user. They've been notified; you won't see who they are until they claim it.");
+      }
+      api.notifyIdOwner(cardWords).catch((error) => console.warn("Backend owner lookup skipped:", error));
+    }
     // Mirror to the Flask backend (matching engine, cross-device). Best effort: the app keeps working offline.
     api.publishFoundReport({
       title: report.itemName,

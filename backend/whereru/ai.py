@@ -135,6 +135,12 @@ def local_item_suggestion(raw):
     else:
         reason='the vision model is not installed' if item is None else 'the item type was not clear enough to suggest'
         out['uncertainty']=f'On-device analysis: color estimated from the photo; {reason}, so add the item type yourself.'
+    if item and item.get('class') in ('ruid','other_id_card'):
+        # The finder is holding the card, so showing them the printed name reveals nothing new.
+        # It is used only to privately notify a registered owner (see /api/id-owner).
+        lines=vision.read_card_text(raw)
+        words=vision.card_words(lines) if lines is not None else []
+        out['card']={'read':lines is not None,'words':words,'name':vision.name_on_card(words)}
     return out
 
 
@@ -152,6 +158,40 @@ def analyze_item_photo():
     suggestion={'title':'','description':'','category':'other',**suggestion}
     suggestion['attributes']={'color':None,**suggestion['attributes']}
     return jsonify(mode='local',suggestion=suggestion,requires_review=True)
+
+
+@bp.post('/api/id-owner')
+@login_required
+def id_owner():
+    """Privately notify the registered owner of a found ID card.
+
+    Body: {words: [name-like words read from the card], listing_id?: int}. A user is notified only
+    if both their first and last name appear on the card and exactly one user matches. The finder
+    learns only whether someone was notified, never who.
+    """
+    from . import vision
+    from .core import notify
+    rate_limit('id_owner',20)
+    p=payload()
+    words=p.get('words')
+    if not isinstance(words,list) or len(words)>20 or not all(isinstance(w,str) and 2<=len(w)<=40 and w.replace('-','').replace("'",'').isalpha() for w in words):
+        raise BadRequest('words must be up to 20 name-like words')
+    words=[w.upper() for w in words]
+    listing_id=p.get('listing_id') or 0
+    if not isinstance(listing_id,int) or listing_id<0: raise BadRequest('listing_id must be a positive integer')
+    db=get_db()
+    candidates=[u for u in db.execute("SELECT id,display_name FROM users WHERE display_name<>'' AND id<>?",(g.user['id'],)).fetchall()
+                if vision.name_matches(words,u['display_name'])]
+    if len(candidates)!=1:
+        return jsonify(notified=False,reason='no unique registered owner')
+    owner=candidates[0]
+    with atomic() as tx:
+        notify(tx,owner['id'],'ID_FOUND',listing_id,
+               'A student ID with your name was turned in on Where RU?. Open the app to verify it is yours and arrange a safe return.',
+               f"id-found:{owner['id']}:{listing_id or g.user['id']}")
+    event_log=current_app.logger.info
+    event_log('ID owner notified for listing %s',listing_id)
+    return jsonify(notified=True)
 
 
 @bp.post('/api/analyses/<int:analysis_id>/apply')

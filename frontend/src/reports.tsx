@@ -631,6 +631,8 @@ type ReportStore = CatalogSnapshot & {
   getClaimAnswer(id: string): string | undefined;
   updateClaim(id: string, status: ClaimStatus): Claim | undefined;
   markNotificationRead(id: string): void;
+  /** In-app notification for another persona (e.g. the owner of a found ID card). */
+  notifyUser(userId: string, reportId: string, title: string, body: string): void;
 };
 
 const ReportContext = createContext<ReportStore | null>(null);
@@ -728,6 +730,10 @@ export function ReportProvider({ children }: { children: ReactNode }) {
     },
     markNotificationRead(id) {
       repository.markNotificationRead(id, currentUserId);
+      refresh();
+    },
+    notifyUser(userId, reportId, title, body) {
+      repository.addNotification({ userId, reportId, title, body, read: false, demo: true });
       refresh();
     },
   }), [currentUser, currentUserId, repository, snapshot, users]);
