@@ -42,8 +42,15 @@ Open `https://<tunnel>.trycloudflare.com/?as=jordan` on the sender phone and
 
 1. **Maya** (receiver) already has a lost report: navy blue Hydro Flask, Hill Center 114.
 2. **Jordan** (sender) photographs the bottle, scans the room and posts it as found.
-3. Within a few seconds the found report appears on Maya's phone. She opens it and claims it,
-   giving the private detail: *Dent near the base and a cat sticker under the lid.*
+3. About 3 seconds later Maya's phone pops up **"Possible match near you: A blue water bottle was
+   found in Hill Center, the same building where you lost it."** (on any screen). She taps it,
+   opens the listing and claims it, giving the private detail: *Dent near the base and a cat
+   sticker under the lid.*
+
+   Matching: a new found report is compared with open lost reports from other people (same
+   category, or a shared distinctive word in the name). The alert says how close it is: same
+   room, same building, about N min walk (from map coordinates), or same campus. Tip: post the
+   found item in the same building as Maya's lost report (the seed uses Hill Center 114).
 4. Jordan gets the "New ownership claim" notification, sees Maya's private answer, approves it and
    arranges the return.
 5. Maya gets "Your claim was approved", then "Item returned".

@@ -356,6 +356,45 @@ function currentClaimStatus(status: string): ClaimStatus {
   return "submitted";
 }
 
+const COLOR_WORDS = new Set(["black", "white", "gray", "grey", "silver", "red", "pink", "orange", "yellow", "gold", "green", "blue", "navy", "purple", "brown", "beige", "clear", "light", "dark"]);
+
+function keywords(report: ItemReport) {
+  return new Set(`${report.itemName} ${report.publicDescription}`.toLowerCase().split(/[^a-z0-9]+/).filter((word) => word.length >= 4 && !COLOR_WORDS.has(word)));
+}
+
+/** Same category, or a shared distinctive word ("hydro", "flask", "airpods"). */
+function itemsMatch(lost: ItemReport, found: ItemReport) {
+  if (lost.category === found.category && lost.category !== "Other") return true;
+  const a = keywords(lost);
+  return [...keywords(found)].some((word) => a.has(word));
+}
+
+function metersBetween([lng1, lat1]: [number, number], [lng2, lat2]: [number, number]) {
+  const rad = Math.PI / 180, dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6_371_000 * Math.asin(Math.sqrt(h));
+}
+
+/** "in Hill Center, the same building where you lost it" / "about 4 min walk from where you lost it". */
+function proximity(lost: ReportLocation | null, found: ReportLocation | null): { near: boolean; text: string } {
+  if (!found) return { near: false, text: "on campus" };
+  const place = found.building || found.area || found.approximateLabel;
+  const sameText = (a?: string, b?: string) => Boolean(a && b && a.trim().toLowerCase() === b.trim().toLowerCase());
+  if (lost && sameText(lost.building || lost.area, found.building || found.area)) {
+    return sameText(lost.room, found.room)
+      ? { near: true, text: `in ${place} ${found.room}, the same room where you lost it` }
+      : { near: true, text: `in ${place}, the same building where you lost it` };
+  }
+  const a = lost?.approximateCoordinates, b = found.approximateCoordinates;
+  if (a && b) {
+    const meters = metersBetween(a, b);
+    if (meters < 150) return { near: true, text: `near ${place}, right by where you lost it` };
+    if (meters < 1200) return { near: true, text: `near ${place}, about ${Math.max(2, Math.round(meters / 80))} min walk from where you lost it` };
+  }
+  if (lost && lost.campus === found.campus) return { near: true, text: `near ${place} on ${found.campus}, the same campus where you lost it` };
+  return { near: false, text: `near ${place} on ${found.campus}` };
+}
+
 export class LocalReportRepository implements ReportRepository {
   private data: CatalogSnapshot;
   private claimAnswers = new Map<string, string>();
@@ -444,8 +483,34 @@ export class LocalReportRepository implements ReportRepository {
     const now = new Date().toISOString();
     const report: ItemReport = { ...input, reporterId: actorId, id: uid("report"), createdAt: now, updatedAt: now };
     this.data = { ...this.data, reports: [report, ...this.data.reports] };
+    this.notifyPossibleMatches(report);
     this.persist();
     return report;
+  }
+
+  /** A new found report alerts owners of matching lost reports (and a new lost report checks
+   * what has already been turned in). The alert says how close the find is. */
+  private notifyPossibleMatches(report: ItemReport) {
+    const open = (candidate: ItemReport) => ["active", "possible_match"].includes(candidate.status);
+    const pairs = report.type === "found"
+      ? this.data.reports.filter((lost) => lost.type === "lost" && open(lost) && lost.reporterId !== report.reporterId && itemsMatch(lost, report)).map((lost) => ({ lost, found: report }))
+      : this.data.reports.filter((found) => found.type === "found" && open(found) && found.reporterId !== report.reporterId && found.visibility !== "private" && itemsMatch(report, found)).map((found) => ({ lost: report, found }));
+    for (const { lost, found } of pairs.slice(0, 3)) {
+      const where = proximity(lost.location, found.location);
+      const name = found.itemName.toLowerCase();
+      const colorAlready = found.color.toLowerCase().split(/\s+/).some((word) => word && name.includes(word));
+      const item = (colorAlready || !found.color ? name : `${found.color.toLowerCase()} ${name}`) || found.category.toLowerCase();
+      this.addNotification({
+        userId: lost.reporterId,
+        reportId: found.id,
+        title: where.near ? "Possible match near you" : "Possible match",
+        body: `A ${item} was found ${where.text}. Tap to check if it's yours.`,
+        read: false,
+        demo: true,
+      });
+      if (lost.status === "active") this.updateInternal(lost.id, { status: "possible_match" });
+      if (found.status === "active") this.updateInternal(found.id, { status: "possible_match" });
+    }
   }
 
   private updateInternal(id: string, updates: Partial<Omit<ItemReport, "id" | "reporterId" | "createdAt" | "updatedAt">>) {

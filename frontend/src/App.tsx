@@ -1082,6 +1082,38 @@ function Profile({ go, email, firstName, lastName, theme, setTheme, demo, setDem
   </main>;
 }
 
+/** Pops up new notifications for this phone's persona on any screen (they arrive through demo sync). */
+function NotificationToast({ onOpen }: { onOpen: (reportId: string) => void }) {
+  const { notifications, currentUserId, markNotificationRead } = useReports();
+  const [shown, setShown] = useState<{ id: string; reportId: string; title: string; body: string } | null>(null);
+  const [seen] = useState(() => new Set<string>());
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    // Everything already present when the app opens (or the persona changes) counts as seen.
+    notifications.forEach((notification) => seen.add(notification.id));
+    setReady(true);
+  }, [currentUserId]);
+  useEffect(() => {
+    if (!ready) return;
+    const fresh = notifications.find((notification) => notification.userId === currentUserId && !notification.read && !seen.has(notification.id));
+    notifications.forEach((notification) => seen.add(notification.id));
+    if (!fresh) return;
+    setShown({ id: fresh.id, reportId: fresh.reportId, title: fresh.title, body: fresh.body });
+    try { navigator.vibrate?.(200); } catch { /* not supported */ }
+  }, [notifications, currentUserId, ready]);
+  useEffect(() => {
+    if (!shown) return;
+    const timer = window.setTimeout(() => setShown(null), 8000);
+    return () => window.clearTimeout(timer);
+  }, [shown]);
+  if (!shown) return null;
+  return <button type="button" className="notification-toast" role="alert" onClick={() => { markNotificationRead(shown.id); onOpen(shown.reportId); setShown(null); }}>
+    <span className="toast-icon"><Icon name="bell" size={20} /></span>
+    <span className="toast-copy"><strong>{shown.title}</strong><small>{shown.body}</small></span>
+    <Icon name="chevron" size={18} />
+  </button>;
+}
+
 function BottomNav({ screen, go }: { screen: Screen; go: (screen: Screen) => void }) {
   const items: [IconName, string, Screen][] = [["home", "Home", "home"], ["search", "Explore", "explore"], ["map", "Map", "map"], ["user", "Profile", "profile"]];
   const activeScreen = screen === "items" ? "profile" : screen === "finderStatus" ? "home" : screen;
@@ -1280,5 +1312,5 @@ export default function App() {
     map: <CampusMapScreen go={go} openReport={openReport} reports={publicReports} firstName={currentUser.firstName} lastName={currentUser.lastName} dark={dark} />, profile: <Profile go={go} email={currentUser.email} firstName={currentUser.firstName} lastName={currentUser.lastName} theme={theme} setTheme={setTheme} demo={demo} setDemo={setDemo} notifications={notifications} setNotifications={setNotifications} sensitiveItems={sensitiveItems} addSensitiveItem={addSensitiveItem} deleteSensitiveItem={deleteSensitiveItem} homeCampus={homeCampus} setHomeCampus={setHomeCampus} />,
   };
   const navScreens: Screen[] = ["home", "explore", "items", "map", "profile", "finderStatus"];
-  return <div className={dark ? "app-root dark" : "app-root"}><div className="app-shell">{screens[screen]}{navScreens.includes(screen) && <BottomNav screen={screen} go={go} />}</div></div>;
+  return <div className={dark ? "app-root dark" : "app-root"}><div className="app-shell">{!["signin", "code", "name"].includes(screen) && <NotificationToast onOpen={openReport} />}{screens[screen]}{navScreens.includes(screen) && <BottomNav screen={screen} go={go} />}</div></div>;
 }
