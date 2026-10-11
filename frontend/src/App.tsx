@@ -284,9 +284,20 @@ function Explore({ go, openReport, state, setState }: { go: (screen: Screen) => 
   const hasFilters = Boolean(query || type !== "all" || campus !== "all" || category !== "all");
   const clearFilters = () => patch({ query: "", type: "all", campus: "all", category: "all" });
   const userNotifications = notifications.filter((notification) => notification.userId === currentUserId && !notification.read);
+  const [showNotifications, setShowNotifications] = useState(false);
   return <main className="tab-page explore-page">
     <header className="title-header explore-title"><div><h1>Explore</h1><p>Lost &amp; found across Rutgers</p></div><button className="report-action" onClick={() => setShowReportChooser(!showReportChooser)}><Icon name="plus" size={17} /> Report</button></header>
-    {userNotifications.map((notification) => <button className="catalog-notification" onClick={() => { markNotificationRead(notification.id); openReport(notification.reportId); }} key={notification.id}><Icon name="bell" size={18} /><span><strong>{notification.title}</strong><small>{notification.body} · Demo in-app event</small></span><Icon name="chevron" size={17} /></button>)}
+    {userNotifications.length > 0 && <div className={`notification-menu ${showNotifications ? "open" : ""}`}>
+      <button type="button" className="notification-menu-toggle" aria-expanded={showNotifications} onClick={() => setShowNotifications(!showNotifications)}>
+        <span className="notification-bell"><Icon name="bell" size={18} /><b>{userNotifications.length}</b></span>
+        <span><strong>{userNotifications.length === 1 ? "1 new notification" : `${userNotifications.length} new notifications`}</strong><small>{showNotifications ? "Tap to hide" : userNotifications[0].title}</small></span>
+        <Icon name="chevron" size={17} />
+      </button>
+      {showNotifications && <div className="notification-menu-list">
+        {userNotifications.map((notification) => <button className="catalog-notification" onClick={() => { markNotificationRead(notification.id); openReport(notification.reportId); }} key={notification.id}><Icon name="bell" size={18} /><span><strong>{notification.title}</strong><small>{notification.body}</small></span><Icon name="chevron" size={17} /></button>)}
+        <button type="button" className="notification-clear" onClick={() => { userNotifications.forEach((notification) => markNotificationRead(notification.id)); setShowNotifications(false); }}>Mark all as read</button>
+      </div>}
+    </div>}
     {showReportChooser && <div className="report-chooser"><button onClick={() => go("capture")}><Icon name="camera" /><span><strong>I found something</strong><small>Photograph and report it safely</small></span></button><button onClick={() => go("lost")}><Icon name="search" /><span><strong>I lost something</strong><small>Create a lost-item listing</small></span></button></div>}
     <label className="catalog-search"><Icon name="search" size={19} /><input aria-label="Search reports" value={query} onChange={(event) => patch({ query: event.target.value })} placeholder="Search items, categories, or places" />{query && <button aria-label="Clear search" onClick={() => patch({ query: "" })}><Icon name="x" size={16} /></button>}</label>
     <div className="catalog-tabs" aria-label="Report type">{(["all", "lost", "found"] as const).map((value) => <button className={type === value ? "active" : ""} aria-pressed={type === value} onClick={() => patch({ type: value })} key={value}>{value[0].toUpperCase() + value.slice(1)}</button>)}</div>

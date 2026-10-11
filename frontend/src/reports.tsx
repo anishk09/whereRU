@@ -358,15 +358,28 @@ function currentClaimStatus(status: string): ClaimStatus {
 
 const COLOR_WORDS = new Set(["black", "white", "gray", "grey", "silver", "red", "pink", "orange", "yellow", "gold", "green", "blue", "navy", "purple", "brown", "beige", "clear", "light", "dark"]);
 
+// Words that say nothing about which specific item it is ("bottle" matches every bottle).
+const GENERIC_WORDS = new Set(["with", "from", "near", "this", "that", "have", "found", "lost", "left", "item", "items", "small", "large", "little", "some", "inside", "outside", "front", "back", "side", "bottle", "water", "case", "card", "cards", "keys", "bag", "bags", "phone", "rutgers", "campus", "room", "hall", "floor", "table", "desk", "seat", "under", "sample", "demo", "photo", "color", "colored"]);
+
 function keywords(report: ItemReport) {
-  return new Set(`${report.itemName} ${report.publicDescription}`.toLowerCase().split(/[^a-z0-9]+/).filter((word) => word.length >= 4 && !COLOR_WORDS.has(word)));
+  return new Set(`${report.itemName} ${report.publicDescription}`.toLowerCase().split(/[^a-z0-9]+/).filter((word) => word.length >= 4 && !COLOR_WORDS.has(word) && !GENERIC_WORDS.has(word)));
 }
 
-/** Same category, or a shared distinctive word ("hydro", "flask", "airpods"). */
-function itemsMatch(lost: ItemReport, found: ItemReport) {
-  if (lost.category === found.category && lost.category !== "Other") return true;
+function colorWords(value: string) {
+  return new Set(value.toLowerCase().split(/[^a-z]+/).filter((word) => COLOR_WORDS.has(word) && word !== "light" && word !== "dark"));
+}
+
+/** 0 = not a match. Same category is required; then a shared distinctive name word (3 points)
+ * or a matching color (1 point) must back it up, plus a bonus when they're in the same place. */
+function matchScore(lost: ItemReport, found: ItemReport) {
+  if (lost.category !== found.category) return 0;
   const a = keywords(lost);
-  return [...keywords(found)].some((word) => a.has(word));
+  const shared = [...keywords(found)].filter((word) => a.has(word)).length;
+  const lostColors = colorWords(`${lost.color} ${lost.itemName}`);
+  const colorMatch = [...colorWords(`${found.color} ${found.itemName}`)].some((color) => lostColors.has(color) || (color === "navy" && lostColors.has("blue")) || (color === "blue" && lostColors.has("navy")));
+  if (!shared && !colorMatch) return 0;
+  const sameBuilding = Boolean(lost.location?.building && found.location?.building && lost.location.building.toLowerCase() === found.location.building.toLowerCase());
+  return 3 * shared + (colorMatch ? 1 : 0) + (sameBuilding ? 2 : 0) + (lost.location?.campus === found.location?.campus ? 1 : 0);
 }
 
 function metersBetween([lng1, lat1]: [number, number], [lng2, lat2]: [number, number]) {
@@ -491,11 +504,19 @@ export class LocalReportRepository implements ReportRepository {
   /** A new found report alerts owners of matching lost reports (and a new lost report checks
    * what has already been turned in). The alert says how close the find is. */
   private notifyPossibleMatches(report: ItemReport) {
+    // Only a newly posted FOUND item triggers alerts, and only to the owner of the single best
+    // matching open LOST listing (same category plus a shared name word or matching color).
+    if (report.type !== "found") return;
     const open = (candidate: ItemReport) => ["active", "possible_match"].includes(candidate.status);
-    const pairs = report.type === "found"
-      ? this.data.reports.filter((lost) => lost.type === "lost" && open(lost) && lost.reporterId !== report.reporterId && itemsMatch(lost, report)).map((lost) => ({ lost, found: report }))
-      : this.data.reports.filter((found) => found.type === "found" && open(found) && found.reporterId !== report.reporterId && found.visibility !== "private" && itemsMatch(report, found)).map((found) => ({ lost: report, found }));
-    for (const { lost, found } of pairs.slice(0, 3)) {
+    const ranked = this.data.reports
+      .filter((lost) => lost.type === "lost" && open(lost) && lost.reporterId !== report.reporterId)
+      .map((lost) => ({ lost, score: matchScore(lost, report) }))
+      .filter((pair) => pair.score > 0)
+      .sort((a, b) => b.score - a.score);
+    if (!ranked.length) return;
+    const { lost } = ranked[0];
+    const found = report;
+    {
       const where = proximity(lost.location, found.location);
       const name = found.itemName.toLowerCase();
       const colorAlready = found.color.toLowerCase().split(/\s+/).some((word) => word && name.includes(word));
@@ -512,6 +533,7 @@ export class LocalReportRepository implements ReportRepository {
       if (found.status === "active") this.updateInternal(found.id, { status: "possible_match" });
     }
   }
+
 
   private updateInternal(id: string, updates: Partial<Omit<ItemReport, "id" | "reporterId" | "createdAt" | "updatedAt">>) {
     const current = this.getById(id);

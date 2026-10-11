@@ -47,10 +47,13 @@ Open `https://<tunnel>.trycloudflare.com/?as=jordan` on the sender phone and
    opens the listing and claims it, giving the private detail: *Dent near the base and a cat
    sticker under the lid.*
 
-   Matching: a new found report is compared with open lost reports from other people (same
-   category, or a shared distinctive word in the name). The alert says how close it is: same
-   room, same building, about N min walk (from map coordinates), or same campus. Tip: post the
-   found item in the same building as Maya's lost report (the seed uses Hill Center 114).
+   Matching: only a newly posted **found** report sends alerts, and only to the owner of the
+   single best matching open **lost** listing. A match needs the same category plus either a
+   shared distinctive word in the name ("hydro", "flask"; generic words like "bottle" don't
+   count) or the same color (navy and blue count as the same). Posting keys, a backpack or a
+   green bottle does not alert Maya. The alert says how close it is: same room, same building,
+   about N min walk (from map coordinates), or same campus. Unread alerts collect in a
+   collapsible "N new notifications" menu at the top of Explore.
 4. Jordan gets the "New ownership claim" notification, sees Maya's private answer, approves it and
    arranges the return.
 5. Maya gets "Your claim was approved", then "Item returned".
