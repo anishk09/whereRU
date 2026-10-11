@@ -203,3 +203,27 @@ export async function myMatches(): Promise<ApiMatch[]> {
   return (await request<{ matches: ApiMatch[] }>("GET", "/api/matches")).matches;
 }
 
+
+// ----- Shared demo catalog (live demos with several phones; see docs/DEMO_SERVER.md) -----
+
+export type DemoCatalog = { reports: unknown[]; claims: unknown[]; notifications: unknown[] };
+
+export type DemoCatalogState = {
+  generation: string | null;
+  version: number;
+  catalog: DemoCatalog | null;
+  claim_answers: Record<string, string>;
+  accepted?: boolean;
+};
+
+/** The shared catalog, or null when the backend isn't running. Throws ApiError 404 when demo sync is off. */
+export async function getDemoCatalog(): Promise<DemoCatalogState | null> {
+  if (!(await isOnline())) return null;
+  return request<DemoCatalogState>("GET", "/api/demo/catalog", undefined, 8000);
+}
+
+/** Sends this phone's catalog; the server merges it and returns the shared result. */
+export async function pushDemoCatalog(body: { generation: string | null; catalog: DemoCatalog; claim_answers: Record<string, string> }): Promise<DemoCatalogState | null> {
+  if (!(await ensureSession())) return null;
+  return request<DemoCatalogState>("POST", "/api/demo/catalog", body, 15000);
+}

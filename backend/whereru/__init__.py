@@ -103,6 +103,6 @@ def create_app(test_config=None):
     @app.get('/api/health')
     def health(): return jsonify(status='ok',app='WhereRU?',ai_mode=app.config['AI_MODE'],auth_delivery=app.config['AUTH_DELIVERY'])
 
-    from . import auth,listings,media,matching,recovery,maps,ai
-    for module in (auth,listings,media,matching,recovery,maps,ai): app.register_blueprint(module.bp)
+    from . import auth,listings,media,matching,recovery,maps,ai,demo_sync
+    for module in (auth,listings,media,matching,recovery,maps,ai,demo_sync): app.register_blueprint(module.bp)
     return app

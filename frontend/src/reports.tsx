@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ImgHTMLAttributes, type ReactNode } from "react";
 import type { CampusId, LocationSource } from "./roomRecognition";
 import type { PlaceType } from "./mapData";
+import { startDemoSync, type SyncCatalog } from "./demoSync";
 
 export type ReportType = "lost" | "found";
 export type ReportStatus = "active" | "possible_match" | "claim_under_review" | "returned" | "closed";
@@ -576,6 +577,22 @@ export class LocalReportRepository implements ReportRepository {
       notifications: [...this.data.notifications],
     };
   }
+
+  // Shared demo catalog (demoSync.ts). Claim answers travel too, so the finder's phone can
+  // review a claim made on the owner's phone.
+  syncExport() {
+    return { catalog: persistentSnapshot(this.data), claimAnswers: Object.fromEntries(this.claimAnswers) };
+  }
+
+  syncReplace(catalog: SyncCatalog, claimAnswers: Record<string, string>) {
+    this.data = {
+      reports: catalog.reports ?? [],
+      claims: catalog.claims ?? [],
+      notifications: catalog.notifications ?? [],
+    };
+    for (const [id, answer] of Object.entries(claimAnswers)) this.claimAnswers.set(id, answer);
+    this.persist();
+  }
 }
 
 export function toPublicReport(report: ItemReport): PublicItemReport {
@@ -618,14 +635,50 @@ type ReportStore = CatalogSnapshot & {
 
 const ReportContext = createContext<ReportStore | null>(null);
 
+const PERSONA_KEY = "where-ru.persona";
+
+/** Which demo persona this phone plays: ?as=jordan (sender) or ?as=maya (receiver), remembered per phone. */
+function initialPersona(): DemoUser["id"] {
+  const requested = new URLSearchParams(window.location.search).get("as")?.toLowerCase();
+  const fromLink = requested === "maya" || requested === "demo-maya" ? "demo-maya" : requested === "jordan" || requested === "demo-jordan" ? "demo-jordan" : null;
+  try {
+    if (fromLink) localStorage.setItem(PERSONA_KEY, fromLink);
+    const saved = fromLink ?? localStorage.getItem(PERSONA_KEY);
+    if (saved === "demo-maya" || saved === "demo-jordan") return saved;
+  } catch {
+    if (fromLink) return fromLink;
+  }
+  return "demo-jordan";
+}
+
+function savePersona(id: DemoUser["id"]) {
+  try {
+    localStorage.setItem(PERSONA_KEY, id);
+  } catch {
+    // The persona still applies for this session.
+  }
+}
+
 export function ReportProvider({ children }: { children: ReactNode }) {
-  const repositoryRef = useRef<ReportRepository | null>(null);
+  const repositoryRef = useRef<LocalReportRepository | null>(null);
   if (!repositoryRef.current) repositoryRef.current = new LocalReportRepository();
   const repository = repositoryRef.current;
   const [snapshot, setSnapshot] = useState(() => repository.snapshot());
-  const [currentUserId, setCurrentUserId] = useState<DemoUser["id"]>("demo-jordan");
+  const [currentUserId, setCurrentUserId] = useState<DemoUser["id"]>(initialPersona);
   const [users, setUsers] = useState(initialDemoUsers);
-  const refresh = () => setSnapshot(repository.snapshot());
+  const syncRef = useRef<ReturnType<typeof startDemoSync> | null>(null);
+  useEffect(() => {
+    const sync = startDemoSync(repository, () => setSnapshot(repository.snapshot()));
+    syncRef.current = sync;
+    return () => {
+      sync.stop();
+      syncRef.current = null;
+    };
+  }, [repository]);
+  const refresh = () => {
+    setSnapshot(repository.snapshot());
+    syncRef.current?.notifyLocalChange();
+  };
   const currentUser = users.find((user) => user.id === currentUserId) ?? users[0];
   const value = useMemo<ReportStore>(() => ({
     ...snapshot,
@@ -633,10 +686,14 @@ export function ReportProvider({ children }: { children: ReactNode }) {
     currentUser,
     users,
     switchUser(id) {
-      if (users.some((user) => user.id === id)) setCurrentUserId(id);
+      if (users.some((user) => user.id === id)) {
+        setCurrentUserId(id);
+        savePersona(id);
+      }
     },
     updatePrimaryUser(identity) {
-      setUsers((current) => current.map((user) => user.id === "demo-jordan" ? { ...user, ...identity } : user));
+      // Onboarding names whichever persona this phone is playing.
+      setUsers((current) => current.map((user) => user.id === currentUserId ? { ...user, ...identity } : user));
     },
     publicReports: snapshot.reports
       .filter((report) => report.status !== "closed" && (report.visibility === "public" || report.visibility === "trusted-only" && report.type === "found"))
