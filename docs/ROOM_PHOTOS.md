@@ -107,19 +107,22 @@ the slower detail matching only on the 4 closest rooms, so adding rooms barely s
 
 ## Item recognition (found-item photos)
 
+Recommended: `pip install open_clip_torch` (downloads the OpenAI CLIP ViT-B/32 weights, ~350 MB, on
+first start). CLIP matches the photo against written descriptions of each item type ("a wallet",
+"a Rutgers University student ID card", "an insulated metal water bottle", ...) and of each color
+("a black water bottle"), so it works on real phone photos without training, and the color comes
+from the item rather than the background. Photos that look like an empty table or a room get no
+guess. Cutoffs: `CLIP_MIN_PROBABILITY` (default 0.45), `CLIP_MIN_COLOR` (0.30).
+
 `data/items/` is the team's synthetic "campus lost items" set: 120 images, 11 classes, with the
 Rutgers ID (RUID) as the priority class. Names are fictional, photos are silhouettes, there are
-no ID numbers and no real seal, so no image is a usable ID. See `data/items/README.md`.
+no ID numbers and no real seal. It is the test set for CLIP (every image is unseen), and the
+fallback when CLIP isn't installed (DINOv2 nearest classes, which works poorly on real photos
+because the examples are illustrations).
 
-With PyTorch installed, a found-item photo is compared with these examples using the same
-DINOv2 model as room scanning. Each variant counts once, and a class scores the mean of its 3
-closest variants. If the best class is clear enough (`ITEM_MIN_SIMILARITY`, `ITEM_MIN_MARGIN` in
-`.env`), the app pre-fills the item name and category. Wallets, phones, keys and ID cards are
-marked sensitive, so they stay restricted.
+Wallets, phones, keys, laptops and ID cards are marked sensitive, so their listings stay restricted.
 
 ```bash
-python tools/test_item_photo.py --eval              # accuracy on unseen variants of the set
+python tools/test_item_photo.py --eval                 # accuracy on the 120 dataset images
 python tools/test_item_photo.py ~/Downloads/keys.jpg   # try real phone photos
 ```
-
-The examples are illustrations, so check real photos before relying on the numbers.

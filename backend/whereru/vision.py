@@ -202,7 +202,9 @@ def reference_embedding(path):
 def warm_cache(rooms, base):
     """Precompute reference features so the first scan isn't slow. Safe to run in a thread."""
     base = Path(base).resolve()
-    warm_items(base)
+    warm_clip()
+    if clip_model() is None:
+        warm_items(base)
     for room in rooms:
         for name in room.get('images', []):
             path = (base / name).resolve()
@@ -313,14 +315,48 @@ ITEM_CLASSES = {
     'wallet': ('Wallet', 'wallet', 'P1', True),
     'phone': ('Phone', 'electronics', 'P1', True),
     'keys': ('Keys', 'keys', 'P1', True),
+    'laptop': ('Laptop', 'electronics', 'P1', True),
     'other_id_card': ('ID card', 'id_card', 'P2', True),
     'eyeglasses': ('Glasses', 'other', 'P2', False),
     'earbuds': ('Earbuds', 'electronics', 'P2', False),
     'headphones': ('Headphones', 'electronics', 'P2', False),
     'backpack': ('Backpack', 'bag', 'P2', False),
+    'calculator': ('Calculator', 'electronics', 'P2', False),
+    'charger': ('Charger', 'electronics', 'P3', False),
+    'jacket': ('Jacket', 'clothing', 'P2', False),
+    'hat': ('Hat', 'clothing', 'P3', False),
+    'notebook': ('Notebook', 'other', 'P3', False),
     'water_bottle': ('Water bottle', 'bottle', 'P3', False),
     'umbrella': ('Umbrella', 'other', 'P3', False),
 }
+
+# Text descriptions for zero-shot recognition (CLIP). Several phrasings per class are averaged.
+ITEM_PROMPTS = {
+    'ruid': ['a Rutgers University student ID card', 'a college ID card with a red header and a photo of a person',
+             'a red and white university ID badge on a lanyard'],
+    'wallet': ['a wallet', 'a leather bifold wallet', 'a small card holder wallet'],
+    'phone': ['a smartphone', 'a mobile phone in a case', 'an iPhone lying on a table'],
+    'keys': ['a set of keys', 'keys on a key ring', 'a car key fob with keys'],
+    'laptop': ['a laptop computer', 'a closed laptop', 'a MacBook'],
+    'other_id_card': ["a driver's license", 'a plastic ID card', 'an employee badge'],
+    'eyeglasses': ['a pair of eyeglasses', 'sunglasses', 'reading glasses'],
+    'earbuds': ['wireless earbuds in a charging case', 'AirPods case', 'a pair of earbuds'],
+    'headphones': ['over-ear headphones', 'a headset', 'a pair of headphones'],
+    'backpack': ['a backpack', 'a school bag', 'a tote bag'],
+    'calculator': ['a calculator', 'a graphing calculator'],
+    'charger': ['a phone charger with a cable', 'a laptop charger', 'a USB cable'],
+    'jacket': ['a jacket', 'a hoodie', 'a sweatshirt'],
+    'hat': ['a baseball cap', 'a beanie hat'],
+    'notebook': ['a notebook', 'a textbook', 'a binder'],
+    'water_bottle': ['a water bottle', 'an insulated metal water bottle', 'a plastic drink bottle', 'a tumbler cup'],
+    'umbrella': ['an umbrella', 'a folded umbrella'],
+}
+# Photos with no clear item (empty desk, classroom, blurry) should not get a guess.
+BACKGROUND_PROMPTS = ['an empty table', 'a classroom', 'a room with chairs', 'a blurry photo', 'a floor']
+ITEM_COLORS = ['black', 'white', 'gray', 'silver', 'red', 'pink', 'orange', 'yellow', 'gold', 'green',
+               'blue', 'navy', 'purple', 'brown', 'beige', 'clear']
+CLIP_MIN_PROBABILITY = float(os.getenv('CLIP_MIN_PROBABILITY', '0.45'))
+CLIP_MIN_COLOR = float(os.getenv('CLIP_MIN_COLOR', '0.30'))
 
 
 def _center_crop(image, keep=0.8):
@@ -395,8 +431,8 @@ def _score_classes(query, refs, skip=None):
     return sorted(((float(np.mean(sorted(v, reverse=True)[:3])), c) for c, v in by_class.items()), reverse=True)
 
 
-def classify_item(raw, base):
-    """Best-matching item class for a found-item photo, or None if the model isn't available.
+def classify_item_dataset(raw, base):
+    """Fallback: nearest classes in the campus lost-items set (DINOv2). None if unavailable.
 
     Each class scores the mean of its 3 most similar variants. Returns
     {class, title, category, priority, sensitive, similarity, lead, confident, runner_up}.
@@ -420,37 +456,145 @@ def classify_item(raw, base):
     return result
 
 
+_clip = None
+_clip_state = 'unloaded'
+_clip_lock = threading.Lock()
+_clip_text = {}
+
+
+def clip_model():
+    """(model, preprocess, tokenizer) for OpenAI CLIP ViT-B/32 via open_clip, or None."""
+    global _clip, _clip_state
+    with _clip_lock:
+        if _clip_state == 'unloaded':
+            try:
+                import open_clip
+                import torch  # noqa: F401
+                model, _, preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='openai')
+                _clip = (model.eval(), preprocess, open_clip.get_tokenizer('ViT-B-32'))
+                _clip_state = 'ready'
+                _log('item model ready (CLIP ViT-B/32)')
+            except Exception as error:
+                _clip_state = 'unavailable'
+                _log(f'item model unavailable, using the lost-items set instead ({type(error).__name__}: {error})')
+        return _clip
+
+
+def _clip_text_features(key, prompts):
+    """Unit text embeddings, cached; one row per prompt."""
+    if key not in _clip_text:
+        import torch
+        model, _, tokenizer = _clip
+        with _clip_lock, torch.inference_mode():
+            feats = model.encode_text(tokenizer(prompts)).float()
+        _clip_text[key] = (feats / feats.norm(dim=-1, keepdim=True)).numpy()
+    return _clip_text[key]
+
+
+def _class_matrix():
+    names = list(ITEM_PROMPTS) + ['_background']
+    rows = []
+    for name in names:
+        prompts = BACKGROUND_PROMPTS if name == '_background' else ITEM_PROMPTS[name]
+        mean = _clip_text_features('cls:' + name, [f'a photo of {p}' if not p.startswith('a photo') else p for p in prompts]).mean(0)
+        rows.append(mean / np.linalg.norm(mean))
+    return names, np.stack(rows)
+
+
+def warm_clip():
+    if clip_model() is not None:
+        _class_matrix()
+
+
+def _softmax(x):
+    e = np.exp(x - x.max())
+    return e / e.sum()
+
+
+def classify_item(raw, base):
+    """What the found item is, and its color.
+
+    Uses CLIP zero-shot (text descriptions of each class; works on real photos without training).
+    Falls back to the campus lost-items set (DINOv2) when CLIP isn't installed. Returns
+    {class, title, category, priority, sensitive, similarity, lead, runner_up, confident, color?}
+    or None when no model is available.
+    """
+    if clip_model() is None:
+        return classify_item_dataset(raw, base)
+    import torch
+    from PIL import Image
+    image = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError('Unreadable image')
+    model, preprocess, _ = _clip
+    pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    with _clip_lock, torch.inference_mode():
+        feat = model.encode_image(preprocess(pil).unsqueeze(0)).float()[0].numpy()
+    feat /= np.linalg.norm(feat)
+    names, matrix = _class_matrix()
+    probs = _softmax(100.0 * matrix @ feat)
+    order = np.argsort(-probs)
+    top, second = names[order[0]], names[order[1]]
+    p_top, p_second = float(probs[order[0]]), float(probs[order[1]])
+    if top == '_background':
+        _log(f'item: no clear item (background {p_top:.2f}, next {second} {p_second:.2f})')
+        return {'class': None, 'confident': False, 'similarity': p_top, 'lead': p_top - p_second,
+                'runner_up': second, 'title': '', 'category': 'other', 'priority': 'P3', 'sensitive': False}
+    # Color of the item itself: "a black water bottle" vs "a red water bottle", not the background.
+    noun = ITEM_PROMPTS[top][0].removeprefix('a ').removeprefix('an ')
+    color_feats = _clip_text_features('color:' + top, [f'a photo of a {c} {noun}' for c in ITEM_COLORS])
+    color_probs = _softmax(100.0 * color_feats @ feat)
+    color = ITEM_COLORS[int(color_probs.argmax())] if color_probs.max() >= CLIP_MIN_COLOR else None
+    title, category, priority, sensitive = ITEM_CLASSES[top]
+    confident = p_top >= CLIP_MIN_PROBABILITY
+    _log(f"item: {top} {p_top:.2f} (next {second} {p_second:.2f}), color {color or '?'} "
+         f"{color_probs.max():.2f} -> {'suggested' if confident else 'not sure'}")
+    return {'class': top, 'title': title, 'category': category, 'priority': priority, 'sensitive': sensitive,
+            'similarity': p_top, 'lead': p_top - p_second, 'runner_up': second, 'confident': confident,
+            'color': color}
+
+
 # Named colors in HSV terms. Hue in OpenCV is 0-179.
 _HUES = [(0, 'red'), (10, 'orange'), (22, 'yellow'), (35, 'green'), (85, 'teal'),
          (100, 'blue'), (125, 'purple'), (150, 'pink'), (170, 'red')]
 
 
 def _color_name(h, s, v):
-    if v < 50:
+    # Dark pixels pick up a tint from lighting; call them black unless clearly colored.
+    if v < 60 or (v < 100 and s < 110):
         return 'black'
-    if s < 35:
+    if s < 40:
         return 'white' if v > 200 else 'gray'
     name = 'red'
     for start, label in _HUES:
         if h >= start:
             name = label
+    if name in ('orange', 'red') and v < 160 and s < 210 and h < 25:
+        return 'brown'
     if name == 'blue' and v < 110:
         return 'navy'
     return name
 
 
 def dominant_color(raw):
-    """Most common color in the central area of a photo, where the item usually is."""
+    """Main color of the object in the middle of a photo (fallback when CLIP isn't installed).
+
+    Clusters the colors, then picks the cluster that is common in the center but rare along the
+    edges, so a table or chairs behind a narrow item don't win.
+    """
     image = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
     if image is None:
         return None
-    h, w = image.shape[:2]
-    center = image[h // 4: 3 * h // 4, w // 4: 3 * w // 4]
-    small = cv2.resize(center, (64, 64), interpolation=cv2.INTER_AREA)
+    small = cv2.resize(image, (96, 96), interpolation=cv2.INTER_AREA)
     pixels = np.float32(small.reshape(-1, 3))
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
-    _, labels, centers = cv2.kmeans(pixels, 4, None, criteria, 3, cv2.KMEANS_PP_CENTERS)
-    counts = np.bincount(labels.flatten(), minlength=4)
-    bgr = np.uint8([[centers[int(counts.argmax())]]])
+    _, labels, centers = cv2.kmeans(pixels, 5, None, criteria, 3, cv2.KMEANS_PP_CENTERS)
+    labels = labels.reshape(96, 96)
+    yy, xx = np.mgrid[0:96, 0:96]
+    dist = np.hypot(yy - 47.5, xx - 47.5) / 47.5
+    center = labels[dist < 0.35]
+    border = labels[dist > 0.85]
+    scores = [np.mean(center == k) - 0.7 * np.mean(border == k) for k in range(5)]
+    bgr = np.uint8([[centers[int(np.argmax(scores))]]])
     hue, sat, val = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)[0][0]
     return _color_name(int(hue), int(sat), int(val))

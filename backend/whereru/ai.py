@@ -122,16 +122,16 @@ def analyze(listing_id):
 def local_item_suggestion(raw):
     """On-device item suggestion: color from the photo, item type from the campus lost-items set."""
     from . import vision
-    color=vision.dominant_color(raw)
-    out={'attributes':{'color':color} if color else {}}
     try: item=vision.classify_item(raw,Path(current_app.config['CLASSROOM_CATALOG']).parent)
     except ValueError: item=None
+    color=(item or {}).get('color') or vision.dominant_color(raw)
+    out={'attributes':{'color':color} if color else {}}
     if item and item['confident']:
         named=item['class'] not in ('ruid','other_id_card') and color
         out.update(title=f"{color.capitalize()} {item['title'].lower()}" if named else item['title'],
             category=item['category'],priority=item['priority'],sensitive=item['sensitive'],
-            uncertainty=(f"On-device recognition: looks like {item['title'].lower()} (similarity {item['similarity']:.2f}, "
-                f"next guess {item['runner_up'].replace('_',' ')}). Color estimated from the photo. Check everything before saving."))
+            uncertainty=(f"On-device recognition: looks like {item['title'].lower()} (score {item['similarity']:.2f}, "
+                f"next guess {str(item['runner_up']).replace('_',' ')}). Check everything before saving."))
     else:
         reason='the vision model is not installed' if item is None else 'the item type was not clear enough to suggest'
         out['uncertainty']=f'On-device analysis: color estimated from the photo; {reason}, so add the item type yourself.'
