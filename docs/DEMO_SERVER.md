@@ -11,7 +11,14 @@ different phones. A seed script fills the campus with fake students so the app l
 
 The persona sticks to that phone after the first visit. It can also be switched in Settings → Demo persona.
 
-## Set up (once per demo)
+## One command
+
+```bash
+./demo.sh           # stops old servers, starts backend + app + tunnel, prints both phone links
+./demo.sh --fresh   # same, with freshly seeded demo data
+```
+
+## Set up by hand
 
 ```bash
 # Terminal 1: backend (from the copy that has the room photos)
