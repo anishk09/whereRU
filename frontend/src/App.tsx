@@ -1,7 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type ReactNode } from "react";
 import CampusMap, { campusViews, type CampusName } from "./CampusMap";
 import { campusPlaces, type ListingProperties, type PlaceType } from "./mapData";
-import { Button, Icon, type IconName } from "./ui";
+import { BrandIcon, Button, Icon, Wordmark, type IconName } from "./ui";
 import LocationPicker, { DemoTag, LocationSummary, PhotoButtons } from "./LocationPicker";
 import { activeRecognizer, formatLocation, shortLocation, sourceLabel, type RoomLocation } from "./roomRecognition";
 
@@ -41,8 +41,15 @@ type TimelinePlace = {
   high: boolean;
 };
 
-function Brand() {
-  return <div className="brand"><strong>CampusFind</strong></div>;
+function Brand({ size = "header", subtitle = false }: { size?: "header" | "welcome"; subtitle?: boolean }) {
+  const isWelcome = size === "welcome";
+  return <div className={`brand ${isWelcome ? "welcome-brand" : ""}`}>
+    <BrandIcon className={isWelcome ? "welcome-logo" : "brand-logo"} />
+    <span className={isWelcome ? "welcome-brand-copy" : "brand-copy"}>
+      <Wordmark size={size} />
+      {subtitle && <small>Student-to-student lost &amp; found</small>}
+    </span>
+  </div>;
 }
 
 function BackHeader({ title, onBack, action }: { title: string; onBack: () => void; action?: ReactNode }) {
@@ -78,9 +85,8 @@ function SignIn({ go, email, setEmail }: { go: (screen: Screen) => void; email: 
   };
   return <main className="welcome-screen">
     <div className="welcome-content">
-      <div className="welcome-brand"><span className="welcome-logo"><Icon name="search" size={19} /></span>CampusFind</div>
+      <Brand size="welcome" subtitle />
       <div className="welcome-copy">
-        <p>Student-to-student lost & found</p>
         <h1>Help it find its way home.</h1>
         <span>Snap the item, scan the room, and we privately reach the students who were just there.</span>
       </div>
@@ -174,9 +180,9 @@ function Home({ go, firstName, lastName }: { go: (screen: Screen) => void; first
   const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
   return <main className="tab-page">
     <header className="home-header"><Brand /><button className="avatar" aria-label={`Open ${firstName}'s profile`} onClick={() => go("profile")}>{initials}</button></header>
-    <section className="welcome"><p className="eyebrow">Good afternoon, {firstName}</p><h1>What can we help you find?</h1></section>
+    <section className="welcome"><p className="eyebrow">Good afternoon, {firstName}</p><h1>What are we looking for?</h1></section>
     <section className="action-grid">
-      <button className="action-card found" onClick={() => go("capture")}><span className="action-icon"><Icon name="camera" size={29} /></span><span><strong>I found<br />something</strong><small>Help it find its owner</small></span><Icon name="chevron" size={18} /></button>
+      <button className="action-card found" onClick={() => go("capture")}><span className="action-icon"><Icon name="camera" size={29} /></span><span><strong>I found<br />something</strong><small>Help it ask Where RU?</small></span><Icon name="chevron" size={18} /></button>
       <button className="action-card lost" onClick={() => go("lost")}><span className="action-icon"><Icon name="search" size={29} /></span><span><strong>I lost<br />something</strong><small>Find your item</small></span><Icon name="chevron" size={18} /></button>
     </section>
     <section className="section priority-requests">
@@ -334,10 +340,10 @@ function OwnerNotice({ go, report }: { go: (screen: Screen) => void; report: Fou
     <BackHeader title="Notification preview" onBack={() => go("finderStatus")} />
     <div className="phone-lock">
       <div className="lock-top"><span>{at.replace(/\s?[AP]M/, "")}</span><small>Today</small></div>
-      <article className="push-card"><div className="push-head"><span className="app-mini"><Icon name="map" size={14} /></span><strong>CAMPUSFIND</strong><small>now</small></div><h3>Possible match found</h3><p>A {title} may match your lost listing near <strong>{short}</strong>.</p></article>
+      <article className="push-card"><div className="push-head"><BrandIcon className="app-mini" /><Wordmark size="notification" /><small>now</small></div><h3>Where RU? Possible match</h3><p>Is this your {title}? It was found in <strong>{where}</strong>.</p></article>
     </div>
     <p className="eyebrow center">IN-APP NOTIFICATION</p>
-    <article className="claim-card"><span className="claim-icon"><Icon name="search" /></span><h2>Does this sound like yours?</h2><p>A {title} was found in <strong>{where}</strong> and may match the listing you posted.</p><div className="found-meta"><Icon name="clock" size={18} /><span><strong>Found today at {at}</strong><small>Matched against your lost listing</small></span></div><Button onClick={() => go("ownership")}>That's mine</Button><Button variant="ghost" onClick={() => go("home")}>Not mine</Button></article>
+    <article className="claim-card"><span className="claim-icon"><Icon name="search" /></span><h2>Is this yours?</h2><p>A {title} was found in <strong>{where}</strong> and may match the listing you posted.</p><div className="found-meta"><Icon name="clock" size={18} /><span><strong>Found today at {at}</strong><small>Matched against your lost listing</small></span></div><Button onClick={() => go("ownership")}>That's mine</Button><Button variant="ghost" onClick={() => go("home")}>Not mine</Button></article>
     <p className="privacy-note"><Icon name="shield" size={16} /> The finder won't know you received this.</p>
   </main>;
 }
@@ -375,7 +381,7 @@ function Handoff({ go, itemValue = "Everyday item" }: { go: (screen: Screen) => 
   const [dropLocation, setDropLocation] = useState("Student Center information desk");
   const [readyForPickup, setReadyForPickup] = useState(false);
   const [problemReported, setProblemReported] = useState(false);
-  if (returned) return <ResultState tone="green" icon="check" title="Item returned!" text="You closed the loop. Thanks for helping a fellow Scarlet Knight." button="Back to home" onClick={() => go("home")} eyebrow="HANDOFF COMPLETE" />;
+  if (returned) return <ResultState tone="green" icon="check" title="Found you!" text="Back where it belongs. Thanks for helping a fellow Scarlet Knight." button="Back to home" onClick={() => go("home")} eyebrow="HANDOFF COMPLETE" />;
   if (readyForPickup) return <main className="simple-page with-bottom">
     <BackHeader title="Item pickup" onBack={() => setReadyForPickup(false)} />
     <div className="verified-hero"><div className="result-icon green"><Icon name="check" size={30} /></div><h1>Ready for pickup at {dropLocation}</h1><p>The finder has confirmed that your item was dropped off.</p></div>
@@ -404,7 +410,7 @@ function Handoff({ go, itemValue = "Everyday item" }: { go: (screen: Screen) => 
       <section className="meeting-section"><h2>Choose a drop-off location</h2><p>Leave the item with staff and keep the receipt.</p>
         <button className={`meeting-card ${dropLocation === "Student Center information desk" ? "selected" : ""}`} aria-pressed={dropLocation === "Student Center information desk"} onClick={() => setDropLocation("Student Center information desk")}><span><Icon name="map" /></span><div><strong>Student Center information desk</strong><p>Staffed campus pickup location</p></div>{dropLocation === "Student Center information desk" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
         <button className={`meeting-card ${dropLocation === "Official Rutgers lost and found" ? "selected" : ""}`} aria-pressed={dropLocation === "Official Rutgers lost and found"} onClick={() => setDropLocation("Official Rutgers lost and found")}><span><Icon name="shield" /></span><div><strong>Official Rutgers lost and found</strong><p>Recommended for valuable or sensitive items</p></div>{dropLocation === "Official Rutgers lost and found" ? <Icon name="check" size={18} /> : <Icon name="chevron" size={18} />}</button>
-        <button className="meeting-card" disabled><span><Icon name="lock" /></span><div><strong>CampusFind Locker (coming soon)</strong><p>Secure self-service pickup</p></div></button>
+        <button className="meeting-card" disabled><span><Icon name="lock" /></span><div><strong>Where RU? Locker (coming soon)</strong><p>Secure self-service pickup</p></div></button>
       </section>
       <div className="bottom-action"><Button onClick={() => setReadyForPickup(true)}>I dropped it off</Button></div>
     </>}
@@ -616,7 +622,7 @@ function Lost({ go, sensitiveItems }: { go: (screen: Screen) => void; sensitiveI
       <p className="field-label timer-end-label">When the timer ends:</p>
       <div className="timer-end-options">
         {[
-          ["Delete the listing", "Remove it automatically from CampusFind"],
+          ["Delete the listing", "Remove it automatically from Where RU?"],
           ["Open it to the public", "Sensitive details stay hidden"],
         ].map(([option, note]) => <button aria-pressed={timerEnd === option} className={timerEnd === option ? "selected" : ""} onClick={() => setTimerEnd(option)} key={option}><span><strong>{option}</strong><small>{note}</small></span><span className="radio-dot">{timerEnd === option && <span />}</span></button>)}
       </div>
@@ -677,7 +683,7 @@ function Items({ go }: { go: (screen: Screen) => void }) {
   return <main className="tab-page"><header className="title-header"><h1>My items</h1><p>Track finds, reports, and claims</p></header>
     <div className="tabs">{Object.keys(lists).map((name) => <button aria-pressed={tab === name} className={tab === name ? "active" : ""} onClick={() => setTab(name)} key={name}>{name}</button>)}</div>
     <div className="stack item-list">{lists[tab].map((item) => <ItemCard item={item} large key={item.title} onClick={itemAction(item)} />)}</div>
-    <div className="empty-note"><Icon name="bag" /><p>Items you report will stay organized here.</p></div>
+    <div className="empty-note"><Icon name="bag" /><p>Nothing lost yet. Keep it that way.</p></div>
   </main>;
 }
 
@@ -765,7 +771,7 @@ function Profile({ go, email, firstName, lastName, theme, setTheme, demo, setDem
     <p className="settings-label">PREFERENCES</p><div className="settings-card toggles"><div><span className="setting-icon"><Icon name="bell" /></span><Toggle on={notifications} setOn={setNotifications} label="Notifications" /></div><div className="theme-setting"><span className="setting-icon"><Icon name="moon" /></span><div><strong>Theme</strong><div className="theme-control">{(["system", "light", "dark"] as ThemePreference[]).map((option) => <button className={theme === option ? "active" : ""} aria-pressed={theme === option} onClick={() => setTheme(option)} key={option}>{option[0].toUpperCase() + option.slice(1)}</button>)}</div></div></div><div><span className="setting-icon"><Icon name="settings" /></span><Toggle on={demo} setOn={setDemo} label="Demo mode" /></div></div>
     <p className="demo-caption">Demo mode loads sample items and keeps every flow available offline.</p>
     <button className="signout" onClick={() => go("signin")}><Icon name="logout" /> Sign out</button>
-    <p className="project-note">CampusFind is an independent student project.<br />Not affiliated with or endorsed by Rutgers University.</p>
+    <p className="project-note">Where RU? is an independent student project.<br />Not affiliated with or endorsed by Rutgers University.</p>
   </main>;
 }
 

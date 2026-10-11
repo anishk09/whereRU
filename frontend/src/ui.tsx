@@ -55,6 +55,23 @@ export function Icon({ name, size = 22, className = "" }: { name: IconName; size
   return <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{paths[name]}</svg>;
 }
 
+export function Wordmark({ size = "header", className = "" }: { size?: "welcome" | "header" | "notification"; className?: string }) {
+  return <span className={`brand-wordmark brand-wordmark-${size} ${className}`} aria-label="Where RU?">
+    <span className="brand-lockup" aria-hidden="true"><span className="brand-where">Where</span><span className="brand-ru"><span className="brand-r">R</span><span className="brand-u">U</span></span><span className="brand-question">?</span></span>
+  </span>;
+}
+
+export function BrandIcon({ className = "" }: { className?: string }) {
+  return <span className={`brand-icon ${className}`} aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" focusable="false">
+      <circle cx="10.25" cy="10.25" r="6.75" stroke="currentColor" strokeWidth="1.8" />
+      <path d="m15.15 15.15 5.1 5.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M8.25 8.2a2.1 2.1 0 0 1 4.1.65c0 1.55-1.85 1.75-1.85 3.15" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" />
+      <circle cx="10.5" cy="14.3" r=".85" fill="currentColor" />
+    </svg>
+  </span>;
+}
+
 export function Button({ children, onClick, variant = "primary", disabled = false, className = "" }: { children: ReactNode; onClick?: () => void; variant?: "primary" | "secondary" | "ghost"; disabled?: boolean; className?: string }) {
   return <button type="button" className={`button button-${variant} ${className}`} onClick={onClick} disabled={disabled}>{children}</button>;
 }
