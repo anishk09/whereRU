@@ -56,14 +56,25 @@ def create_app(test_config=None):
                 app.logger.warning('Room cache warm-up skipped: %s',error)
         threading.Thread(target=warm,daemon=True).start()
 
+    def origin_permitted(origin):
+        """Same host as this request (http or https: tunnels end TLS before the Vite proxy),
+        an ALLOWED_ORIGINS entry, or, outside production, a Cloudflare/ngrok demo tunnel.
+        CSRF tokens still protect every write; this is an extra check."""
+        from urllib.parse import urlsplit
+        if origin in app.config['ALLOWED_ORIGINS']: return True
+        host=urlsplit(origin).netloc.lower()
+        forwarded=request.headers.get('X-Forwarded-Host','').split(',')[0].strip().lower()
+        if host and host in (request.host.lower(),forwarded): return True
+        tunnels=('.trycloudflare.com','.ngrok-free.app','.ngrok.app','.ngrok.io')
+        return app.config['APP_ENV']!='production' and urlsplit(origin).scheme=='https' and host.endswith(tunnels)
+
     @app.before_request
     def guards():
         if request.method=='OPTIONS': return '',204
         authenticate()
         if request.method in ('POST','PATCH','PUT','DELETE'):
             origin=request.headers.get('Origin')
-            allowed=[request.host_url.rstrip('/')]+app.config['ALLOWED_ORIGINS']
-            if origin and origin not in allowed: raise Forbidden('Origin is not permitted')
+            if origin and not origin_permitted(origin): raise Forbidden('Origin is not permitted')
             if request.headers.get('Sec-Fetch-Site')=='cross-site' and not (origin and origin in allowed):
                 raise Forbidden('Cross-site request denied')
             if request.endpoint not in ('media.upload','ai.recognize_room_photo','ai.analyze_item_photo') and not request.is_json:
