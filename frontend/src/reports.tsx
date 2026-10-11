@@ -70,6 +70,8 @@ export type Claim = {
   reportId: string;
   claimantId: string;
   status: ClaimStatus;
+  /** Where the finder left the item or will meet, shown to the claimant. */
+  handoffNote?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -114,7 +116,7 @@ export interface ReportRepository {
   getClaims(): Claim[];
   createClaim(reportId: string, claimantId: string, privateProof?: string): Claim;
   getClaimAnswer(id: string, actorId: string): string | undefined;
-  updateClaim(id: string, status: ClaimStatus, actorId: string): Claim | undefined;
+  updateClaim(id: string, status: ClaimStatus, actorId: string, handoffNote?: string): Claim | undefined;
   addNotification(notification: Omit<AppNotification, "id" | "createdAt">): AppNotification;
   markNotificationRead(id: string, actorId: string): void;
   snapshot(): CatalogSnapshot;
@@ -434,6 +436,7 @@ export class LocalReportRepository implements ReportRepository {
               reportId: claim.reportId,
               claimantId: stableUserId(claim.claimantId),
               status: currentClaimStatus(claim.status),
+              handoffNote: claim.handoffNote,
               createdAt: claim.createdAt,
               updatedAt: claim.updatedAt || claim.createdAt,
             };
@@ -598,7 +601,7 @@ export class LocalReportRepository implements ReportRepository {
     return this.claimAnswers.get(id);
   }
 
-  updateClaim(id: string, status: ClaimStatus, actorId: string) {
+  updateClaim(id: string, status: ClaimStatus, actorId: string, handoffNote?: string) {
     const current = this.data.claims.find((claim) => claim.id === id);
     if (!current) return undefined;
     const report = this.getById(current.reportId);
@@ -615,15 +618,22 @@ export class LocalReportRepository implements ReportRepository {
     if (!transitions[current.status].includes(status)) throw new Error(`A claim cannot move from ${current.status} to ${status}.`);
     if (status === "approved" && !this.claimAnswers.get(id)?.trim()) throw new Error("Private answer unavailable after refresh — ask the claimant to resubmit.");
     if (["closed", "returned"].includes(report.status)) throw new Error("Claims cannot be changed for an unavailable report.");
-    const updated = { ...current, status, updatedAt: new Date().toISOString() };
+    const updated: Claim = { ...current, status, ...(handoffNote ? { handoffNote } : {}), updatedAt: new Date().toISOString() };
     this.data = { ...this.data, claims: this.data.claims.map((claim) => claim.id === id ? updated : claim) };
-    if (status === "returned") this.updateInternal(current.reportId, { status: "returned" });
+    if (status === "returned") {
+      this.updateInternal(current.reportId, { status: "returned" });
+      // The claimant got their item back, so their matching lost listing is resolved too.
+      for (const lost of this.data.reports.filter((candidate) => candidate.type === "lost" && candidate.reporterId === current.claimantId && ["active", "possible_match"].includes(candidate.status) && (report.relatedLostReportId === candidate.id || matchScore(candidate, report) > 0))) {
+        this.updateInternal(lost.id, { status: "returned" });
+      }
+    }
     else if (status === "rejected") {
       const hasOtherActiveClaim = this.data.claims.some((claim) => claim.id !== id && claim.reportId === current.reportId && !["rejected", "returned"].includes(claim.status));
       if (!hasOtherActiveClaim) this.updateInternal(current.reportId, { status: "active" });
     }
     const claimantNotifications: Partial<Record<ClaimStatus, { title: string; body: string }>> = {
-      approved: { title: "Your claim was approved", body: "The finder approved your ownership claim. A demo handoff can now be arranged." },
+      approved: { title: "Your claim was approved", body: "The finder approved your claim and is arranging the return. Tap for details." },
+      handoff: { title: "Ready for pickup", body: handoffNote ? `Your item is waiting at ${handoffNote}. Tap for details.` : "The finder dropped off your item. Tap for details." },
       rejected: { title: "Your claim was not approved", body: "The finder did not approve your ownership claim." },
       returned: { title: "Item returned", body: "The finder marked the item as returned." },
     };
@@ -715,7 +725,7 @@ type ReportStore = CatalogSnapshot & {
   closeReport(id: string): ItemReport | undefined;
   createClaim(reportId: string, privateProof?: string): Claim;
   getClaimAnswer(id: string): string | undefined;
-  updateClaim(id: string, status: ClaimStatus): Claim | undefined;
+  updateClaim(id: string, status: ClaimStatus, handoffNote?: string): Claim | undefined;
   markNotificationRead(id: string): void;
   /** In-app notification for another persona (e.g. the owner of a found ID card). */
   notifyUser(userId: string, reportId: string, title: string, body: string): void;
@@ -809,8 +819,8 @@ export function ReportProvider({ children }: { children: ReactNode }) {
     getClaimAnswer(id) {
       return repository.getClaimAnswer(id, currentUserId);
     },
-    updateClaim(id, status) {
-      const claim = repository.updateClaim(id, status, currentUserId);
+    updateClaim(id, status, handoffNote) {
+      const claim = repository.updateClaim(id, status, currentUserId, handoffNote);
       refresh();
       return claim;
     },

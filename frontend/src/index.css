@@ -968,3 +968,14 @@ h3 { font-size: 16px; font-weight: 700; }
 .notification-menu-list { max-height: 280px; overflow-y: auto; padding: 0 10px 10px; display: flex; flex-direction: column; gap: 8px; }
 .notification-menu-list .catalog-notification { margin-bottom: 0; background: var(--surface); }
 .notification-clear { align-self: flex-end; padding: 4px 6px; color: var(--scarlet); background: transparent; border: 0; font-size: 12px; font-weight: 700; }
+
+/* Claimant's live claim status on the report page */
+.claim-status-card { display: flex; gap: 14px; align-items: flex-start; margin: 16px 0 4px; padding: 16px; border-radius: 18px; border: 1px solid var(--line, rgba(0,0,0,.08)); background: var(--surface, #fff); }
+.claim-status-card > span { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: rgba(204, 0, 51, .1); color: #cc0033; }
+.claim-status-card.approved > span { background: rgba(22, 163, 74, .12); color: #15803d; }
+.claim-status-card.approved { border-color: rgba(22, 163, 74, .35); }
+.claim-status-card.rejected > span { background: rgba(100, 116, 139, .14); color: #64748b; }
+.claim-status-card .eyebrow { margin: 0 0 2px; }
+.claim-status-card strong { display: block; font-size: 17px; margin-bottom: 4px; }
+.claim-status-card p:last-child { margin: 0; font-size: 14px; line-height: 1.45; opacity: .8; }
+.result-screen .button + .button { margin-top: 10px; }

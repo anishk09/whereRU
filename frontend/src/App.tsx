@@ -360,6 +360,7 @@ function ReportDetail({ reportId, go, onBack, startFoundFromLost }: { reportId: 
   const safeReport = owner ? report : toPublicReport(report);
   const reportClaims = claims.filter((claim) => claim.reportId === report.id);
   const activeClaim = reportClaims.find((claim) => claim.claimantId === currentUserId && !["rejected", "returned"].includes(claim.status));
+  const myClaim = reportClaims.filter((claim) => claim.claimantId === currentUserId).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   const relatedFoundReports = reports.filter((candidate) => candidate.relatedLostReportId === report.id && (owner || candidate.visibility === "public"));
   const active = !["closed", "returned"].includes(report.status);
   return <main className="simple-page report-detail-page">
@@ -370,16 +371,31 @@ function ReportDetail({ reportId, go, onBack, startFoundFromLost }: { reportId: 
     {(report.sensitive || report.visibility !== "public") && !owner && <div className="private-note"><Icon name="shield" /><p><strong>Restricted details.</strong> Identifying features and the precise custody location stay private until a claim is reviewed.</p></div>}
     <section className="detail-card"><div><span>Description</span><p>{safeReport.publicDescription || "No public description provided."}</p></div><div><span>Approximate location</span><p>{safeReport.location?.approximateLabel || "Location unavailable"}</p></div><div><span>Submitted</span><p>{new Date(safeReport.createdAt).toLocaleString()}</p></div><div><span>{safeReport.type === "lost" ? "Last seen" : "Found"}</span><p>{new Date(safeReport.observedAt).toLocaleString()}</p></div>{safeReport.updatedAt !== safeReport.createdAt && <div><span>Last updated</span><p>{new Date(safeReport.updatedAt).toLocaleString()}</p></div>}{safeReport.relatedLostReportId && <div><span>Related lost report</span><p>{safeReport.relatedLostReportId} · potential relationship only</p></div>}{relatedFoundReports.length > 0 && <div><span>Potential found reports</span><p>{relatedFoundReports.map((candidate) => candidate.id).join(", ")} · not verified matches</p></div>}</section>
     <div className="recovery-note"><Icon name={report.sensitive ? "shield" : "bag"} /><p><strong>{report.sensitive ? "Use an official staffed return point." : "Keep recovery public and safe."}</strong><br />Never post private identifiers or meet in an isolated location.</p></div>
+    {!owner && myClaim && <ClaimStatusCard claim={myClaim} report={report} />}
     {owner ? <div className="detail-actions">
       <p className="helper-text">This is your report. Claim actions are disabled for your own listing.</p>
       {reportClaims.length > 0 && <Button onClick={() => go("finderStatus")}>Review {reportClaims.length} {reportClaims.length === 1 ? "claim" : "claims"}</Button>}
       {active && <Button variant="secondary" onClick={() => setEditing(!editing)}>{editing ? "Cancel editing" : "Edit report"}</Button>}
       {active && <Button variant="secondary" onClick={() => closeReport(report.id)}>Close report</Button>}
     </div> : active ? <div className="detail-actions">
-      {report.type === "found" ? activeClaim ? <Button disabled>Claim submitted · under review</Button> : <Button onClick={() => go("ownership")}>This might be mine</Button> : <Button onClick={() => startFoundFromLost(toPublicReport(report))}>I may have found this</Button>}
+      {report.type === "found" ? activeClaim ? <Button variant="secondary" onClick={() => go("home")}>Back to home</Button> : <Button onClick={() => go("ownership")}>{myClaim?.status === "rejected" ? "Try again with another detail" : "This might be mine"}</Button> : <Button onClick={() => startFoundFromLost(toPublicReport(report))}>I may have found this</Button>}
       <Button variant="ghost" onClick={() => setFlagged(true)}>{flagged ? "Listing flagged for demo review" : "Report suspicious listing"}</Button>
     </div> : null}
   </main>;
+}
+
+/** What the claimant sees about their own claim, updated live as the finder acts on it. */
+function ClaimStatusCard({ claim, report }: { claim: Claim; report: ItemReport }) {
+  const place = report.location?.approximateLabel || "a public campus location";
+  const views: Record<Claim["status"], { tone: string; icon: IconName; title: string; text: string }> = {
+    submitted: { tone: "pending", icon: "clock", title: "Claim under review", text: "The finder is comparing your private detail with theirs. You'll get a notification when they decide." },
+    approved: { tone: "approved", icon: "check", title: "Claim approved", text: `The finder confirmed your detail and is arranging the return. You'll be notified when it's ready to pick up. Item location: ${place}.` },
+    handoff: { tone: "approved", icon: "bag", title: "Ready for pickup", text: claim.handoffNote ? `The finder left it at ${claim.handoffNote}. Bring your Rutgers ID and confirm hours before you go.` : "The finder dropped it off at a staffed location. Bring your Rutgers ID." },
+    returned: { tone: "approved", icon: "check", title: "Returned", text: "The finder marked this item as returned to you. Glad it found its way back." },
+    rejected: { tone: "rejected", icon: "lock", title: "Claim not approved", text: "Your detail didn't match what the finder recorded. If it's yours, try again with a more specific detail." },
+  };
+  const view = views[claim.status];
+  return <div className={`claim-status-card ${view.tone}`} role="status"><span><Icon name={view.icon} size={22} /></span><div><p className="eyebrow">YOUR CLAIM</p><strong>{view.title}</strong><p>{view.text}</p></div></div>;
 }
 
 type FoundReport = {
@@ -621,7 +637,7 @@ function Ownership({ go, report, claimantId, onSubmit }: { go: (screen: Screen) 
   if (!report) return <main className="simple-page"><CatalogEmpty icon="lock" title="Invalid claim" text="A claim must reference an available report." action="Back to Explore" onAction={() => go("explore")} /></main>;
   if (report.reporterId === claimantId) return <main className="simple-page"><CatalogEmpty icon="lock" title="This is your listing" text="You cannot submit an ownership claim against your own report." action="Back to report" onAction={() => go("detail")} /></main>;
   if (["closed", "returned"].includes(report.status)) return <main className="simple-page"><CatalogEmpty icon="lock" title="Claims unavailable" text="This report is no longer accepting ownership claims." action="Back to report" onAction={() => go("detail")} /></main>;
-  if (submitted) return <ResultState tone="green" icon="check" title="Claim submitted" text="Your private details are under review in this demo. Ownership has not been verified." button="Back to report" onClick={() => go("detail")} eyebrow="DEMO CLAIM" />;
+  if (submitted) return <ResultState tone="green" icon="check" title="Claim submitted" text="The finder will compare your private detail with theirs. You'll get a notification when they decide." button="Back to home" onClick={() => go("home")} secondary="View claim status" onSecondary={() => go("detail")} eyebrow="DEMO CLAIM" />;
   return <main className="simple-page with-bottom">
     <BackHeader title="Private Verification" onBack={() => go("detail")} />
     <div className="verify-heading"><span><Icon name="shield" size={27} /></span><p className="eyebrow">PRIVATE VERIFICATION</p><h1>Tell us something only the owner would know.</h1><p>Only the finder sees this answer. It is never posted publicly.</p></div>
@@ -636,11 +652,11 @@ function Ownership({ go, report, claimantId, onSubmit }: { go: (screen: Screen) 
   </main>;
 }
 
-function ResultState({ tone, icon, title, text, button, onClick, eyebrow = "PRIVATE VERIFICATION" }: { tone: string; icon: IconName; title: string; text: string; button: string; onClick: () => void; eyebrow?: string }) {
-  return <main className="result-screen"><div className={`result-icon ${tone}`}><Icon name={icon} size={42} /></div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{text}</p><Button onClick={onClick}>{button}</Button></main>;
+function ResultState({ tone, icon, title, text, button, onClick, secondary, onSecondary, eyebrow = "PRIVATE VERIFICATION" }: { tone: string; icon: IconName; title: string; text: string; button: string; onClick: () => void; secondary?: string; onSecondary?: () => void; eyebrow?: string }) {
+  return <main className="result-screen"><div className={`result-icon ${tone}`}><Icon name={icon} size={42} /></div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{text}</p><Button onClick={onClick}>{button}</Button>{secondary && onSecondary && <Button variant="secondary" onClick={onSecondary}>{secondary}</Button>}</main>;
 }
 
-function Handoff({ go, report, claim, onUpdateClaim }: { go: (screen: Screen) => void; report?: ItemReport; claim?: Claim; onUpdateClaim: (id: string, status: Claim["status"]) => void }) {
+function Handoff({ go, report, claim, onUpdateClaim }: { go: (screen: Screen) => void; report?: ItemReport; claim?: Claim; onUpdateClaim: (id: string, status: Claim["status"], note?: string) => void }) {
   const { currentUserId } = useReports();
   const recommendDropOff = Boolean(report?.sensitive);
   const [returned, setReturned] = useState(false);
@@ -653,7 +669,7 @@ function Handoff({ go, report, claim, onUpdateClaim }: { go: (screen: Screen) =>
   const beginPickup = () => {
     try {
       if (!claim) throw new Error("The approved claim is unavailable.");
-      onUpdateClaim(claim.id, "handoff");
+      onUpdateClaim(claim.id, "handoff", dropLocation);
       setActionError("");
       setReadyForPickup(true);
     } catch (error) {
@@ -663,7 +679,7 @@ function Handoff({ go, report, claim, onUpdateClaim }: { go: (screen: Screen) =>
   const completeReturn = () => {
     try {
       if (!claim) throw new Error("The approved claim is unavailable.");
-      if (claim.status === "approved") onUpdateClaim(claim.id, "handoff");
+      if (claim.status === "approved") onUpdateClaim(claim.id, "handoff", handoffMethod === "meet" ? meeting : dropLocation);
       onUpdateClaim(claim.id, "returned");
       setActionError("");
       setReturned(true);
@@ -1133,7 +1149,7 @@ function Profile({ go, email, firstName, lastName, theme, setTheme, demo, setDem
     <p className="settings-label">CAMPUS</p><div className="settings-card"><button onClick={() => setHomeCampus(campuses[(campuses.indexOf(homeCampus) + 1) % campuses.length])}><span className="setting-icon"><Icon name="map" /></span><span><strong>Home campus</strong><small>{homeCampus}</small></span><Icon name="chevron" size={18} /></button></div>
     <p className="settings-label">PREFERENCES</p><div className="settings-card toggles"><Toggle on={notifications} setOn={setNotifications} label="Notifications" icon={<span className="setting-icon"><Icon name="bell" /></span>} /><div className="theme-setting"><span className="setting-icon"><Icon name="moon" /></span><div><strong>Theme</strong><div className="theme-control">{(["system", "light", "dark"] as ThemePreference[]).map((option) => <button className={theme === option ? "active" : ""} aria-pressed={theme === option} onClick={() => setTheme(option)} key={option}>{option[0].toUpperCase() + option.slice(1)}</button>)}</div></div></div><Toggle on={demo} setOn={setDemo} label="Demo mode" icon={<span className="setting-icon"><Icon name="settings" /></span>} /></div>
     <p className="demo-caption">Demo mode loads sample items and keeps every flow available offline.</p>
-    <button className="signout" onClick={() => go("signin")}><Icon name="logout" /> Sign out</button>
+    <button className="signout" onClick={() => { try { localStorage.removeItem(SIGNED_IN_KEY); } catch { /* storage unavailable */ } go("signin"); }}><Icon name="logout" /> Sign out</button>
     <p className="project-note">Where RU? is an independent student project.<br />Not affiliated with or endorsed by Rutgers University.</p>
   </main>;
 }
@@ -1183,6 +1199,15 @@ function nameFromEmail(email: string) {
     return letters ? letters[0].toUpperCase() + letters.slice(1) : "";
   };
   return match ? { first: format(match[1]), last: format(match[2]) } : { first: "", last: "" };
+}
+
+// Remembers that this phone finished signing in, so a refresh during a demo returns to Home.
+const SIGNED_IN_KEY = "where-ru.signed-in";
+function rememberSignedIn() {
+  try { localStorage.setItem(SIGNED_IN_KEY, "1"); } catch { /* storage unavailable: sign in again after a refresh */ }
+}
+function wasSignedIn() {
+  try { return localStorage.getItem(SIGNED_IN_KEY) === "1"; } catch { return false; }
 }
 
 const initialSensitiveItems: SensitiveItem[] = [
@@ -1353,11 +1378,17 @@ export default function App() {
     setFirstName(currentUser.firstName);
     setLastName(currentUser.lastName);
     api.signIn(currentUser.email, `${currentUser.firstName} ${currentUser.lastName}`.trim()).catch(() => {});
+    rememberSignedIn();
     go("home");
   };
+  useEffect(() => {
+    // After a refresh, pick up where this phone left off instead of the sign-in screen.
+    if (wasSignedIn()) devSkipSignIn();
+  }, []);
   const completeProfile = () => {
     updatePrimaryUser({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() });
     api.updateName(`${firstName.trim()} ${lastName.trim()}`.trim()).catch(() => {});
+    rememberSignedIn();
     go("home");
   };
   const screens: Record<Screen, ReactNode> = {
