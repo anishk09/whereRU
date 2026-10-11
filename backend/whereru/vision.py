@@ -27,7 +27,9 @@ MAX_SIDE = 1000
 MIN_INLIERS = 18          # below this, feature matching does not report a room
 RATIO = 0.75              # Lowe ratio test
 # Scene similarity (cosine of DINOv2 embeddings, best reference view per room).
-MIN_SIMILARITY = float(os.getenv('ROOM_MIN_SIMILARITY', '0.45'))
+# Calibrated 2026-10-11: unrelated lecture halls score 0.57-0.70, a Weeks 105 photo scored 0.79
+# for Weeks 105 with a 0.09 lead.
+MIN_SIMILARITY = float(os.getenv('ROOM_MIN_SIMILARITY', '0.70'))
 MIN_MARGIN = float(os.getenv('ROOM_MIN_MARGIN', '0.06'))   # lead over the next-best room
 
 
@@ -132,7 +134,9 @@ def scene_model():
     with _model_lock:
         if _model_state == 'unloaded':
             try:
+                import warnings
                 import torch
+                warnings.filterwarnings('ignore', message='xFormers is not available')
                 torch.set_num_threads(max(1, (os.cpu_count() or 2) - 1))
                 _model = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14', verbose=False).eval()
                 _model_state = 'ready'

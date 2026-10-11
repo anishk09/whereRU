@@ -92,5 +92,5 @@ python tools/test_room_photo.py ~/Downloads/photo.jpg
 ```
 
 The tool prints each room's `similarity`. A room is suggested when its similarity is at least
-`ROOM_MIN_SIMILARITY` (default 0.45) and beats the next room by `ROOM_MIN_MARGIN` (default 0.06).
+`ROOM_MIN_SIMILARITY` (default 0.70; unrelated lecture halls score about 0.57–0.70) and beats the next room by `ROOM_MIN_MARGIN` (default 0.06).
 Both can be set in `.env`. Without PyTorch the app uses feature matching only.
