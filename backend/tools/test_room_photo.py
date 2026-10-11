@@ -11,6 +11,7 @@ import sys
 import time
 from pathlib import Path
 
+print('Loading OpenCV...', flush=True)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from whereru import vision  # noqa: E402
 
@@ -20,10 +21,13 @@ DATA = Path(__file__).resolve().parent.parent / 'data'
 def main(photo):
     rooms = json.loads((DATA / 'classrooms.json').read_text())['rooms']
     raw = Path(photo).expanduser().read_bytes()
+    print(f'Read photo ({len(raw) / 1e6:.1f} MB). Finding features...', flush=True)
+    t = time.time()
     query = vision.QueryIndex(vision.features_from_bytes(raw))
-    print(f'Photo features: {len(query.points)}')
+    print(f'Photo features: {len(query.points)} ({time.time() - t:.1f}s)', flush=True)
     started = time.time()
     for room in rooms:
+        print(f'{room["id"]:10s}  checking {len(room.get("images", []))} views...', end='\r', flush=True)
         images = room.get('images', [])
         if not images:
             print(f'{room["id"]:10s}  no reference images (run tools/import_dcs.py)')
@@ -36,7 +40,7 @@ def main(photo):
         missing = len(images) - len(scores)
         best, best_name = max(scores) if scores else (0, '-')
         verdict = 'MATCH' if best >= vision.MIN_INLIERS else 'no match'
-        print(f'{room["id"]:10s}  best {best:4d}  {verdict:8s}  ({Path(best_name).name}){"  missing files: " + str(missing) if missing else ""}')
+        print(f'{room["id"]:10s}  best {best:4d}  {verdict:8s}  ({Path(best_name).name}){"  missing files: " + str(missing) if missing else ""}', flush=True)
     print(f'Matching took {time.time() - started:.1f}s (includes loading reference features the first time)')
 
 
