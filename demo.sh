@@ -75,7 +75,9 @@ echo "Starting backend and app..."
 wait_for http://127.0.0.1:5001/api/health "Backend" || cleanup
 wait_for http://localhost:5173/ "App" || cleanup
 
-cloudflared tunnel --url http://localhost:5173 >/tmp/whereru-tunnel.log 2>&1 &
+# http2 (TCP 443) works on campus/venue Wi-Fi that blocks the default QUIC (UDP) connection,
+# which otherwise shows up on the phones as Cloudflare error 1033.
+cloudflared tunnel --protocol http2 --url http://localhost:5173 >/tmp/whereru-tunnel.log 2>&1 &
 PIDS="$PIDS $!"
 URL=""
 for _ in $(seq 1 30); do
@@ -84,6 +86,14 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 [ -n "$URL" ] || { echo "!! Tunnel did not start. See /tmp/whereru-tunnel.log"; cleanup; }
+echo "Waiting for the tunnel to connect..."
+CONNECTED=0
+for _ in $(seq 1 45); do
+  grep -q 'Registered tunnel connection' /tmp/whereru-tunnel.log && { CONNECTED=1; break; }
+  sleep 1
+done
+[ "$CONNECTED" = 1 ] || echo "!! Tunnel has not connected yet (this network may block it). Phones will show error 1033. See /tmp/whereru-tunnel.log"
+sleep 3  # give Cloudflare's DNS a moment so the first phone load works
 
 if [ "$SIM" = 1 ]; then
   (cd "$ROOT/backend" && rm -f instance/simulator.paused && exec python tools/simulate_campus.py >/tmp/whereru-simulator.log 2>&1) &
