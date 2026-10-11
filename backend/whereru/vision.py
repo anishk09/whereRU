@@ -334,7 +334,8 @@ ITEM_CLASSES = {
 ITEM_PROMPTS = {
     'ruid': ['a Rutgers University student ID card', 'a college ID card with a red header and a photo of a person',
              'a red and white university ID badge on a lanyard'],
-    'wallet': ['a wallet', 'a leather bifold wallet', 'a small card holder wallet'],
+    'wallet': ['a wallet', 'a leather bifold wallet', 'a small card holder wallet', 'a zip-around clutch wallet',
+               'a small coin purse', 'a wristlet wallet with a strap'],
     'phone': ['a smartphone', 'a mobile phone in a case', 'an iPhone lying on a table'],
     'keys': ['a set of keys', 'keys on a key ring', 'a car key fob with keys'],
     'laptop': ['a laptop computer', 'a closed laptop', 'a MacBook'],
@@ -342,13 +343,14 @@ ITEM_PROMPTS = {
     'eyeglasses': ['a pair of eyeglasses', 'sunglasses', 'reading glasses'],
     'earbuds': ['wireless earbuds in a charging case', 'AirPods case', 'a pair of earbuds'],
     'headphones': ['over-ear headphones', 'a headset', 'a pair of headphones'],
-    'backpack': ['a backpack', 'a school bag', 'a tote bag'],
+    'backpack': ['a backpack', 'a school bag', 'a tote bag', 'a drawstring gym bag', 'a crossbody sling bag'],
     'calculator': ['a calculator', 'a graphing calculator'],
     'charger': ['a phone charger with a cable', 'a laptop charger', 'a USB cable'],
     'jacket': ['a jacket', 'a hoodie', 'a sweatshirt'],
     'hat': ['a baseball cap', 'a beanie hat'],
     'notebook': ['a notebook', 'a textbook', 'a binder'],
-    'water_bottle': ['a water bottle', 'an insulated metal water bottle', 'a plastic drink bottle', 'a tumbler cup'],
+    'water_bottle': ['a water bottle', 'an insulated metal water bottle', 'a plastic drink bottle', 'a tumbler cup',
+                     'a sports squeeze bottle', 'a large water jug with a handle'],
     'umbrella': ['an umbrella', 'a folded umbrella'],
 }
 # Photos with no clear item (empty desk, classroom, blurry) should not get a guess.
@@ -470,8 +472,8 @@ def clip_model():
             try:
                 import open_clip
                 import torch  # noqa: F401
-                model, _, preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='openai')
-                _clip = (model.eval(), preprocess, open_clip.get_tokenizer('ViT-B-32'))
+                model, _, preprocess = open_clip.create_model_and_transforms('ViT-B-32-quickgelu', pretrained='openai')
+                _clip = (model.eval(), preprocess, open_clip.get_tokenizer('ViT-B-32-quickgelu'))
                 _clip_state = 'ready'
                 _log('item model ready (CLIP ViT-B/32)')
             except Exception as error:
