@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type I
 import type { CampusId, LocationSource } from "./roomRecognition";
 import type { PlaceType } from "./mapData";
 import { startDemoSync, type SyncCatalog } from "./demoSync";
+import { uploadDemoPhoto } from "./api";
 
 export type ReportType = "lost" | "found";
 export type ReportStatus = "active" | "possible_match" | "claim_under_review" | "returned" | "closed";
@@ -137,6 +138,9 @@ function imageDatabase(): Promise<IDBDatabase> {
 }
 
 export async function storeReportImage(file: File): Promise<string> {
+  // In a live demo the photo goes to the shared server so the other phone sees it too.
+  const shared = await uploadDemoPhoto(file).catch(() => null);
+  if (shared) return shared;
   const id = uid("image");
   const database = await imageDatabase();
   await new Promise<void>((resolve, reject) => {

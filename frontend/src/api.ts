@@ -240,3 +240,17 @@ export async function sendItemFeedback(photo: File, label: string): Promise<stri
   form.append("label", label.trim());
   return (await request<{ learned: string | null }>("POST", "/api/item-feedback", form, 20000)).learned;
 }
+
+/** Uploads a report photo to the shared demo so other phones can show it. Returns its URL, or
+ * null when the backend or demo sync isn't running (the photo then stays on this phone only). */
+export async function uploadDemoPhoto(photo: Blob): Promise<string | null> {
+  if (!(await ensureSession())) return null;
+  const form = new FormData();
+  form.append("image", photo, "photo.jpg");
+  try {
+    return (await request<{ url: string }>("POST", "/api/demo/photos", form, 30000)).url;
+  } catch (error) {
+    console.warn("Photo stays on this phone (demo photo upload unavailable):", error);
+    return null;
+  }
+}
