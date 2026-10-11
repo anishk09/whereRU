@@ -12,16 +12,6 @@
       "images": []
     },
     {
-      "id": "HLL-114",
-      "building": "Hill Center",
-      "campus": "Busch",
-      "room": "114",
-      "capacity": 314,
-      "room_type": "Lecture Hall",
-      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/HLL-114",
-      "images": []
-    },
-    {
       "id": "LSH-A102",
       "building": "Lucy Stone Hall",
       "campus": "Livingston",
@@ -39,6 +29,16 @@
       "capacity": 316,
       "room_type": "Lecture Hall",
       "source_url": "https://webapps.rutgers.edu/dcs/classrooms/PHY-001",
+      "images": []
+    },
+    {
+      "id": "RWH-105",
+      "building": "Richard Weeks Hall of Engineering",
+      "campus": "Busch",
+      "room": "105",
+      "capacity": 285,
+      "room_type": "Auditorium",
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/RWH-105",
       "images": []
     },
     {

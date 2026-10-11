@@ -9,7 +9,7 @@ panorama for a few demo rooms and slices it into 16 phone-camera-style views
 ```bash
 cd backend
 source .venv/bin/activate
-python tools/import_dcs.py            # ARC-103, LSH-A102, PHY-001, HLL-114, SEC-111
+python tools/import_dcs.py            # ARC-103, LSH-A102, PHY-001, RWH-105, SEC-111
 python tools/import_dcs.py ARC-103    # or just some of them
 ```
 

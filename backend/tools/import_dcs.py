@@ -3,7 +3,7 @@ into ordinary camera-style views that the on-device room matcher can use.
 
 Usage (from backend/):
     python tools/import_dcs.py                 # the 5 default CS lecture halls
-    python tools/import_dcs.py ARC-103 HLL-114 # specific rooms already listed in ROOMS
+    python tools/import_dcs.py ARC-103 RWH-105 # specific rooms already listed in ROOMS
 
 Images are saved under data/rooms/<ROOM-ID>/ and are git-ignored: they belong to Rutgers
 DCS and are used only locally for the demo. Room metadata (building, campus, capacity)
@@ -28,7 +28,7 @@ ROOMS = {
     'ARC-103': dict(building='Allison Road Classroom', campus='Busch', room='103', capacity=500, room_type='Lecture Hall'),
     'LSH-A102': dict(building='Lucy Stone Hall', campus='Livingston', room='A102', capacity=400, room_type='Lecture Hall'),
     'PHY-001': dict(building='Physics Lecture Hall', campus='Busch', room='001', capacity=316, room_type='Lecture Hall'),
-    'HLL-114': dict(building='Hill Center', campus='Busch', room='114', capacity=314, room_type='Lecture Hall'),
+    'RWH-105': dict(building='Richard Weeks Hall of Engineering', campus='Busch', room='105', capacity=285, room_type='Auditorium'),
     'SEC-111': dict(building='Science & Engineering Research Center', campus='Busch', room='111', capacity=269, room_type='Auditorium'),
 }
 
@@ -91,6 +91,9 @@ def update_catalog(entries):
         # Keep any photos you took yourself; replace only the panorama views.
         own = [img for img in existing.get('images', []) if '/view_' not in img]
         by_id[entry['id']] = {**existing, **entry, 'images': own + entry['images']}
+    # Drop rooms that were removed from ROOMS, unless the team added its own photos for them.
+    by_id = {code: room for code, room in by_id.items()
+             if code in ROOMS or any('/view_' not in img for img in room.get('images', []))}
     catalog['rooms'] = sorted(by_id.values(), key=lambda room: room['id'])
     path.write_text(json.dumps(catalog, indent=2) + '\n')
 

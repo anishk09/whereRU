@@ -26,6 +26,7 @@ export const buildings: Building[] = [
   { name: "Academic Building West", code: "ABW", campus: "College Ave" },
   { name: "Campbell Hall", code: "CA", campus: "College Ave" },
   { name: "Hill Center", code: "HLL", campus: "Busch" },
+  { name: "Richard Weeks Hall of Engineering", code: "RWH", campus: "Busch" },
   { name: "Allison Road Classroom", code: "ARC", campus: "Busch" },
   { name: "Science & Engineering Research Center", code: "SEC", campus: "Busch" },
   { name: "Physics Lecture Hall", code: "PHY", campus: "Busch" },
@@ -102,7 +103,7 @@ const demoRooms: Record<CampusId, { code: string; room: string; features: string
   Busch: [
     { code: "ARC", room: "103", features: ["500-seat lecture hall", "Tiered seating"] },
     { code: "PHY", room: "001", features: ["316-seat lecture hall", "Projection screens"] },
-    { code: "HLL", room: "114", features: ["314-seat lecture hall", "Tiered seating"] },
+    { code: "RWH", room: "105", features: ["285-seat auditorium", "Red front wall", "Tall windows"] },
   ],
   Livingston: [
     { code: "LSH", room: "A102", features: ["400-seat lecture hall", "Tiered seating"] },
