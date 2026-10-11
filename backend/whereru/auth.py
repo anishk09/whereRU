@@ -84,6 +84,32 @@ def verify_code():
     return response
 
 
+@bp.post('/api/auth/demo-login')
+def demo_login():
+    """Development-only shortcut for live demos: signs in without an email code.
+
+    Disabled unless DEMO_LOGIN=true and APP_ENV is not production.
+    """
+    if current_app.config['APP_ENV']=='production' or os.getenv('DEMO_LOGIN','').lower()!='true':
+        from werkzeug.exceptions import NotFound
+        raise NotFound('Not found')
+    p=payload()
+    email=email_input(p.get('email') or 'demo@scarletmail.rutgers.edu')
+    name=text(p.get('display_name') or '','display_name',80)
+    rate_limit('demo-login',60,600)
+    now=time.time()
+    with atomic() as db:
+        db.execute('INSERT OR IGNORE INTO users(email) VALUES(?)',(email,))
+        if name: db.execute('UPDATE users SET display_name=? WHERE email=? AND (display_name IS NULL OR display_name=\'\')',(name,email))
+        user=db.execute('SELECT * FROM users WHERE email=?',(email,)).fetchone()
+        if g.auth_session: db.execute('DELETE FROM sessions WHERE token_hash=?',(g.auth_session['token_hash'],))
+        token=secrets.token_urlsafe(32);csrf=secrets.token_urlsafe(32)
+        db.execute('INSERT INTO sessions VALUES(?,?,?,?)',(digest(token),user['id'],csrf,now+86400))
+    response=jsonify(user=user_json(user),csrf_token=csrf,demo=True)
+    response.set_cookie('whereru_session',token,max_age=86400,httponly=True,secure=current_app.config['COOKIE_SECURE'],samesite='Lax',path='/')
+    return response
+
+
 def user_json(row):
     points=get_db().execute('SELECT COALESCE(SUM(points),0) FROM reputation_events WHERE user_id=?',(row['id'],)).fetchone()[0]
     return dict(id=row['id'],email=row['email'],display_name=row['display_name'],email_verified=bool(row['verified_at']),

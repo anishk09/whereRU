@@ -71,6 +71,10 @@ No file path is ever accepted from the API. An image URL is not a bypass of repo
 
 See GEMINI.md. All calls require report ownership and `consent_to_ai:true`.
 
+`AI_MODE=local` runs without any API key: `recognize-room` uses on-device OpenCV feature matching against the reference photos in `data/classrooms.json` (see ROOM_PHOTOS.md), and `analyze` adds the item's dominant color from the photo. Optional body field `campus` narrows the rooms compared.
+
+Development only: `POST /api/auth/demo-login` with `{"email":"...","display_name":"..."}` signs in without a code when `DEMO_LOGIN=true` and `APP_ENV` is not production. It powers the app's "Skip for demo" button.
+
 - POST `/api/listings/{id}/analyze` — `{"consent_to_ai":true,"image_ids":[]}`. Returns analysis ID and suggestions.
 - POST `/api/analyses/{id}/apply` — `{"confirm":true,"corrections":{}}`. Applies reviewed item suggestions if revision is current.
 - POST `/api/listings/{id}/semantic-index` — sends current title/description/category to embeddings; enables cross-report semantic ranking where both owners opted in.

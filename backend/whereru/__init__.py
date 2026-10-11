@@ -25,7 +25,7 @@ def create_app(test_config=None):
         ALLOWED_ORIGINS=[x.strip() for x in os.getenv('ALLOWED_ORIGINS','').split(',') if x.strip()],
         COOKIE_SECURE=os.getenv('APP_ENV','development')=='production',TESTING=False)
     if test_config: app.config.update(test_config)
-    if app.config['AI_MODE'] not in ('demo','gemini'): raise RuntimeError('AI_MODE must be demo or gemini')
+    if app.config['AI_MODE'] not in ('demo','local','gemini'): raise RuntimeError('AI_MODE must be demo, local, or gemini')
     if app.config['APP_ENV']=='production':
         if len(app.config['SECRET_KEY'])<32: raise RuntimeError('Production requires SECRET_KEY of at least 32 characters')
         if app.config['AUTH_DELIVERY']!='smtp': raise RuntimeError('Production requires SMTP authentication delivery')
@@ -54,7 +54,7 @@ def create_app(test_config=None):
                 raise Forbidden('Cross-site request denied')
             if request.endpoint!='media.upload' and not request.is_json:
                 raise UnsupportedMediaType('Use Content-Type: application/json')
-            if g.user and request.endpoint not in ('auth.request_code','auth.verify_code'):
+            if g.user and request.endpoint not in ('auth.request_code','auth.verify_code','auth.demo_login'):
                 import hmac
                 if not hmac.compare_digest(request.headers.get('X-CSRF-Token','').encode(),g.auth_session['csrf'].encode()):
                     raise Forbidden('Valid X-CSRF-Token required')

@@ -111,6 +111,13 @@ def analyze(listing_id):
         except Exception as error:
             current_app.logger.warning('Item AI failed: %s',type(error).__name__)
             result=fallback(listing);mode='fallback';notice='Gemini unavailable; text-only fallback used. Check API key, model availability and quota.'
+    elif mode=='local':
+        from . import vision
+        result=fallback(listing)
+        color=vision.dominant_color(images[0]) if images else None
+        if color: result['attributes']['color']=color
+        result['uncertainty']=('On-device analysis: color estimated from the center of the photo. '
+            'Category and details come from your description and need your review.')
     else: result=fallback(listing);mode='demo'
     aid=save_analysis(listing,'ITEM',result,mode)
     return jsonify(id=aid,mode=mode,suggestion=result,notice=notice,requires_review=True)
@@ -241,9 +248,23 @@ def classroom_detail(room_id):
 def recognize_room(listing_id):
     listing=fetch_listing(listing_id,True);p=payload();consent(p)
     photos=image_bytes(listing_id,[p.get('image_id')])
-    rooms,base=catalog();building=text(p.get('building',''),'building',100)
-    candidates=[r for r in rooms if not building or str(r.get('building','')).casefold()==building.casefold()]
+    rooms,base=catalog();building=text(p.get('building',''),'building',100);campus=text(p.get('campus',''),'campus',40)
+    candidates=[r for r in rooms if (not building or str(r.get('building','')).casefold()==building.casefold())
+                and (not campus or str(r.get('campus','')).casefold()==campus.casefold())]
     if not candidates: return jsonify(mode=current_app.config['AI_MODE'],candidates=[],message='No reference rooms configured for this selection. Enter location manually or add labeled reference photos.')
+    if current_app.config['AI_MODE']=='local':
+        from . import vision
+        try: ranked=vision.match_rooms(photos[0],candidates,base)
+        except ValueError: raise BadRequest('Could not read the room photo')
+        by_id={r['id']:r for r in candidates}
+        result=dict(candidates=[dict(room_id=item['room_id'],building=by_id[item['room_id']]['building'],
+                    room=by_id[item['room_id']]['room'],campus=by_id[item['room_id']]['campus'],
+                    evidence=[f"{item['matches']} visual features match the reference photo of this room"],conflicts=[])
+                    for item in ranked],
+                    visible_sign_text='',needs_confirmation=True,
+                    uncertainty='On-device feature matching against reference photos. Confirm the room before saving.')
+        aid=save_analysis(listing,'ROOM',result,'local')
+        return jsonify(id=aid,mode='local',**result)
     if len(candidates)>12: raise BadRequest('Select a building with at most 12 reference rooms per comparison')
     if current_app.config['AI_MODE']!='gemini':
         return jsonify(mode='demo',candidates=[],message='Demo mode does not recognize classrooms. Configure Gemini and reference photos for real comparison.')
@@ -267,7 +288,7 @@ def recognize_room(listing_id):
         current_app.logger.warning('Room AI failed: %s',type(error).__name__)
         raise ServiceUnavailable('Room comparison unavailable; enter the room manually')
     allowed={r['id']:r for r in candidates}
-    result['candidates']=[{**candidate,'building':allowed[candidate['room_id']]['building'],'room':allowed[candidate['room_id']]['room']}
+    result['candidates']=[{**candidate,'building':allowed[candidate['room_id']]['building'],'room':allowed[candidate['room_id']]['room'],'campus':allowed[candidate['room_id']]['campus']}
                            for candidate in result['candidates'] if candidate['room_id'] in allowed]
     result['needs_confirmation']=True
     aid=save_analysis(listing,'ROOM',result,'gemini')
