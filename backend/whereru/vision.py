@@ -1,14 +1,18 @@
 """On-device computer vision used when AI_MODE=local.
 
-No API key, no network, no cost. Two features:
+No API key and no per-request cost. Two features:
 
-1. match_rooms(): identifies which catalog classroom a photo was taken in by matching
-   SIFT keypoints against labeled reference photos, then keeping only matches that agree
-   on one camera geometry (RANSAC on the fundamental matrix). The score is the number of
-   geometrically verified feature matches, so it reflects real visual evidence rather than
-   an invented confidence value.
+1. match_rooms(): identifies which catalog classroom a photo was taken in, using two signals.
+   a. Scene similarity (when PyTorch is installed): a pretrained DINOv2 model turns each photo
+      into an embedding that captures the room's overall look (seating, walls, screens,
+      windows). It tolerates different viewpoints and people in the shot. A room is reported
+      only if it is clearly closer than every other room.
+   b. Feature matching: SIFT keypoints matched against the reference photos, keeping only
+      matches that agree on one camera geometry (RANSAC on the fundamental matrix). Strong
+      evidence when the photo is taken from near a reference viewpoint.
 2. dominant_color(): names the main color of the object in the center of an item photo.
 """
+import os
 import sys
 import threading
 import time
@@ -20,8 +24,11 @@ import cv2
 import numpy as np
 
 MAX_SIDE = 1000
-MIN_INLIERS = 18          # below this, a room is not reported as a match
+MIN_INLIERS = 18          # below this, feature matching does not report a room
 RATIO = 0.75              # Lowe ratio test
+# Scene similarity (cosine of DINOv2 embeddings, best reference view per room).
+MIN_SIMILARITY = float(os.getenv('ROOM_MIN_SIMILARITY', '0.45'))
+MIN_MARGIN = float(os.getenv('ROOM_MIN_MARGIN', '0.06'))   # lead over the next-best room
 
 
 def _prepare(gray):
@@ -106,6 +113,80 @@ def verified_matches(index, reference):
     return int(np.count_nonzero(mask.ravel() == 1))
 
 
+# ---------------------------------------------------------------- scene similarity
+
+_model = None
+_model_state = 'unloaded'      # unloaded | ready | unavailable
+_model_lock = threading.Lock()
+_MEAN = np.array([0.485, 0.456, 0.406], np.float32)
+_STD = np.array([0.229, 0.224, 0.225], np.float32)
+
+
+def _log(message):
+    print(f'[room scan] {message}', file=sys.stderr, flush=True)
+
+
+def scene_model():
+    """DINOv2-small via torch.hub, or None when PyTorch isn't installed or the download fails."""
+    global _model, _model_state
+    with _model_lock:
+        if _model_state == 'unloaded':
+            try:
+                import torch
+                torch.set_num_threads(max(1, (os.cpu_count() or 2) - 1))
+                _model = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14', verbose=False).eval()
+                _model_state = 'ready'
+                _log('scene model ready (DINOv2-small)')
+            except Exception as error:  # ImportError, no network on first run, etc.
+                _model_state = 'unavailable'
+                _log(f'scene model unavailable, using feature matching only ({type(error).__name__}: {error})')
+        return _model
+
+
+def _embed_bgr(image):
+    import torch
+    rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    h, w = rgb.shape[:2]
+    scale = 224 / min(h, w)
+    # Keep the whole frame (no center crop) so wide shots keep their walls and windows.
+    nh = max(14, round(h * scale / 14) * 14)
+    nw = min(448, max(14, round(w * scale / 14) * 14))
+    rgb = cv2.resize(rgb, (nw, nh), interpolation=cv2.INTER_AREA).astype(np.float32) / 255
+    tensor = torch.from_numpy(((rgb - _MEAN) / _STD).transpose(2, 0, 1)).unsqueeze(0)
+    with _model_lock, torch.inference_mode():
+        out = _model.forward_features(tensor)
+    # Overall look = class token plus the average of the patch tokens.
+    vector = torch.cat([out['x_norm_clstoken'], out['x_norm_patchtokens'].mean(1)], dim=1)[0].numpy()
+    return vector / (np.linalg.norm(vector) + 1e-8)
+
+
+def embed_bytes(raw):
+    if scene_model() is None:
+        return None
+    image = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError('Unreadable image')
+    return _embed_bgr(image)
+
+
+@lru_cache(maxsize=1024)
+def _reference_embedding(path_str, mtime):
+    image = cv2.imread(path_str, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError(f'Unreadable reference image: {path_str}')
+    return _embed_bgr(image)
+
+
+def reference_embedding(path):
+    if scene_model() is None:
+        return None
+    path = Path(path)
+    with _path_locks_guard:
+        lock = _path_locks['emb:' + str(path)]
+    with lock:
+        return _reference_embedding(str(path), path.stat().st_mtime)
+
+
 def warm_cache(rooms, base):
     """Precompute reference features so the first scan isn't slow. Safe to run in a thread."""
     base = Path(base).resolve()
@@ -115,36 +196,67 @@ def warm_cache(rooms, base):
             if path.is_relative_to(base) and path.is_file():
                 try:
                     reference_features(path)
+                    reference_embedding(path)
                 except ValueError:
                     pass
 
 
-def match_rooms(query_raw, rooms, base, limit=3):
-    """Rank catalog rooms by verified feature matches against their reference photos.
+def _room_paths(room, base):
+    for name in room.get('images', []):
+        path = (base / name).resolve()
+        if path.is_relative_to(base) and path.is_file():
+            yield path
 
-    rooms: catalog entries with an `images` list of paths relative to `base`.
-    Returns [{room_id, matches}] for rooms at or above MIN_INLIERS, best first.
+
+def score_rooms(query_raw, rooms, base):
+    """Both signals for every room: {room_id: {'matches': int, 'similarity': float|None, 'views': int}}."""
+    base = Path(base).resolve()
+    index = QueryIndex(features_from_bytes(query_raw))
+    query_vec = embed_bytes(query_raw)
+    scores = {}
+    for room in rooms:
+        best_matches, best_sim, views = 0, None, 0
+        for path in _room_paths(room, base):
+            views += 1
+            best_matches = max(best_matches, verified_matches(index, reference_features(path)))
+            if query_vec is not None:
+                sim = float(query_vec @ reference_embedding(path))
+                best_sim = sim if best_sim is None else max(best_sim, sim)
+        scores[room['id']] = {'matches': best_matches, 'similarity': best_sim, 'views': views}
+    return scores, len(index.points)
+
+
+def match_rooms(query_raw, rooms, base, limit=3):
+    """Rooms the photo was likely taken in, best first.
+
+    Returns [{room_id, matches, similarity, evidence}]. A room is reported when feature matching
+    verifies it (>= MIN_INLIERS) or when its scene similarity is at least MIN_SIMILARITY and
+    leads the next-best room by MIN_MARGIN. Otherwise the list is empty and the finder uses
+    the placard or picks the room.
     """
     started = time.time()
-    index = QueryIndex(features_from_bytes(query_raw))
-    base = Path(base).resolve()
-    scored, report = [], []
-    for room in rooms:
-        best, available = 0, 0
-        for name in room.get('images', []):
-            path = (base / name).resolve()
-            if not path.is_relative_to(base) or not path.is_file():
-                continue
-            available += 1
-            best = max(best, verified_matches(index, reference_features(path)))
-        report.append(f"{room['id']}={best}" if available else f"{room['id']}=no-photos")
-        if best >= MIN_INLIERS:
-            scored.append({'room_id': room['id'], 'matches': best})
-    scored.sort(key=lambda item: item['matches'], reverse=True)
-    # Shown in the Flask terminal so the team can see why a photo did or didn't match.
-    print(f"[room scan] {len(index.points)} photo features, scores: {', '.join(report)} "
-          f"(need {MIN_INLIERS}), {time.time() - started:.1f}s", file=sys.stderr, flush=True)
-    return scored[:limit]
+    scores, n_features = score_rooms(query_raw, rooms, base)
+    sims = sorted(((v['similarity'], k) for k, v in scores.items() if v['similarity'] is not None), reverse=True)
+    accepted = {}
+    if sims:
+        top_sim, top_id = sims[0]
+        runner_up = sims[1][0] if len(sims) > 1 else -1.0
+        if top_sim >= MIN_SIMILARITY and top_sim - runner_up >= MIN_MARGIN:
+            accepted[top_id] = [f'Overall look of the room matches (similarity {top_sim:.2f}, '
+                                f'next closest room {runner_up:.2f})']
+    for room_id, value in scores.items():
+        if value['matches'] >= MIN_INLIERS:
+            accepted.setdefault(room_id, []).insert(0, f"{value['matches']} visual details line up with the reference photos")
+    ranked = sorted(accepted, key=lambda r: (scores[r]['matches'] >= MIN_INLIERS, scores[r]['matches'],
+                                            scores[r]['similarity'] or 0), reverse=True)
+    report = ', '.join(
+        f"{k}={v['matches']}" + (f"/{v['similarity']:.2f}" if v['similarity'] is not None else '')
+        if v['views'] else f'{k}=no-photos' for k, v in scores.items())
+    _log(f"{n_features} photo features; matches/similarity: {report} "
+         f"(need {MIN_INLIERS} matches, or similarity {MIN_SIMILARITY} with lead {MIN_MARGIN}); "
+         f"picked {ranked or 'none'} in {time.time() - started:.1f}s")
+    return [{'room_id': r, 'matches': scores[r]['matches'], 'similarity': scores[r]['similarity'],
+             'evidence': accepted[r]} for r in ranked[:limit]]
 
 
 # Named colors in HSV terms. Hue in OpenCV is 0-179.

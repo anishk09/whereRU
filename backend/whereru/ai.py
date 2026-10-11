@@ -259,10 +259,10 @@ def recognize_room(listing_id):
         by_id={r['id']:r for r in candidates}
         result=dict(candidates=[dict(room_id=item['room_id'],building=by_id[item['room_id']]['building'],
                     room=by_id[item['room_id']]['room'],campus=by_id[item['room_id']]['campus'],
-                    evidence=[f"{item['matches']} visual features match the reference photo of this room"],conflicts=[])
+                    evidence=item['evidence'],conflicts=[])
                     for item in ranked],
                     visible_sign_text='',needs_confirmation=True,
-                    uncertainty='On-device feature matching against reference photos. Confirm the room before saving.')
+                    uncertainty='On-device comparison with reference photos of each room. Confirm the room before saving.')
         aid=save_analysis(listing,'ROOM',result,'local')
         return jsonify(id=aid,mode='local',**result)
     if len(candidates)>12: raise BadRequest('Select a building with at most 12 reference rooms per comparison')

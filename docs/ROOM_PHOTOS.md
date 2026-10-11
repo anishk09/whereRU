@@ -78,3 +78,19 @@ so unknown rooms return no candidates instead of a wrong guess.
 
 Measured on test scenes: 39/40 correct top match across perspective, crop, and lighting
 changes; 0/8 false matches on scenes outside the catalog.
+
+## Scene model (recommended)
+
+Feature matching needs the photo to be taken from close to where a reference photo was taken.
+A DCS panorama is shot from one spot, so a photo from the other side of the room often won't
+match. With PyTorch installed, the backend also compares the overall look of the room using
+a pretrained DINOv2 model (runs on your laptop, no API key, about 90 MB downloaded once):
+
+```bash
+pip install torch
+python tools/test_room_photo.py ~/Downloads/photo.jpg
+```
+
+The tool prints each room's `similarity`. A room is suggested when its similarity is at least
+`ROOM_MIN_SIMILARITY` (default 0.45) and beats the next room by `ROOM_MIN_MARGIN` (default 0.06).
+Both can be set in `.env`. Without PyTorch the app uses feature matching only.

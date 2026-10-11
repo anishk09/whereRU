@@ -1,10 +1,12 @@
 """Check how a photo scores against every classroom in data/classrooms.json.
 
 Usage (from backend/, with the venv active):
-    python tools/test_room_photo.py ~/Downloads/hill114.jpg
+    python tools/test_room_photo.py ~/Downloads/photo.jpg [more photos...]
 
-Prints each room's best number of verified feature matches (a room is reported
-by the app at 18 or more) and how long matching took.
+For each room it prints:
+  matches     verified feature matches (the room is reported at 18 or more)
+  similarity  scene similarity from the DINOv2 model, if PyTorch is installed
+and then which room(s) the app would suggest.
 """
 import json
 import sys
@@ -18,33 +20,28 @@ from whereru import vision  # noqa: E402
 DATA = Path(__file__).resolve().parent.parent / 'data'
 
 
-def main(photo):
+def main(photos):
     rooms = json.loads((DATA / 'classrooms.json').read_text())['rooms']
-    raw = Path(photo).expanduser().read_bytes()
-    print(f'Read photo ({len(raw) / 1e6:.1f} MB). Finding features...', flush=True)
-    t = time.time()
-    query = vision.QueryIndex(vision.features_from_bytes(raw))
-    print(f'Photo features: {len(query.points)} ({time.time() - t:.1f}s)', flush=True)
-    started = time.time()
-    for room in rooms:
-        print(f'{room["id"]:10s}  checking {len(room.get("images", []))} views...', end='\r', flush=True)
-        images = room.get('images', [])
-        if not images:
-            print(f'{room["id"]:10s}  no reference images (run tools/import_dcs.py)')
-            continue
-        scores = []
-        for name in images:
-            path = DATA / name
-            if path.is_file():
-                scores.append((vision.verified_matches(query, vision.reference_features(path)), name))
-        missing = len(images) - len(scores)
-        best, best_name = max(scores) if scores else (0, '-')
-        verdict = 'MATCH' if best >= vision.MIN_INLIERS else 'no match'
-        print(f'{room["id"]:10s}  best {best:4d}  {verdict:8s}  ({Path(best_name).name}){"  missing files: " + str(missing) if missing else ""}', flush=True)
-    print(f'Matching took {time.time() - started:.1f}s (includes loading reference features the first time)')
+    print('Loading scene model (first run downloads about 90 MB)...', flush=True)
+    if vision.scene_model() is None:
+        print('  -> not available: install it with  pip install torch  (feature matching still works)')
+    for photo in photos:
+        raw = Path(photo).expanduser().read_bytes()
+        print(f'\n{Path(photo).name} ({len(raw) / 1e6:.1f} MB)', flush=True)
+        started = time.time()
+        scores, _ = vision.score_rooms(raw, rooms, DATA)
+        for room_id, value in sorted(scores.items(), key=lambda kv: -(kv[1]['similarity'] or 0)):
+            if not value['views']:
+                print(f'  {room_id:10s}  no reference images (run tools/import_dcs.py)')
+                continue
+            sim = f"{value['similarity']:.3f}" if value['similarity'] is not None else '  -  '
+            print(f"  {room_id:10s}  matches {value['matches']:4d}   similarity {sim}")
+        picked = vision.match_rooms(raw, rooms, DATA)
+        print(f"  => app suggests: {', '.join(p['room_id'] for p in picked) or 'no match (placard / choose manually)'}"
+              f"   ({time.time() - started:.1f}s, first photo includes loading reference photos)")
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        sys.exit('Usage: python tools/test_room_photo.py <photo.jpg>')
-    main(sys.argv[1])
+    if len(sys.argv) < 2:
+        sys.exit('Usage: python tools/test_room_photo.py <photo.jpg> [more photos...]')
+    main(sys.argv[1:])
