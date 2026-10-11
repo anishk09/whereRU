@@ -6,6 +6,7 @@
 let csrfToken = "";
 let lastEmail = "";
 let online: boolean | null = null;
+let offlineCheckedAt = 0;
 let draftFoundId: number | null = null;
 
 export class ApiError extends Error {
@@ -39,12 +40,14 @@ async function request<T>(method: string, path: string, body?: unknown, timeoutM
   return data as T;
 }
 
-/** True when the Flask backend answers. Checked once, then cached. */
+/** True when the Flask backend answers. A "yes" is remembered; a "no" is re-checked after a
+ * few seconds, so starting the backend after the page loaded still works. */
 export async function isOnline(): Promise<boolean> {
-  if (online !== null) return online;
+  if (online) return true;
+  if (online === false && Date.now() - offlineCheckedAt < 5000) return false;
   try {
     const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 1500);
+    const timer = window.setTimeout(() => controller.abort(), 4000);
     const response = await fetch("/api/health", { signal: controller.signal });
     window.clearTimeout(timer);
     const data = await response.json();
@@ -52,6 +55,7 @@ export async function isOnline(): Promise<boolean> {
   } catch {
     online = false;
   }
+  if (!online) offlineCheckedAt = Date.now();
   return online;
 }
 
