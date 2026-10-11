@@ -14,7 +14,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, timeoutMs = 30000): Promise<T> {
   const headers: Record<string, string> = {};
   let payload: BodyInit | undefined;
   if (body instanceof FormData) payload = body;
@@ -23,7 +23,17 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     payload = JSON.stringify(body ?? {});
   }
   if (method !== "GET" && csrfToken) headers["X-CSRF-Token"] = csrfToken;
-  const response = await fetch(path, { method, headers, body: payload, credentials: "include" });
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  let response: Response;
+  try {
+    response = await fetch(path, { method, headers, body: payload, credentials: "include", signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted) throw new ApiError(408, "The server took too long to answer.");
+    throw error;
+  } finally {
+    window.clearTimeout(timer);
+  }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new ApiError(response.status, data.message || data.error || `Request failed (${response.status})`);
   return data as T;
@@ -151,7 +161,7 @@ export async function recognizeRoomPhoto(photo: File, campus: string | null) {
     consent_to_ai: true,
     image_id: imageId,
     ...(campus ? { campus } : {}),
-  });
+  }, 45000);
 }
 
 /** Fills in the draft found report and makes it visible to matching. Returns its ID. */

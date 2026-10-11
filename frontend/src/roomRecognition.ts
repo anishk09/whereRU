@@ -171,8 +171,10 @@ export const backendRecognizer: RoomRecognizer = {
         demo: false,
       }));
     } catch (error) {
-      console.warn("Room recognition failed, using demo result", error);
-      return demoRecognizer.recognizeRoom(photo, campusHint);
+      // The server is up but the scan failed or timed out. Show "no match" so the finder
+      // uses the placard or picks the room, rather than showing made-up sample rooms.
+      console.warn("Room recognition failed", error);
+      return [];
     }
   },
   async readPlacard(photo) {

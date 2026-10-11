@@ -9,6 +9,10 @@ No API key, no network, no cost. Two features:
    an invented confidence value.
 2. dominant_color(): names the main color of the object in the center of an item photo.
 """
+import sys
+import threading
+import time
+from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
 
@@ -51,9 +55,18 @@ def _reference_features(path_str, mtime):
     return _features(_prepare(image))
 
 
+_path_locks = defaultdict(threading.Lock)
+_path_locks_guard = threading.Lock()
+
+
 def reference_features(path):
     path = Path(path)
-    return _reference_features(str(path), path.stat().st_mtime)
+    # The startup warm-up thread and a scan request can ask for the same file at once.
+    # The lock makes the second caller wait for the first result instead of redoing it.
+    with _path_locks_guard:
+        lock = _path_locks[str(path)]
+    with lock:
+        return _reference_features(str(path), path.stat().st_mtime)
 
 
 class QueryIndex:
@@ -112,19 +125,25 @@ def match_rooms(query_raw, rooms, base, limit=3):
     rooms: catalog entries with an `images` list of paths relative to `base`.
     Returns [{room_id, matches}] for rooms at or above MIN_INLIERS, best first.
     """
+    started = time.time()
     index = QueryIndex(features_from_bytes(query_raw))
     base = Path(base).resolve()
-    scored = []
+    scored, report = [], []
     for room in rooms:
-        best = 0
+        best, available = 0, 0
         for name in room.get('images', []):
             path = (base / name).resolve()
             if not path.is_relative_to(base) or not path.is_file():
                 continue
+            available += 1
             best = max(best, verified_matches(index, reference_features(path)))
+        report.append(f"{room['id']}={best}" if available else f"{room['id']}=no-photos")
         if best >= MIN_INLIERS:
             scored.append({'room_id': room['id'], 'matches': best})
     scored.sort(key=lambda item: item['matches'], reverse=True)
+    # Shown in the Flask terminal so the team can see why a photo did or didn't match.
+    print(f"[room scan] {len(index.points)} photo features, scores: {', '.join(report)} "
+          f"(need {MIN_INLIERS}), {time.time() - started:.1f}s", file=sys.stderr, flush=True)
     return scored[:limit]
 
 
