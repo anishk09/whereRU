@@ -1,0 +1,12 @@
+{
+  "rooms": [
+    {
+      "id": "your-building-room-id",
+      "campus": "Your campus",
+      "building": "Actual building name",
+      "room": "Actual room number",
+      "source_url": "https://dcs.rutgers.edu/learning-spaces/",
+      "images": ["reference_images/your-room.jpg"]
+    }
+  ]
+}

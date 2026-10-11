@@ -1,0 +1,166 @@
+[
+  {
+    "file": ".gitignore",
+    "sha256": "94199f54098d167e193b7983d6d3730e9a8ed32f30d6c8f00aa4e2a6a06d74cf"
+  },
+  {
+    "file": "README.md",
+    "sha256": "1fc4d0096b28a90b6bfa5e0cfe7d0504430766c8ee26c8f9980b0c8571bea99b"
+  },
+  {
+    "file": "backend/.env.example",
+    "sha256": "76b7059f4e6577a9d8afb65eb2cb7e3cb7f82fc0f9eb21f10e083fe19bf0977c"
+  },
+  {
+    "file": "backend/app.py",
+    "sha256": "27f2bef386b85f402d43c820d3e214e48b5ccd073701846f7f65f0882d133c08"
+  },
+  {
+    "file": "backend/benchmark.py",
+    "sha256": "1c3416d93005b2b81c8cac6735121c10fc8072fffe3f95339f251fe250f839cd"
+  },
+  {
+    "file": "backend/client_demo.py",
+    "sha256": "cf19505eeea92e3e27c60e06c537e978a21eaf15b4c5dc1da188c799023d0802"
+  },
+  {
+    "file": "backend/data/classrooms.example.json",
+    "sha256": "08fc2b61e55ef7fb8d9e780b62332f9d4c1a29111f5b6dad1be94c1b5d0699d9"
+  },
+  {
+    "file": "backend/data/classrooms.json",
+    "sha256": "2dd6f3334229fd1c34b58b352ccb8b22be186ad3502215780216f9b5820b74ca"
+  },
+  {
+    "file": "backend/data/matching_examples.json",
+    "sha256": "78f4ff9cd875b8d39e1caacf58f0bfbbe821e2039423e3e9ecf20dc800ae826d"
+  },
+  {
+    "file": "backend/demo_flow.py",
+    "sha256": "8411ee63796b9008ef62873492d250c914cdececce38d89bad237e10e8125854"
+  },
+  {
+    "file": "backend/manage.py",
+    "sha256": "dfad9d7cba4ebf021d5982c5283f06f815b4265f4c316e9fae282f209e009fb0"
+  },
+  {
+    "file": "backend/requirements-dev.txt",
+    "sha256": "1438527233ce7beb1cdf4a046b8b5d38f140bd77217ef4df17d5592989d3ec15"
+  },
+  {
+    "file": "backend/requirements-lock.txt",
+    "sha256": "adf4660102bc41dd7c6e53aca129eb7ce1634ee2aa1c4e13c4887c5d16c35466"
+  },
+  {
+    "file": "backend/requirements.txt",
+    "sha256": "9978c3de7e39bae0e39d92e27f59512c80dae5980f724c31cbaf572504bc83e3"
+  },
+  {
+    "file": "backend/tests/conftest.py",
+    "sha256": "0875fad1a144be9f1e71c7d94b1c109bbe661b6258d8de1d0ebae7ed71ca52cd"
+  },
+  {
+    "file": "backend/tests/test_auth.py",
+    "sha256": "856670d41103ed7bdc0e1b60da97c5c018bc76437f84d1814cf839d1f088afbd"
+  },
+  {
+    "file": "backend/tests/test_http.py",
+    "sha256": "0ee9b4722a8a2e36c7a15a5aebf5ba499cb19dbefb93a1529e5ac930c9ac5035"
+  },
+  {
+    "file": "backend/tests/test_maintenance.py",
+    "sha256": "07f3cf0516794afc37f3f95ad103cc83e1192e654255e95d317bdc26660c6c53"
+  },
+  {
+    "file": "backend/tests/test_maps_ai.py",
+    "sha256": "11e363fc90f6bba01c2bf27e9f3ed5fce4fd7466674ffe54514c800185be5809"
+  },
+  {
+    "file": "backend/tests/test_recovery.py",
+    "sha256": "8f9c08dd2fa323c6aa29b19990319dccc397ec5f625758cc0fbccce0748f1b66"
+  },
+  {
+    "file": "backend/tests/test_reports.py",
+    "sha256": "c51d3385c3612c95a450c26ef2d4ef29d18f44ee03203c527647ef3a6dc919e9"
+  },
+  {
+    "file": "backend/whereru/__init__.py",
+    "sha256": "17abb84ad2f8308cb38898f190857d044661e75574a86535ccf504fde18eaf0b"
+  },
+  {
+    "file": "backend/whereru/ai.py",
+    "sha256": "dce3c49ebd24973a6dc1eff28be803ecdb35c8e4c887469482f17fb62584a4e6"
+  },
+  {
+    "file": "backend/whereru/auth.py",
+    "sha256": "70ee4a553205b03c84cc3b602bf8e4c8af7a94156e8a73efd8a2e4effd6e065f"
+  },
+  {
+    "file": "backend/whereru/core.py",
+    "sha256": "74c9326fbec6401e4c496d8ac8f182190ca3a59f123b4fd41785c3b50af20827"
+  },
+  {
+    "file": "backend/whereru/db.py",
+    "sha256": "3a3e8f03460102a5f1f4b1c16d3c161513c178a6c7809fc7f7b77894b5a68330"
+  },
+  {
+    "file": "backend/whereru/listings.py",
+    "sha256": "533bc97aad9e165c6950c10e3ec0646aee4875ac2920fbe022202662b352138b"
+  },
+  {
+    "file": "backend/whereru/maps.py",
+    "sha256": "f6594d668a76a0cbc89ad3a113e3556774ac5afe1bde8096701813f82dcd1b04"
+  },
+  {
+    "file": "backend/whereru/matching.py",
+    "sha256": "a935ed3cdaba6425afb7436fa7274fdeb808483a18e5b643a5c2556defd54bf4"
+  },
+  {
+    "file": "backend/whereru/media.py",
+    "sha256": "1ca023eeea25cb722bf33be68f4c70696bc62f3a002c21a8249288743f6bb33d"
+  },
+  {
+    "file": "backend/whereru/openapi_export.py",
+    "sha256": "28da6fd1f5533ed9fc8b66e58197bececc65d23d207bbb05bcc4fd3fb76639c3"
+  },
+  {
+    "file": "backend/whereru/recovery.py",
+    "sha256": "4fb5abd02f789c396eae82191d0c6b423868644df8ebce263cd25c9841fb6a30"
+  },
+  {
+    "file": "backend/whereru/schema.sql",
+    "sha256": "e64eabd492ff3ae0754946a4b339e43eb11f9202bea10370f8c35de9f05aaf23"
+  },
+  {
+    "file": "docs/API.md",
+    "sha256": "bdef89b4c406fd041e12653fb2925a5911241a257467ac24ed8463fbb84d8730"
+  },
+  {
+    "file": "docs/DEMO.md",
+    "sha256": "f358c6dbbcda8ba8dff589999a93090cd342727e7ec81148ba0ba05a2fda100e"
+  },
+  {
+    "file": "docs/DEPLOYMENT.md",
+    "sha256": "4d8cf6902d5b5b83386433165f87189c9637d335df737029840a78a7b08bd4fd"
+  },
+  {
+    "file": "docs/FEATURE_MATRIX.md",
+    "sha256": "70e236514575d8095884d0925b79a62a332589073a3989a76d10ed807c264348"
+  },
+  {
+    "file": "docs/GEMINI.md",
+    "sha256": "c966d7b5691f0554d960c0c1715929e563c296fffc013ece99758c175c2ce13c"
+  },
+  {
+    "file": "docs/TEST_REPORT.md",
+    "sha256": "dc3e1be61e858a4a8806535a56078811855ce245c558eecd6633912b34f5a2e1"
+  },
+  {
+    "file": "docs/benchmark-demo.json",
+    "sha256": "5a0f9a68abb0cba5dd54c2a3c64bbc1d153c64cf62a1056b2ece8bbaeb2ac5a3"
+  },
+  {
+    "file": "docs/openapi.json",
+    "sha256": "4bf67801e0ab8cc586bc334a4a08f30ef41790ee1c7af80f6a37ba3e30d81472"
+  }
+]

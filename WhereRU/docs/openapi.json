@@ -1,0 +1,2697 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "WhereRU? backend",
+    "version": "1.0.0",
+    "description": "Executable endpoint inventory and examples. See API.md for field limits, privacy rules and response contracts. Timestamps in examples must be replaced where current time is required."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:5001"
+    }
+  ],
+  "paths": {
+    "/api/analyses/{analysis_id}/apply": {
+      "post": {
+        "operationId": "ai_apply_post",
+        "summary": "ai / apply",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "confirm": true,
+                "corrections": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "auth_logout_post",
+        "summary": "auth / logout",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "auth_me_get",
+        "summary": "auth / me",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    },
+    "/api/auth/request-code": {
+      "post": {
+        "operationId": "auth_request_code_post",
+        "summary": "auth / request code",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "email": "owner@example.com"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/verify-code": {
+      "post": {
+        "operationId": "auth_verify_code_post",
+        "summary": "auth / verify code",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "email": "owner@example.com",
+                "code": "123456"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/claims": {
+      "post": {
+        "operationId": "recovery_create_claim_post",
+        "summary": "recovery / create claim",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "found_id": 2,
+                "lost_id": 1,
+                "evidence": "Private identifying evidence"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "recovery_claims_get",
+        "summary": "recovery / claims",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ]
+      }
+    },
+    "/api/claims/{claim_id}": {
+      "get": {
+        "operationId": "recovery_detail_get",
+        "summary": "recovery / detail",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/claims/{claim_id}/cancel": {
+      "post": {
+        "operationId": "recovery_cancel_post",
+        "summary": "recovery / cancel",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/claims/{claim_id}/evidence": {
+      "post": {
+        "operationId": "recovery_evidence_post",
+        "summary": "recovery / evidence",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "evidence": "More private identifying evidence"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/claims/{claim_id}/handoff": {
+      "post": {
+        "operationId": "recovery_arrange_post",
+        "summary": "recovery / arrange",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "method": "MEETUP",
+                "place": "Student center"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "recovery_handoff_get",
+        "summary": "recovery / handoff",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/claims/{claim_id}/handoff/confirm": {
+      "post": {
+        "operationId": "recovery_confirm_post",
+        "summary": "recovery / confirm",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/claims/{claim_id}/messages": {
+      "get": {
+        "operationId": "recovery_messages_get",
+        "summary": "recovery / messages",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "recovery_send_message_post",
+        "summary": "recovery / send message",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "body": "Meet at the student center?"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/claims/{claim_id}/review": {
+      "post": {
+        "operationId": "recovery_review_post",
+        "summary": "recovery / review",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "decision": "ACCEPTED",
+                "note": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/classrooms": {
+      "get": {
+        "operationId": "ai_classrooms_get",
+        "summary": "ai / classrooms",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "health_get",
+        "summary": "health",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    },
+    "/api/images/{image_id}": {
+      "get": {
+        "operationId": "media_view_get",
+        "summary": "media / view",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "media_visibility_patch",
+        "summary": "media / visibility",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "is_public": true
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "media_delete_delete",
+        "summary": "media / delete",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/listings": {
+      "get": {
+        "operationId": "listings_feed_get",
+        "summary": "listings / feed",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "campus",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "listings_create_post",
+        "summary": "listings / create",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "type": "LOST",
+                "title": "Blue bottle",
+                "category": "bottle",
+                "occurred_at": "2026-10-10T14:00:00-04:00",
+                "visibility": "PUBLIC"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings/{listing_id}": {
+      "get": {
+        "operationId": "listings_detail_get",
+        "summary": "listings / detail",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "listings_edit_patch",
+        "summary": "listings / edit",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "title": "Updated bottle description"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings/{listing_id}/analyze": {
+      "post": {
+        "operationId": "ai_analyze_post",
+        "summary": "ai / analyze",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "consent_to_ai": true,
+                "image_ids": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings/{listing_id}/close": {
+      "post": {
+        "operationId": "listings_close_post",
+        "summary": "listings / close",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "reason": "WITHDRAWN"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings/{listing_id}/drop-off": {
+      "post": {
+        "operationId": "listings_drop_off_post",
+        "summary": "listings / drop off",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "place": "Appropriate staffed desk"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings/{listing_id}/history": {
+      "get": {
+        "operationId": "listings_history_get",
+        "summary": "listings / history",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/listings/{listing_id}/images": {
+      "post": {
+        "operationId": "media_upload_post",
+        "summary": "media / upload",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "image"
+                ],
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings/{listing_id}/potential-locations": {
+      "post": {
+        "operationId": "maps_locations_post",
+        "summary": "maps / locations",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "locations": [
+                  {
+                    "label": "Library",
+                    "latitude": 40.503,
+                    "longitude": -74.452,
+                    "priority": 2,
+                    "share_public": true
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings/{listing_id}/recognize-room": {
+      "post": {
+        "operationId": "ai_recognize_room_post",
+        "summary": "ai / recognize room",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "consent_to_ai": true,
+                "image_id": 1,
+                "building": "Your building"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings/{listing_id}/scan-items": {
+      "post": {
+        "operationId": "ai_scan_items_post",
+        "summary": "ai / scan items",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "consent_to_ai": true,
+                "image_id": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings/{listing_id}/search-areas": {
+      "get": {
+        "operationId": "maps_cloud_get",
+        "summary": "maps / cloud",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/listings/{listing_id}/semantic-index": {
+      "post": {
+        "operationId": "ai_semantic_index_post",
+        "summary": "ai / semantic index",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "listing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "consent_to_ai": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/location-sessions": {
+      "post": {
+        "operationId": "maps_start_post",
+        "summary": "maps / start",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "consent": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/location-sessions/{sid}": {
+      "get": {
+        "operationId": "maps_trail_get",
+        "summary": "maps / trail",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "sid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "maps_delete_delete",
+        "summary": "maps / delete",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "sid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/location-sessions/{sid}/points": {
+      "post": {
+        "operationId": "maps_points_post",
+        "summary": "maps / points",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "sid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "points": [
+                  {
+                    "latitude": 40.503,
+                    "longitude": -74.452,
+                    "accuracy": 20,
+                    "recorded_at": 1791670000.0
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/location-sessions/{sid}/stop": {
+      "post": {
+        "operationId": "maps_stop_post",
+        "summary": "maps / stop",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "sid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/maps/density": {
+      "get": {
+        "operationId": "maps_density_get",
+        "summary": "maps / density",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "campus",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/matches": {
+      "get": {
+        "operationId": "matching_matches_get",
+        "summary": "matching / matches",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ]
+      }
+    },
+    "/api/matches/{match_id}": {
+      "get": {
+        "operationId": "matching_detail_get",
+        "summary": "matching / detail",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "match_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/matches/{match_id}/feedback": {
+      "post": {
+        "operationId": "matching_feedback_post",
+        "summary": "matching / feedback",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "match_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "decision": "NOT_MINE"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me": {
+      "patch": {
+        "operationId": "auth_edit_profile_patch",
+        "summary": "auth / edit profile",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "display_name": "Alex",
+                "notifications_enabled": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/activity": {
+      "get": {
+        "operationId": "auth_activity_get",
+        "summary": "auth / activity",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    },
+    "/api/me/listings": {
+      "get": {
+        "operationId": "listings_mine_get",
+        "summary": "listings / mine",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "operationId": "matching_notifications_get",
+        "summary": "matching / notifications",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ]
+      }
+    },
+    "/api/notifications/{notification_id}/read": {
+      "post": {
+        "operationId": "matching_read_post",
+        "summary": "matching / read",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/return-guidance": {
+      "get": {
+        "operationId": "recovery_guidance_get",
+        "summary": "recovery / guidance",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Sign in required"
+          },
+          "403": {
+            "description": "Permission, origin, or CSRF denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "SessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "whereru_session"
+      },
+      "CsrfToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-Token"
+      }
+    }
+  }
+}

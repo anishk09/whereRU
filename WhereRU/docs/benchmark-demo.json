@@ -1,0 +1,153 @@
+{
+  "dataset": "Six synthetic examples; engineering sanity check, not a real-world accuracy estimate",
+  "threshold": 35,
+  "gemini_tested": false,
+  "results": [
+    {
+      "mode": "keyword_baseline",
+      "top1_unique_correct": 1,
+      "positive_cases": 5,
+      "top1_unique_rate": 0.2,
+      "negative_candidates_above_threshold": 3,
+      "negative_candidates": 7,
+      "false_positive_candidate_rate": 0.42857142857142855,
+      "tied_cases": 1,
+      "elapsed_ms": 0.29,
+      "cases": [
+        {
+          "case": "Bottle synonyms across campuses",
+          "scores": [
+            27.27,
+            22.22
+          ],
+          "expected": 0,
+          "predicted": null,
+          "tied": false
+        },
+        {
+          "case": "Category excludes misleading wording",
+          "scores": [
+            57.14,
+            42.86
+          ],
+          "expected": 1,
+          "predicted": 0,
+          "tied": false
+        },
+        {
+          "case": "Color conflict",
+          "scores": [
+            50.0,
+            50.0
+          ],
+          "expected": 1,
+          "predicted": 0,
+          "tied": true
+        },
+        {
+          "case": "Brand disambiguation",
+          "scores": [
+            60.0,
+            100.0
+          ],
+          "expected": 0,
+          "predicted": 1,
+          "tied": false
+        },
+        {
+          "case": "Missing attributes",
+          "scores": [
+            0.0,
+            100.0
+          ],
+          "expected": 1,
+          "predicted": 1,
+          "tied": false
+        },
+        {
+          "case": "No matching category",
+          "scores": [
+            14.29,
+            14.29
+          ],
+          "expected": null,
+          "predicted": null,
+          "tied": false
+        }
+      ]
+    },
+    {
+      "mode": "attribute_matcher",
+      "top1_unique_correct": 4,
+      "positive_cases": 5,
+      "top1_unique_rate": 0.8,
+      "negative_candidates_above_threshold": 1,
+      "negative_candidates": 7,
+      "false_positive_candidate_rate": 0.14285714285714285,
+      "tied_cases": 0,
+      "elapsed_ms": 0.25,
+      "cases": [
+        {
+          "case": "Bottle synonyms across campuses",
+          "scores": [
+            57.0,
+            30.5
+          ],
+          "expected": 0,
+          "predicted": 0,
+          "tied": false
+        },
+        {
+          "case": "Category excludes misleading wording",
+          "scores": [
+            0,
+            60.0
+          ],
+          "expected": 1,
+          "predicted": 1,
+          "tied": false
+        },
+        {
+          "case": "Color conflict",
+          "scores": [
+            8.0,
+            32.0
+          ],
+          "expected": 1,
+          "predicted": null,
+          "tied": false
+        },
+        {
+          "case": "Brand disambiguation",
+          "scores": [
+            84.0,
+            60.0
+          ],
+          "expected": 0,
+          "predicted": 0,
+          "tied": false
+        },
+        {
+          "case": "Missing attributes",
+          "scores": [
+            30.0,
+            60.0
+          ],
+          "expected": 1,
+          "predicted": 1,
+          "tied": false
+        },
+        {
+          "case": "No matching category",
+          "scores": [
+            0,
+            0
+          ],
+          "expected": null,
+          "predicted": null,
+          "tied": false
+        }
+      ]
+    }
+  ]
+}
