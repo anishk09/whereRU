@@ -275,7 +275,8 @@ def local_room_result(raw,campus=''):
         if campus and room['campus'].casefold()!=campus.casefold():
             conflicts.append(f"This room is on {room['campus']}, not {campus}. Check before confirming.")
         candidates.append(dict(room_id=item['room_id'],building=room['building'],room=room['room'],
-                               campus=room['campus'],evidence=item['evidence'],conflicts=conflicts))
+                               campus=room['campus'],evidence=item['evidence'],conflicts=conflicts,
+                               confident=item.get('confident',False)))
     return dict(candidates=candidates,visible_sign_text='',needs_confirmation=True,
                 uncertainty='On-device comparison with reference photos of each room. Confirm the room before saving.')
 

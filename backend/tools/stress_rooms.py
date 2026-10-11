@@ -140,45 +140,51 @@ def room_scores(per_room, drop_room=None, hide_yaw_of=None, query_yaw=None):
     return out
 
 
-def decide(scores, min_sim, min_margin):
-    """Same rules as vision.match_rooms. Returns the set of rooms the app would suggest."""
-    picked = set()
+def decide(scores, min_sim, min_margin, clear=None):
+    """Same rules as vision.match_rooms. Returns (rooms suggested, confident?)."""
+    clear = vision.CLEAR_MARGIN if clear is None else clear
+    picked, confident = set(), False
     sims = sorted(((s, r) for r, (_, s) in scores.items() if s is not None), reverse=True)
     if sims:
-        runner = sims[1][0] if len(sims) > 1 else -1.0
-        if sims[0][0] >= min_sim and sims[0][0] - runner >= min_margin:
-            picked.add(sims[0][1])
+        runner, runner_id = sims[1] if len(sims) > 1 else (-1.0, None)
+        lead = sims[0][0] - runner
+        if sims[0][0] >= min_sim and lead >= clear:
+            picked, confident = {sims[0][1]}, True
+        elif sims[0][0] >= min_sim and lead >= min_margin and runner_id:
+            picked = {sims[0][1], runner_id}
     feats = sorted(((m, r) for r, (m, _) in scores.items()), reverse=True)
     if feats:
         second = feats[1][0] if len(feats) > 1 else 0
         if feats[0][0] >= vision.MIN_INLIERS and feats[0][0] >= vision.FEATURE_LEAD * max(second, 1):
-            picked.add(feats[0][1])
-    return picked
+            picked, confident = {feats[0][1]}, True
+    return picked, confident
 
 
 def evaluate(records, min_sim, min_margin):
-    stats = {k: {'n': 0, 'right': 0, 'wrong': 0, 'none': 0} for k in ('known', 'hard', 'unknown', 'leave_one_out')}
+    """right: one confident pick, correct. offered: correct room among two possible matches.
+    wrong: confident pick of the wrong room. fooled (unknown rooms): confident pick of any room.
+    maybe: unknown room shown as two possible matches (the finder can still tap None of these)."""
+    keys = ('n', 'right', 'offered', 'wrong', 'none', 'maybe')
+    stats = {k: dict.fromkeys(keys, 0) for k in ('known', 'hard', 'unknown', 'leave_one_out')}
     for rec in records:
         if rec['truth'] in rec['catalog_ids']:
-            for kind, scores in (('known', room_scores(rec['per_room'])),
-                                 ('hard', room_scores(rec['per_room'], hide_yaw_of=rec['truth'], query_yaw=rec['yaw'])),
-                                 ('leave_one_out', room_scores(rec['per_room'], drop_room=rec['truth']))):
-                picked = decide(scores, min_sim, min_margin)
-                st = stats[kind]
-                st['n'] += 1
-                if kind == 'leave_one_out':
-                    st['wrong' if picked else 'none'] += 1
-                elif not picked:
-                    st['none'] += 1
-                elif picked == {rec['truth']}:
-                    st['right'] += 1
-                else:
-                    st['wrong'] += 1
+            cases = (('known', room_scores(rec['per_room'])),
+                     ('hard', room_scores(rec['per_room'], hide_yaw_of=rec['truth'], query_yaw=rec['yaw'])),
+                     ('leave_one_out', room_scores(rec['per_room'], drop_room=rec['truth'])))
         else:
-            picked = decide(room_scores(rec['per_room']), min_sim, min_margin)
-            st = stats['unknown']
+            cases = (('unknown', room_scores(rec['per_room'])),)
+        for kind, scores in cases:
+            picked, confident = decide(scores, min_sim, min_margin)
+            st = stats[kind]
             st['n'] += 1
-            st['wrong' if picked else 'none'] += 1
+            if kind in ('unknown', 'leave_one_out'):
+                st['wrong' if confident else 'maybe' if picked else 'none'] += 1
+            elif not picked:
+                st['none'] += 1
+            elif rec['truth'] in picked:
+                st['right' if confident else 'offered'] += 1
+            else:
+                st['wrong'] += 1
     return stats
 
 
@@ -191,10 +197,14 @@ def main():
     parser.add_argument('--fetch', action='store_true')
     parser.add_argument('--quick', action='store_true')
     parser.add_argument('--seed', type=int, default=7)
+    parser.add_argument('--report', action='store_true', help='re-score data/stress/results.json without scanning')
     args = parser.parse_args()
     if args.fetch:
         print('Downloading decoy rooms...')
         fetch()
+        return
+    if args.report:
+        report(json.loads((STRESS / 'results.json').read_text()), [])
         return
     rng = random.Random(args.seed)
     rooms = [with_photos_on_disk(r, DATA) for r in json.loads((DATA / 'classrooms.json').read_text())['rooms']]
@@ -233,48 +243,59 @@ def main():
     STRESS.mkdir(parents=True, exist_ok=True)
     (STRESS / 'results.json').write_text(json.dumps(records))
 
+    report(records, times)
+
+
+def report(records, times):
+    catalog_ids = records[0]['catalog_ids'] if records else []
     cur = (vision.MIN_SIMILARITY, vision.MIN_MARGIN)
     print(f'\n=== Current settings: similarity >= {cur[0]}, lead >= {cur[1]} ===')
     stats = evaluate(records, *cur)
+    print('(right = one confident correct pick; offered = correct room among 2 possible matches)')
     for kind, label in (('known', 'Known rooms'), ('hard', 'Known rooms, hard viewpoint')):
         st = stats[kind]
-        print(f"{label:30s} right {pct(st['right'], st['n'])}  wrong {pct(st['wrong'], st['n'])}  "
-              f"no match {pct(st['none'], st['n'])}   (n={st['n']})")
+        print(f"{label:30s} right {pct(st['right'], st['n'])}  offered {pct(st['offered'], st['n'])}  "
+              f"wrong {pct(st['wrong'], st['n'])}  no match {pct(st['none'], st['n'])}   (n={st['n']})")
+    print('(fooled = confident wrong pick; 2 options = shown as possible matches, finder can say none)')
     for kind, label in (('unknown', 'Unknown rooms (decoys)'), ('leave_one_out', 'Look-alike (leave-one-out)')):
         st = stats[kind]
-        print(f"{label:30s} fooled {pct(st['wrong'], st['n'])}  correctly no match {pct(st['none'], st['n'])}   (n={st['n']})")
+        print(f"{label:30s} fooled {pct(st['wrong'], st['n'])}  2 options {pct(st['maybe'], st['n'])}  "
+              f"no match {pct(st['none'], st['n'])}   (n={st['n']})")
 
-    print('\nKnown rooms by condition (right / wrong):')
+    print('\nKnown rooms by condition (right or offered / wrong):')
     for variant in VARIANTS:
         sub = [r for r in records if r['variant'] == variant and r['truth'] in catalog_ids]
         st = evaluate(sub, *cur)['known']
-        print(f"  {variant:12s} {pct(st['right'], st['n'])} / {pct(st['wrong'], st['n'])}  (n={st['n']})")
+        print(f"  {variant:12s} {pct(st['right'] + st['offered'], st['n'])} / {pct(st['wrong'], st['n'])}  (n={st['n']})")
 
-    print('\nThreshold sweep (known right | hard right | decoys fooled | look-alike fooled):')
-    for min_sim in (0.65, 0.70, 0.75, 0.80):
-        for margin in (0.03, 0.05, 0.08, 0.10):
-            st = evaluate(records, min_sim, margin)
-            mark = '  <- current' if (min_sim, margin) == cur else ''
-            print(f"  sim {min_sim:.2f} lead {margin:.2f}:  {pct(st['known']['right'], st['known']['n'])} | "
-                  f"{pct(st['hard']['right'], st['hard']['n'])} | {pct(st['unknown']['wrong'], st['unknown']['n'])} | "
-                  f"{pct(st['leave_one_out']['wrong'], st['leave_one_out']['n'])}{mark}")
+    print('\nSweep of the confident-match lead (hard right+offered | decoys fooled | look-alike fooled):')
+    for clear in (0.06, 0.08, 0.10, 0.12):
+        saved = vision.CLEAR_MARGIN
+        vision.CLEAR_MARGIN = clear
+        st = evaluate(records, *cur)
+        vision.CLEAR_MARGIN = saved
+        h, u, lo = st['hard'], st['unknown'], st['leave_one_out']
+        mark = '  <- current' if clear == saved else ''
+        print(f"  clear lead {clear:.2f}:  {pct(h['right'] + h['offered'], h['n'])} | {pct(u['wrong'], u['n'])} | "
+              f"{pct(lo['wrong'], lo['n'])}{mark}")
 
-    print('\nWorst false alarms (decoy photo -> room picked, similarity):')
+    print('\nWorst confident false alarms (decoy photo -> room picked, similarity):')
     alarms = []
     for rec in records:
         if rec['truth'] in catalog_ids:
             continue
         scores = room_scores(rec['per_room'])
-        picked = decide(scores, *cur)
-        for room in picked:
+        picked, confident = decide(scores, *cur)
+        for room in (picked if confident else []):
             alarms.append((scores[room][1] or 0, rec['truth'], room, rec['variant']))
     for sim, truth, room, variant in sorted(alarms, reverse=True)[:8]:
         print(f'  {truth:10s} -> {room:10s} sim {sim:.2f} ({variant})')
     if not alarms:
         print('  none')
-    times = np.array(times)
-    print(f'\nTime per scan: median {np.median(times):.2f}s, slowest 5% {np.percentile(times, 95):.2f}s')
-    print(f'Raw scores saved to {STRESS / "results.json"}')
+    if len(times):
+        times = np.array(times)
+        print(f'\nTime per scan: median {np.median(times):.2f}s, slowest 5% {np.percentile(times, 95):.2f}s')
+    print(f'Raw scores in {STRESS / "results.json"}')
 
 
 if __name__ == '__main__':

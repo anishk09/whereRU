@@ -157,7 +157,7 @@ export async function analyzeItemPhoto(photo: File) {
   return request<{ mode: string; suggestion: ApiItemSuggestion }>("POST", `/api/listings/${listingId}/analyze`, { consent_to_ai: true, image_ids: [imageId] });
 }
 
-export type ApiRoomCandidate = { room_id: string; building: string; room: string; campus: string; evidence: string[]; conflicts?: string[] };
+export type ApiRoomCandidate = { room_id: string; building: string; room: string; campus: string; evidence: string[]; conflicts?: string[]; confident?: boolean };
 
 export type ApiRoomResult = { mode: string; candidates: ApiRoomCandidate[]; message?: string };
 

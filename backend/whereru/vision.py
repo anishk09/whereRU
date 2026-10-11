@@ -33,7 +33,12 @@ RATIO = 0.75              # Lowe ratio test
 # Calibrated 2026-10-11: unrelated lecture halls score 0.57-0.70, a Weeks 105 photo scored 0.79
 # for Weeks 105 with a 0.09 lead.
 MIN_SIMILARITY = float(os.getenv('ROOM_MIN_SIMILARITY', '0.70'))
-MIN_MARGIN = float(os.getenv('ROOM_MIN_MARGIN', '0.06'))   # lead over the next-best room
+MIN_MARGIN = float(os.getenv('ROOM_MIN_MARGIN', '0.06'))      # below this lead: no match
+CLEAR_MARGIN = float(os.getenv('ROOM_CLEAR_MARGIN', '0.10'))  # at or above: one confident match
+# Between MIN_MARGIN and CLEAR_MARGIN the top two rooms are shown as possible matches.
+# Stress test 2026-10-11 (236 photos, 5 rooms + 24 decoy rooms): look-alike rooms (Physics vs
+# SEC, ARC vs Lucy Stone) lead by up to ~0.08, so a single confident pick needs 0.10. That cut
+# confident wrong answers from 5-9% to about 1%.
 
 
 def _prepare(gray):
@@ -261,12 +266,19 @@ def match_rooms(query_raw, rooms, base, limit=3):
     accepted = {}
 
     sims = sorted(((v['similarity'], k) for k, v in scores.items() if v['similarity'] is not None), reverse=True)
+    confident = False
     if sims:
         top_sim, top_id = sims[0]
-        runner_up = sims[1][0] if len(sims) > 1 else -1.0
-        if top_sim >= MIN_SIMILARITY and top_sim - runner_up >= MIN_MARGIN:
+        runner_up, runner_id = sims[1] if len(sims) > 1 else (-1.0, None)
+        lead = top_sim - runner_up
+        if top_sim >= MIN_SIMILARITY and lead >= CLEAR_MARGIN:
+            confident = True
             accepted[top_id] = [f'Overall look of the room matches (similarity {top_sim:.2f}, '
                                 f'next closest room {runner_up:.2f})']
+        elif top_sim >= MIN_SIMILARITY and lead >= MIN_MARGIN and runner_id:
+            # Close call: offer both and let the finder pick.
+            accepted[top_id] = [f'Looks most like this room (similarity {top_sim:.2f})']
+            accepted[runner_id] = [f'Also looks similar (similarity {runner_up:.2f})']
 
     feats = sorted(((v['matches'], k) for k, v in scores.items()), reverse=True)
     if feats:
@@ -274,6 +286,9 @@ def match_rooms(query_raw, rooms, base, limit=3):
         second = feats[1][0] if len(feats) > 1 else 0
         if top_matches >= MIN_INLIERS and top_matches >= FEATURE_LEAD * max(second, 1):
             accepted.setdefault(top_id, []).insert(0, f'{top_matches} visual details line up with the reference photos')
+            confident = True
+            # Detail matching is decisive (no false alarms in the stress test): drop close-call extras.
+            accepted = {top_id: accepted[top_id]}
 
     ranked = sorted(accepted, key=lambda r: (len(accepted[r]), scores[r]['matches'], scores[r]['similarity'] or 0), reverse=True)
     report = ', '.join(
@@ -282,7 +297,7 @@ def match_rooms(query_raw, rooms, base, limit=3):
     _log(f"{n_features} photo features; matches/similarity: {report}; picked {ranked or 'none'} "
          f"in {time.time() - started:.1f}s")
     return [{'room_id': r, 'matches': scores[r]['matches'], 'similarity': scores[r]['similarity'],
-             'evidence': accepted[r]} for r in ranked[:limit]]
+             'evidence': accepted[r], 'confident': confident} for r in ranked[:limit]]
 
 
 # Named colors in HSV terms. Hue in OpenCV is 0-179.

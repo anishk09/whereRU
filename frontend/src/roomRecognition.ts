@@ -86,6 +86,8 @@ export type RoomCandidate = {
   features: string[];
   /** False when the result came from the real backend. */
   demo?: boolean;
+  /** True when the backend is sure about this room; false for a close call between rooms. */
+  confident?: boolean;
 };
 
 export type ItemDescription = {
@@ -183,6 +185,7 @@ export const backendRecognizer: RoomRecognizer = {
         },
         features: [...candidate.evidence, ...(candidate.conflicts ?? [])],
         demo: false,
+        confident: candidate.confident ?? false,
       }));
     } catch (error) {
       // The server is up but the scan failed or timed out. Show "no match" so the finder

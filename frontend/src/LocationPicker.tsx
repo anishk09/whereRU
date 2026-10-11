@@ -177,7 +177,9 @@ export default function LocationPicker({ value, onChange, context }: {
         <div className="candidate-head"><h3>Possible classroom matches</h3>{candidates.some((candidate) => candidate.demo !== false) ? <DemoTag /> : <span className="demo-tag live"><Icon name="check" size={12} />On-device match</span>}</div>
         {candidates.some((candidate) => candidate.demo !== false)
           ? <p className="form-hint left">These are sample rooms because the room-recognition server isn't running. Pick the one that matches what you see.</p>
-          : <p className="form-hint left">Matched against reference photos of campus classrooms. Confirm the room before continuing.</p>}
+          : candidates.length > 1 && !candidates[0].confident
+            ? <p className="form-hint left">These rooms look alike, so pick the one you're in. If it's neither, choose “None of these”.</p>
+            : <p className="form-hint left">Matched against reference photos of campus classrooms. Confirm the room before continuing.</p>}
         {candidates.map((candidate, index) => <button type="button" className="candidate-card" key={`${candidate.location.code}-${candidate.location.room}`} onClick={() => onChange(candidate.location)}>
           <span className="candidate-rank">{index + 1}</span>
           <span><strong>{formatLocation(candidate.location)}</strong><small>{candidate.location.campus} · {candidate.location.code}</small><span className="feature-chips">{candidate.features.map((feature) => <em key={feature}>{feature}</em>)}</span></span>
