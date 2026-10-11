@@ -32,3 +32,4 @@ secret.key
 backend/data/rooms/*/pano.jpg
 backend/data/rooms/*/view_*.jpg
 backend/data/*.tar
+backend/data/stress/
