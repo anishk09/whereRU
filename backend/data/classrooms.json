@@ -1,6 +1,50 @@
 {
-  "description": "Add labeled reference photos you have permission to use. No room recognition is claimed until configured and evaluated.",
   "rooms": [
+    {
+      "id": "ABE-2225",
+      "building": "Academic Building East Wing",
+      "campus": "College Ave",
+      "room": "2225",
+      "capacity": 271,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/ABE-2225",
+      "images": []
+    },
+    {
+      "id": "ABE-2400",
+      "building": "Academic Building East Wing",
+      "campus": "College Ave",
+      "room": "2400",
+      "capacity": 271,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/ABE-2400",
+      "images": []
+    },
+    {
+      "id": "ABE-4225",
+      "building": "Academic Building East Wing",
+      "campus": "College Ave",
+      "room": "4225",
+      "capacity": 246,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/ABE-4225",
+      "images": []
+    },
+    {
+      "id": "ABW-2125",
+      "building": "Academic Building West Wing",
+      "campus": "College Ave",
+      "room": "2125",
+      "capacity": 271,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/ABW-2125",
+      "images": []
+    },
+    {
+      "id": "ABW-2160",
+      "building": "Academic Building West Wing",
+      "campus": "College Ave",
+      "room": "2160",
+      "capacity": 271,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/ABW-2160",
+      "images": []
+    },
     {
       "id": "ARC-103",
       "building": "Allison Road Classroom",
@@ -9,6 +53,141 @@
       "capacity": 500,
       "room_type": "Lecture Hall",
       "source_url": "https://webapps.rutgers.edu/dcs/classrooms/ARC-103",
+      "images": []
+    },
+    {
+      "id": "ARH-200",
+      "building": "Art History Hall",
+      "campus": "Cook/Douglass",
+      "room": "200",
+      "capacity": 150,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/ARH-200",
+      "images": []
+    },
+    {
+      "id": "BE-100",
+      "building": "Beck Hall",
+      "campus": "Livingston",
+      "room": "100",
+      "capacity": 391,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/BE-100",
+      "images": []
+    },
+    {
+      "id": "BME-102",
+      "building": "Biomedical Engineering Building",
+      "campus": "Busch",
+      "room": "102",
+      "capacity": 141,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/BME-102",
+      "images": []
+    },
+    {
+      "id": "CCB-1303",
+      "building": "Chemistry & Chemical Biology",
+      "campus": "Busch",
+      "room": "1303",
+      "capacity": 117,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/CCB-1303",
+      "images": []
+    },
+    {
+      "id": "CDL-102",
+      "building": "Cook/Douglass Lecture Hall",
+      "campus": "Cook/Douglass",
+      "room": "102",
+      "capacity": 120,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/CDL-102",
+      "images": []
+    },
+    {
+      "id": "COR-101",
+      "building": "CoRE Building",
+      "campus": "Busch",
+      "room": "101",
+      "capacity": 113,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/COR-101",
+      "images": []
+    },
+    {
+      "id": "EN-B120",
+      "building": "Engineering Building",
+      "campus": "Busch",
+      "room": "B120",
+      "capacity": 165,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/EN-B120",
+      "images": []
+    },
+    {
+      "id": "FBO-108",
+      "building": "Fiber Optic Materials Research Building",
+      "campus": "Busch",
+      "room": "108",
+      "capacity": 173,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/FBO-108",
+      "images": []
+    },
+    {
+      "id": "FSW-105",
+      "building": "Food Science and Nutritional Sciences West",
+      "campus": "Cook/Douglass",
+      "room": "105",
+      "capacity": 194,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/FSW-105",
+      "images": []
+    },
+    {
+      "id": "HCK-101",
+      "building": "Hickman Hall",
+      "campus": "Cook/Douglass",
+      "room": "101",
+      "capacity": 288,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/HCK-101",
+      "images": []
+    },
+    {
+      "id": "HCK-138",
+      "building": "Hickman Hall",
+      "campus": "Cook/Douglass",
+      "room": "138",
+      "capacity": 481,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/HCK-138",
+      "images": []
+    },
+    {
+      "id": "HLL-114",
+      "building": "Hill Center",
+      "campus": "Busch",
+      "room": "114",
+      "capacity": 314,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/HLL-114",
+      "images": []
+    },
+    {
+      "id": "HLL-116",
+      "building": "Hill Center",
+      "campus": "Busch",
+      "room": "116",
+      "capacity": 105,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/HLL-116",
+      "images": []
+    },
+    {
+      "id": "KLG-010",
+      "building": "Ludwig Global Village Learning Center",
+      "campus": "Cook/Douglass",
+      "room": "010",
+      "capacity": 198,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/KLG-010",
+      "images": []
+    },
+    {
+      "id": "LOR-022",
+      "building": "Loree Classroom Building",
+      "campus": "Cook/Douglass",
+      "room": "022",
+      "capacity": 295,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/LOR-022",
       "images": []
     },
     {
@@ -22,6 +201,33 @@
       "images": []
     },
     {
+      "id": "LSH-A142",
+      "building": "Lucy Stone Hall",
+      "campus": "Livingston",
+      "room": "A142",
+      "capacity": 112,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/LSH-A142",
+      "images": []
+    },
+    {
+      "id": "MI-100",
+      "building": "Milledoler Hall",
+      "campus": "College Ave",
+      "room": "100",
+      "capacity": 170,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/MI-100",
+      "images": []
+    },
+    {
+      "id": "PH-111",
+      "building": "Pharmacy Building",
+      "campus": "Busch",
+      "room": "111",
+      "capacity": 136,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/PH-111",
+      "images": []
+    },
+    {
       "id": "PHY-001",
       "building": "Physics Lecture Hall",
       "campus": "Busch",
@@ -29,6 +235,15 @@
       "capacity": 316,
       "room_type": "Lecture Hall",
       "source_url": "https://webapps.rutgers.edu/dcs/classrooms/PHY-001",
+      "images": []
+    },
+    {
+      "id": "RAB-001",
+      "building": "Ruth Adams Building",
+      "campus": "Cook/Douglass",
+      "room": "001",
+      "capacity": 144,
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/RAB-001",
       "images": []
     },
     {

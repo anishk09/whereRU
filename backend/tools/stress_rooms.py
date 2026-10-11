@@ -2,7 +2,7 @@
 
 Usage (from backend/, venv active, after tools/import_dcs.py):
     python tools/stress_rooms.py --fetch     # first time: download decoy rooms (~25 panoramas)
-    python tools/stress_rooms.py             # full run (about 15-20 minutes)
+    python tools/stress_rooms.py             # full run (about 25 minutes with 29 rooms)
     python tools/stress_rooms.py --quick     # smaller run (about 8 minutes)
 
 Test photos are rendered from DCS 360° panoramas at angles, zooms and tilts the reference views
@@ -12,7 +12,7 @@ tilted phone, portrait framing.
 - Known rooms: photos of the 5 catalog rooms. The app should name the right room.
 - Unknown rooms: photos of other Rutgers lecture halls (decoys). The app should say no match.
 - Leave-one-out: photos of a catalog room scanned as if that room were missing from the app.
-  This is the "a random classroom that looks like ours" case.
+  This is the "a random classroom the app doesn't know" case, tested for every room.
 - Hard viewpoint: known-room photos compared without the reference views facing the same way,
   closer to a finder standing somewhere other than where the panorama was shot.
 
@@ -35,6 +35,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'tools'))
 from whereru import vision  # noqa: E402
+from whereru.ai import with_photos_on_disk  # noqa: E402
 from import_dcs import download, perspective_view  # noqa: E402
 
 DATA = ROOT / 'data'
@@ -87,14 +88,15 @@ def roughen(view, variant, rng):
     return img
 
 
-def make_queries(pano, n_views, variants, rng):
+def make_queries(pano, n_views, variants, rng, per_view=None):
     out = []
     for i in range(n_views):
         yaw = 22.5 + 45 * i + rng.uniform(-12, 12)
         pitch = rng.uniform(-20, 5)
         fov = rng.choice([55, 65, 75, 90])
         view = perspective_view(pano, yaw, pitch, fov, (1000, 750))
-        for variant in variants:
+        chosen = rng.sample(variants, per_view) if per_view and per_view < len(variants) else variants
+        for variant in chosen:
             ok, buf = cv2.imencode('.jpg', roughen(view, variant, rng), [cv2.IMWRITE_JPEG_QUALITY, 85])
             out.append({'yaw': yaw % 360, 'variant': variant, 'raw': buf.tobytes()})
     return out
@@ -105,20 +107,22 @@ def view_yaw(name):
 
 
 def score_query(raw, rooms):
-    """Per reference view: verified matches and similarity."""
-    index = vision.QueryIndex(vision.features_from_bytes(raw))
+    """Per reference view: (yaw, verified matches, similarity). Mirrors the app: detail matching
+    runs only on the rooms closest in similarity (one extra so leave-one-out stays accurate)."""
     q = vision.embed_bytes(raw)
+    paths = {r['id']: [(n, DATA / n) for n in r['images'] if (DATA / n).is_file()] for r in rooms}
+    sims = {rid: [float(q @ vision.reference_embedding(p)) if q is not None else None for _, p in ps]
+            for rid, ps in paths.items()}
+    if q is not None:
+        order = sorted((rid for rid in paths if sims[rid]), key=lambda rid: max(sims[rid]), reverse=True)
+        to_match = set(order[:vision.SHORTLIST + 1])
+    else:
+        to_match = set(paths)
+    index = vision.QueryIndex(vision.features_from_bytes(raw))
     per_room = {}
-    for room in rooms:
-        views = []
-        for name in room['images']:
-            path = DATA / name
-            if not path.is_file():
-                continue
-            m = vision.verified_matches(index, vision.reference_features(path))
-            s = float(q @ vision.reference_embedding(path)) if q is not None else None
-            views.append((view_yaw(name), m, s))
-        per_room[room['id']] = views
+    for rid, ps in paths.items():
+        per_room[rid] = [(view_yaw(n), vision.verified_matches(index, vision.reference_features(p)) if rid in to_match else 0, s)
+                         for (n, p), s in zip(ps, sims[rid])]
     return per_room
 
 
@@ -193,21 +197,22 @@ def main():
         fetch()
         return
     rng = random.Random(args.seed)
-    rooms = json.loads((DATA / 'classrooms.json').read_text())['rooms']
+    rooms = [with_photos_on_disk(r, DATA) for r in json.loads((DATA / 'classrooms.json').read_text())['rooms']]
+    rooms = [r for r in rooms if r['images']]
     catalog_ids = [r['id'] for r in rooms]
     if vision.scene_model() is None:
         print('Scene model not available (pip install torch); testing feature matching only.')
     print('Preparing reference views...', flush=True)
     vision.warm_cache(rooms, DATA)
 
-    n_views = 4 if args.quick else 6
+    n_views, per_view = (3, 3) if args.quick else (6, 4)
     sources = [(r['id'], DATA / 'rooms' / r['id'] / 'pano.jpg', VARIANTS) for r in rooms]
     decoys = sorted(p.parent.name for p in STRESS.glob('*/pano.jpg') if p.parent.name not in catalog_ids)
     if args.quick:
         decoys = decoys[:12]
     sources += [(code, STRESS / code / 'pano.jpg', ['clean', 'crowd']) for code in decoys]
     if not decoys:
-        print('No decoy rooms yet. Run with --fetch first for the unknown-room test.')
+        print('No extra decoy rooms (all of them are in the app now); the look-alike test covers unknown rooms.')
 
     records, times = [], []
     for code, pano_path, variants in sources:
@@ -215,7 +220,7 @@ def main():
         if pano is None:
             print(f'  {code}: no panorama at {pano_path}, skipped')
             continue
-        queries = make_queries(pano, n_views, variants, rng)
+        queries = make_queries(pano, n_views, variants, rng, per_view)
         print(f'  {code:10s} {len(queries):3d} photos', end='', flush=True)
         for q in queries:
             t = time.time()

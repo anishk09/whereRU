@@ -185,7 +185,24 @@ def catalog():
             'Classroom catalog is not configured correctly'
         )
 
-    return rooms, path.parent
+    return [with_photos_on_disk(room, path.parent) for room in rooms], path.parent
+
+
+PHOTO_TYPES = ('.jpg', '.jpeg', '.png', '.webp')
+
+
+def with_photos_on_disk(room, base):
+    """Adds reference photos found in rooms/<id>/ (DCS views and your own photos) to the
+    images listed in classrooms.json. The original panorama (pano.jpg) is not a reference."""
+    folder = base / 'rooms' / room['id']
+    listed = list(room.get('images', []))
+    if folder.is_dir():
+        seen = set(listed)
+        for file in sorted(folder.iterdir()):
+            name = f"rooms/{room['id']}/{file.name}"
+            if file.suffix.lower() in PHOTO_TYPES and file.name != 'pano.jpg' and name not in seen:
+                listed.append(name)
+    return {**room, 'images': listed}
 
 
 def classroom_json(room):

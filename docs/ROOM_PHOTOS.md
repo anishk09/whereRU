@@ -9,7 +9,8 @@ panorama for a few demo rooms and slices it into 16 phone-camera-style views
 ```bash
 cd backend
 source .venv/bin/activate
-python tools/import_dcs.py            # ARC-103, LSH-A102, PHY-001, RWH-105, SEC-111
+python tools/import_dcs.py            # all 29 rooms in tools/import_dcs.py (about 1 minute)
+python tools/import_dcs.py --core     # only ARC-103, LSH-A102, PHY-001, RWH-105, SEC-111
 python tools/import_dcs.py ARC-103    # or just some of them
 ```
 
@@ -94,3 +95,12 @@ python tools/test_room_photo.py ~/Downloads/photo.jpg
 The tool prints each room's `similarity`. A room is suggested when its similarity is at least
 `ROOM_MIN_SIMILARITY` (default 0.70; unrelated lecture halls score about 0.57–0.70) and beats the next room by `ROOM_MIN_MARGIN` (default 0.06).
 Both can be set in `.env`. Without PyTorch the app uses feature matching only.
+
+## How reference photos are found
+
+`data/classrooms.json` lists each room's details. The app adds every photo it finds in
+`data/rooms/<room id>/` (DCS views and your own photos, any of .jpg .jpeg .png .webp) except
+`pano.jpg`. So to add your own photos, just drop them in the room's folder and restart Flask.
+
+With the scene model installed, every scan compares against all rooms by overall look, then runs
+the slower detail matching only on the 4 closest rooms, so adding rooms barely slows scans down.

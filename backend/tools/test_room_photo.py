@@ -16,12 +16,14 @@ from pathlib import Path
 print('Loading OpenCV...', flush=True)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from whereru import vision  # noqa: E402
+from whereru.ai import with_photos_on_disk  # noqa: E402
 
 DATA = Path(__file__).resolve().parent.parent / 'data'
 
 
 def main(photos):
-    rooms = json.loads((DATA / 'classrooms.json').read_text())['rooms']
+    rooms = [with_photos_on_disk(r, DATA) for r in json.loads((DATA / 'classrooms.json').read_text())['rooms']]
+    rooms = [r for r in rooms if r['images']]
     print('Loading scene model (first run downloads about 90 MB)...', flush=True)
     if vision.scene_model() is None:
         print('  -> not available: install it with  pip install torch  (feature matching still works)')

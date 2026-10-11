@@ -215,22 +215,33 @@ def _room_paths(room, base):
             yield path
 
 
+SHORTLIST = 4   # with the scene model, detail matching only runs on the closest rooms
+
+
 def score_rooms(query_raw, rooms, base):
-    """Both signals for every room: {room_id: {'matches': int, 'similarity': float|None, 'views': int}}."""
+    """Both signals per room: {room_id: {'matches': int, 'similarity': float|None, 'views': int}}.
+
+    With the scene model, every room gets a similarity (fast: one dot product per view) and the
+    slower detail matching runs only on the SHORTLIST most similar rooms, so scans stay quick as
+    the catalog grows. Without the model, detail matching runs on every room.
+    """
     base = Path(base).resolve()
-    index = QueryIndex(features_from_bytes(query_raw))
+    paths = {room['id']: list(_room_paths(room, base)) for room in rooms}
     query_vec = embed_bytes(query_raw)
-    scores = {}
-    for room in rooms:
-        best_matches, best_sim, views = 0, None, 0
-        for path in _room_paths(room, base):
-            views += 1
-            best_matches = max(best_matches, verified_matches(index, reference_features(path)))
-            if query_vec is not None:
-                sim = float(query_vec @ reference_embedding(path))
-                best_sim = sim if best_sim is None else max(best_sim, sim)
-        scores[room['id']] = {'matches': best_matches, 'similarity': best_sim, 'views': views}
-    return scores, len(index.points)
+    scores = {rid: {'matches': 0, 'similarity': None, 'views': len(p)} for rid, p in paths.items()}
+    if query_vec is not None:
+        for rid, room_paths in paths.items():
+            if room_paths:
+                scores[rid]['similarity'] = max(float(query_vec @ reference_embedding(p)) for p in room_paths)
+        ranked = sorted((rid for rid in paths if scores[rid]['similarity'] is not None),
+                        key=lambda rid: scores[rid]['similarity'], reverse=True)
+        to_match = ranked[:SHORTLIST]
+    else:
+        to_match = [rid for rid, p in paths.items() if p]
+    index = QueryIndex(features_from_bytes(query_raw))
+    for rid in to_match:
+        scores[rid]['matches'] = max(verified_matches(index, reference_features(p)) for p in paths[rid])
+    return {rid: v for rid, v in scores.items() if v['views']}, len(index.points)
 
 
 def match_rooms(query_raw, rooms, base, limit=3):
