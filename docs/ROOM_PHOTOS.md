@@ -1,5 +1,30 @@
 # Adding classroom reference photos (room scan)
 
+## Fastest: import DCS 360° panoramas (5 CS lecture halls)
+
+Rutgers DCS publishes a 360° panorama for each classroom. The importer downloads the
+panorama for a few demo rooms and slices it into 16 phone-camera-style views
+(8 directions x 2 tilts), which is what the matcher compares against.
+
+```bash
+cd backend
+source .venv/bin/activate
+python tools/import_dcs.py            # ARC-103, LSH-A102, PHY-001, HLL-114, SEC-111
+python tools/import_dcs.py ARC-103    # or just some of them
+```
+
+Then restart Flask. It loads the room features in the background (about 10 seconds),
+and each scan then takes about 2-3 seconds.
+
+The images are saved only on your laptop (`data/rooms/` is git-ignored) because they belong
+to Rutgers DCS. Only room metadata with a source link goes in `data/classrooms.json`.
+To add another room, put its verified details from its DCS page into `ROOMS` in the script.
+
+Tested on synthetic 360° rooms: 20/20 correct from in-between angles with different zoom and
+lighting. Real rooms should be tested in person, so take one photo in the room and try it.
+
+## Your own photos (works for any room)
+
 Room scan works without Gemini (`AI_MODE=local`). It compares the finder's photo against
 reference photos of each classroom using on-device feature matching (OpenCV SIFT + RANSAC).
 A room can only be recognized if it has at least one reference photo.

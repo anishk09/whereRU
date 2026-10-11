@@ -27,9 +27,11 @@ export const buildings: Building[] = [
   { name: "Campbell Hall", code: "CA", campus: "College Ave" },
   { name: "Hill Center", code: "HLL", campus: "Busch" },
   { name: "Allison Road Classroom", code: "ARC", campus: "Busch" },
-  { name: "Science and Engineering Resource Center", code: "SEC", campus: "Busch" },
+  { name: "Science & Engineering Research Center", code: "SEC", campus: "Busch" },
+  { name: "Physics Lecture Hall", code: "PHY", campus: "Busch" },
   { name: "Beck Hall", code: "BE", campus: "Livingston" },
   { name: "Tillett Hall", code: "TIL", campus: "Livingston" },
+  { name: "Lucy Stone Hall", code: "LSH", campus: "Livingston" },
   { name: "Hickman Hall", code: "HCK", campus: "Cook/Douglass" },
   { name: "Ruth Adams Building", code: "RAB", campus: "Cook/Douglass" },
 ];
@@ -98,14 +100,14 @@ const demoRooms: Record<CampusId, { code: string; room: string; features: string
     { code: "MU", room: "212", features: ["Seminar tables", "Projector screen"] },
   ],
   Busch: [
-    { code: "ARC", room: "103", features: ["Large lecture hall", "Tiered seating"] },
-    { code: "HLL", room: "116", features: ["Flat floor", "Whiteboards"] },
-    { code: "SEC", room: "111", features: ["Tiered seating", "Wood panels"] },
+    { code: "ARC", room: "103", features: ["500-seat lecture hall", "Tiered seating"] },
+    { code: "PHY", room: "001", features: ["316-seat lecture hall", "Projection screens"] },
+    { code: "HLL", room: "114", features: ["314-seat lecture hall", "Tiered seating"] },
   ],
   Livingston: [
-    { code: "BE", room: "101", features: ["Flat floor", "Tall windows"] },
-    { code: "BE", room: "219", features: ["Seminar layout", "Whiteboard wall"] },
-    { code: "TIL", room: "232", features: ["Tablet arm chairs"] },
+    { code: "LSH", room: "A102", features: ["400-seat lecture hall", "Tiered seating"] },
+    { code: "BE", room: "100", features: ["391-seat lecture hall", "Projection screens"] },
+    { code: "TIL", room: "232", features: ["208-seat lecture hall", "Tiered seating"] },
   ],
   "Cook/Douglass": [
     { code: "HCK", room: "138", features: ["Tiered seating", "Projector screen"] },

@@ -1,4 +1,55 @@
 {
   "description": "Add labeled reference photos you have permission to use. No room recognition is claimed until configured and evaluated.",
-  "rooms": []
+  "rooms": [
+    {
+      "id": "ARC-103",
+      "building": "Allison Road Classroom",
+      "campus": "Busch",
+      "room": "103",
+      "capacity": 500,
+      "room_type": "Lecture Hall",
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/ARC-103",
+      "images": []
+    },
+    {
+      "id": "HLL-114",
+      "building": "Hill Center",
+      "campus": "Busch",
+      "room": "114",
+      "capacity": 314,
+      "room_type": "Lecture Hall",
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/HLL-114",
+      "images": []
+    },
+    {
+      "id": "LSH-A102",
+      "building": "Lucy Stone Hall",
+      "campus": "Livingston",
+      "room": "A102",
+      "capacity": 400,
+      "room_type": "Lecture Hall",
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/LSH-A102",
+      "images": []
+    },
+    {
+      "id": "PHY-001",
+      "building": "Physics Lecture Hall",
+      "campus": "Busch",
+      "room": "001",
+      "capacity": 316,
+      "room_type": "Lecture Hall",
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/PHY-001",
+      "images": []
+    },
+    {
+      "id": "SEC-111",
+      "building": "Science & Engineering Research Center",
+      "campus": "Busch",
+      "room": "111",
+      "capacity": 269,
+      "room_type": "Auditorium",
+      "source_url": "https://webapps.rutgers.edu/dcs/classrooms/SEC-111",
+      "images": []
+    }
+  ]
 }

@@ -26,3 +26,8 @@ private_uploads/
 instance/
 **/instance/
 secret.key
+
+# DCS panoramas and their sliced views stay local (they belong to Rutgers DCS).
+# Photos your team takes yourselves can be committed.
+backend/data/rooms/*/pano.jpg
+backend/data/rooms/*/view_*.jpg

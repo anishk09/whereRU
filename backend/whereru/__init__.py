@@ -41,6 +41,20 @@ def create_app(test_config=None):
     Path(app.config['UPLOAD_DIR']).mkdir(parents=True,exist_ok=True)
     app.teardown_appcontext(close_db)
     with app.app_context(): init_db()
+    if app.config['AI_MODE']=='local' and not app.config.get('TESTING'):
+        # Load classroom reference features in the background so the first room scan is fast.
+        import threading
+        def warm():
+            try:
+                from .vision import warm_cache
+                with app.app_context():
+                    from .ai import catalog
+                    rooms,base=catalog()
+                warm_cache(rooms,base)
+                app.logger.info('Room recognition ready: %d rooms',len(rooms))
+            except Exception as error:
+                app.logger.warning('Room cache warm-up skipped: %s',error)
+        threading.Thread(target=warm,daemon=True).start()
 
     @app.before_request
     def guards():

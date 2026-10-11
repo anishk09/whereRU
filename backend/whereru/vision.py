@@ -56,25 +56,35 @@ def reference_features(path):
     return _reference_features(str(path), path.stat().st_mtime)
 
 
-def verified_matches(query, reference):
-    q_points, q_desc = query
+class QueryIndex:
+    """FLANN index over the user's photo, built once and reused for every reference view."""
+
+    def __init__(self, query):
+        self.points, descriptors = query
+        self.ready = descriptors is not None and len(descriptors) >= 8
+        if self.ready:
+            self.matcher = cv2.FlannBasedMatcher({'algorithm': 1, 'trees': 5}, {'checks': 48})
+            self.matcher.add([descriptors])
+            self.matcher.train()
+
+
+def verified_matches(index, reference):
     r_points, r_desc = reference
-    if q_desc is None or r_desc is None or len(q_desc) < 8 or len(r_desc) < 8:
+    if not index.ready or r_desc is None or len(r_desc) < 8:
         return 0
-    matcher = cv2.FlannBasedMatcher({'algorithm': 1, 'trees': 5}, {'checks': 64})
-    pairs = matcher.knnMatch(q_desc, r_desc, k=2)
+    pairs = index.matcher.knnMatch(r_desc, k=2)
     good = [m for m, *rest in pairs if rest and m.distance < RATIO * rest[0].distance]
-    # One-to-one: repetitive textures make many query points land on the same reference
-    # point. Keep only the closest match per reference feature.
-    best_per_train = {}
+    # One-to-one: repetitive textures make many reference points land on the same photo
+    # point. Keep only the closest match per photo feature.
+    best_per_query = {}
     for m in good:
-        if m.trainIdx not in best_per_train or m.distance < best_per_train[m.trainIdx].distance:
-            best_per_train[m.trainIdx] = m
-    good = list(best_per_train.values())
+        if m.trainIdx not in best_per_query or m.distance < best_per_query[m.trainIdx].distance:
+            best_per_query[m.trainIdx] = m
+    good = list(best_per_query.values())
     if len(good) < 8:
         return 0
-    src = q_points[[m.queryIdx for m in good]]
-    dst = r_points[[m.trainIdx for m in good]]
+    src = index.points[[m.trainIdx for m in good]]
+    dst = r_points[[m.queryIdx for m in good]]
     # Rooms are 3D scenes, so check consistency with one camera pose (fundamental matrix),
     # not a flat homography.
     fundamental, mask = cv2.findFundamentalMat(src, dst, cv2.FM_RANSAC, 3.0, 0.99)
@@ -83,13 +93,26 @@ def verified_matches(query, reference):
     return int(np.count_nonzero(mask.ravel() == 1))
 
 
+def warm_cache(rooms, base):
+    """Precompute reference features so the first scan isn't slow. Safe to run in a thread."""
+    base = Path(base).resolve()
+    for room in rooms:
+        for name in room.get('images', []):
+            path = (base / name).resolve()
+            if path.is_relative_to(base) and path.is_file():
+                try:
+                    reference_features(path)
+                except ValueError:
+                    pass
+
+
 def match_rooms(query_raw, rooms, base, limit=3):
     """Rank catalog rooms by verified feature matches against their reference photos.
 
     rooms: catalog entries with an `images` list of paths relative to `base`.
     Returns [{room_id, matches}] for rooms at or above MIN_INLIERS, best first.
     """
-    query = features_from_bytes(query_raw)
+    index = QueryIndex(features_from_bytes(query_raw))
     base = Path(base).resolve()
     scored = []
     for room in rooms:
@@ -98,7 +121,7 @@ def match_rooms(query_raw, rooms, base, limit=3):
             path = (base / name).resolve()
             if not path.is_relative_to(base) or not path.is_file():
                 continue
-            best = max(best, verified_matches(query, reference_features(path)))
+            best = max(best, verified_matches(index, reference_features(path)))
         if best >= MIN_INLIERS:
             scored.append({'room_id': room['id'], 'matches': best})
     scored.sort(key=lambda item: item['matches'], reverse=True)
