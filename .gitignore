@@ -21,3 +21,8 @@ private_uploads/
 .DS_Store
 .vscode/
 .idea/
+
+# Flask instance folder: generated at runtime (secret key, SQLite DB, uploads)
+instance/
+**/instance/
+secret.key
