@@ -168,7 +168,7 @@ export const backendRecognizer: RoomRecognizer = {
           room: candidate.room,
           source: "room-scan" as const,
         },
-        features: candidate.evidence,
+        features: [...candidate.evidence, ...(candidate.conflicts ?? [])],
         demo: false,
       }));
     } catch (error) {

@@ -243,6 +243,42 @@ def classroom_detail(room_id):
     raise NotFound('Classroom not found')
 
 
+def local_room_result(raw,campus=''):
+    """On-device room recognition against the whole catalog. The campus is only a hint: the
+    winner is chosen among all rooms so a room can't win just because it is the only one left
+    after filtering, and a winner on another campus is still shown, with a note."""
+    from . import vision
+    rooms,base=catalog()
+    by_id={r['id']:r for r in rooms}
+    ranked=vision.match_rooms(raw,rooms,base)
+    candidates=[]
+    for item in ranked:
+        room=by_id[item['room_id']]
+        conflicts=[]
+        if campus and room['campus'].casefold()!=campus.casefold():
+            conflicts.append(f"This room is on {room['campus']}, not {campus}. Check before confirming.")
+        candidates.append(dict(room_id=item['room_id'],building=room['building'],room=room['room'],
+                               campus=room['campus'],evidence=item['evidence'],conflicts=conflicts))
+    return dict(candidates=candidates,visible_sign_text='',needs_confirmation=True,
+                uncertainty='On-device comparison with reference photos of each room. Confirm the room before saving.')
+
+
+@bp.post('/api/recognize-room')
+@login_required
+def recognize_room_photo():
+    """Scan a room photo without storing it. The photo is checked, compared in memory and
+    discarded, so room scans (which can show other students) never end up on a report."""
+    rate_limit('room_scan',60)
+    if 'image' not in request.files: raise BadRequest('multipart/form-data field image is required')
+    campus=text(request.form.get('campus',''),'campus',40)
+    raw,_,_=normalize_image(request.files['image'].stream)
+    if current_app.config['AI_MODE']!='local':
+        return jsonify(mode=current_app.config['AI_MODE'],candidates=[],message='Room scanning without storing the photo needs AI_MODE=local.')
+    try: result=local_room_result(raw,campus)
+    except ValueError: raise BadRequest('Could not read the room photo')
+    return jsonify(mode='local',**result)
+
+
 @bp.post('/api/listings/<int:listing_id>/recognize-room')
 @login_required
 def recognize_room(listing_id):
@@ -253,16 +289,8 @@ def recognize_room(listing_id):
                 and (not campus or str(r.get('campus','')).casefold()==campus.casefold())]
     if not candidates: return jsonify(mode=current_app.config['AI_MODE'],candidates=[],message='No reference rooms configured for this selection. Enter location manually or add labeled reference photos.')
     if current_app.config['AI_MODE']=='local':
-        from . import vision
-        try: ranked=vision.match_rooms(photos[0],candidates,base)
+        try: result=local_room_result(photos[0],campus)
         except ValueError: raise BadRequest('Could not read the room photo')
-        by_id={r['id']:r for r in candidates}
-        result=dict(candidates=[dict(room_id=item['room_id'],building=by_id[item['room_id']]['building'],
-                    room=by_id[item['room_id']]['room'],campus=by_id[item['room_id']]['campus'],
-                    evidence=item['evidence'],conflicts=[])
-                    for item in ranked],
-                    visible_sign_text='',needs_confirmation=True,
-                    uncertainty='On-device comparison with reference photos of each room. Confirm the room before saving.')
         aid=save_analysis(listing,'ROOM',result,'local')
         return jsonify(id=aid,mode='local',**result)
     if len(candidates)>12: raise BadRequest('Select a building with at most 12 reference rooms per comparison')

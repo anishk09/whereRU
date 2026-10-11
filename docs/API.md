@@ -146,3 +146,15 @@ At most 20 points; priority is a reporter-supplied weight from 1 to 3. Sharing i
 - DELETE `/api/location-sessions/{id}` with `{}`.
 
 Only points after session consent and no more than 30 seconds in the future are accepted. Sessions expire after 24 hours. Expired data is inaccessible and is deleted by `manage.py cleanup` or on a subsequent recording start. Run cleanup regularly for physical retention enforcement. The server does not get GPS by itself and cannot recover locations from before recording. Frontend native/background permission work remains separate.
+
+
+## Room scan without storing the photo
+
+`POST /api/recognize-room` (signed in, CSRF header, `multipart/form-data`)
+
+- `image`: JPEG, PNG or WebP, at most 8 MB and 20 megapixels
+- `campus` (optional): a hint only. The room is chosen among all catalog rooms; a winner on another campus is returned with a note in `conflicts`.
+
+The photo is validated, compared in memory and discarded. Limit: 60 scans per user per hour.
+
+Response: `{mode, candidates:[{room_id, building, room, campus, evidence[], conflicts[]}], needs_confirmation, uncertainty}`. An empty `candidates` list means no room was clearly identified.

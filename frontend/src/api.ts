@@ -157,15 +157,17 @@ export async function analyzeItemPhoto(photo: File) {
   return request<{ mode: string; suggestion: ApiItemSuggestion }>("POST", `/api/listings/${listingId}/analyze`, { consent_to_ai: true, image_ids: [imageId] });
 }
 
-export type ApiRoomCandidate = { room_id: string; building: string; room: string; campus: string; evidence: string[] };
+export type ApiRoomCandidate = { room_id: string; building: string; room: string; campus: string; evidence: string[]; conflicts?: string[] };
 
+export type ApiRoomResult = { mode: string; candidates: ApiRoomCandidate[]; message?: string };
+
+/** Scans a room photo. The server compares it in memory and does not keep it. */
 export async function recognizeRoomPhoto(photo: File, campus: string | null) {
-  const { listingId, imageId } = await uploadToDraft(photo);
-  return request<{ mode: string; candidates: ApiRoomCandidate[]; message?: string }>("POST", `/api/listings/${listingId}/recognize-room`, {
-    consent_to_ai: true,
-    image_id: imageId,
-    ...(campus ? { campus } : {}),
-  }, 45000);
+  await ensureSession();
+  const form = new FormData();
+  form.append("image", photo);
+  if (campus) form.append("campus", campus);
+  return request<ApiRoomResult>("POST", "/api/recognize-room", form, 45000);
 }
 
 /** Fills in the draft found report and makes it visible to matching. Returns its ID. */

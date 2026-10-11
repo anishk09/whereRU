@@ -25,6 +25,9 @@ import numpy as np
 
 MAX_SIDE = 1000
 MIN_INLIERS = 18          # below this, feature matching does not report a room
+# Feature matching must single out one room: every DCS reference panorama shows the same DCS
+# slide on its projector, so a photo of that slide gets 30-70 matches in every room.
+FEATURE_LEAD = 2.0        # best room needs at least this many times the next room's matches
 RATIO = 0.75              # Lowe ratio test
 # Scene similarity (cosine of DINOv2 embeddings, best reference view per room).
 # Calibrated 2026-10-11: unrelated lecture halls score 0.57-0.70, a Weeks 105 photo scored 0.79
@@ -233,32 +236,40 @@ def score_rooms(query_raw, rooms, base):
 def match_rooms(query_raw, rooms, base, limit=3):
     """Rooms the photo was likely taken in, best first.
 
-    Returns [{room_id, matches, similarity, evidence}]. A room is reported when feature matching
-    verifies it (>= MIN_INLIERS) or when its scene similarity is at least MIN_SIMILARITY and
-    leads the next-best room by MIN_MARGIN. Otherwise the list is empty and the finder uses
-    the placard or picks the room.
+    Always compares against every room passed in, so a room only wins if it is clearly closer
+    than all the others. Returns [{room_id, matches, similarity, evidence}]:
+    - feature matching picks a room with >= MIN_INLIERS verified matches and FEATURE_LEAD times
+      the next room's count;
+    - scene similarity picks a room with similarity >= MIN_SIMILARITY that leads the next room
+      by MIN_MARGIN.
+    Usually both agree and one room is returned. An empty list means "couldn't match", and the
+    finder scans the placard or picks the room.
     """
     started = time.time()
     scores, n_features = score_rooms(query_raw, rooms, base)
-    sims = sorted(((v['similarity'], k) for k, v in scores.items() if v['similarity'] is not None), reverse=True)
     accepted = {}
+
+    sims = sorted(((v['similarity'], k) for k, v in scores.items() if v['similarity'] is not None), reverse=True)
     if sims:
         top_sim, top_id = sims[0]
         runner_up = sims[1][0] if len(sims) > 1 else -1.0
         if top_sim >= MIN_SIMILARITY and top_sim - runner_up >= MIN_MARGIN:
             accepted[top_id] = [f'Overall look of the room matches (similarity {top_sim:.2f}, '
                                 f'next closest room {runner_up:.2f})']
-    for room_id, value in scores.items():
-        if value['matches'] >= MIN_INLIERS:
-            accepted.setdefault(room_id, []).insert(0, f"{value['matches']} visual details line up with the reference photos")
-    ranked = sorted(accepted, key=lambda r: (scores[r]['matches'] >= MIN_INLIERS, scores[r]['matches'],
-                                            scores[r]['similarity'] or 0), reverse=True)
+
+    feats = sorted(((v['matches'], k) for k, v in scores.items()), reverse=True)
+    if feats:
+        top_matches, top_id = feats[0]
+        second = feats[1][0] if len(feats) > 1 else 0
+        if top_matches >= MIN_INLIERS and top_matches >= FEATURE_LEAD * max(second, 1):
+            accepted.setdefault(top_id, []).insert(0, f'{top_matches} visual details line up with the reference photos')
+
+    ranked = sorted(accepted, key=lambda r: (len(accepted[r]), scores[r]['matches'], scores[r]['similarity'] or 0), reverse=True)
     report = ', '.join(
         f"{k}={v['matches']}" + (f"/{v['similarity']:.2f}" if v['similarity'] is not None else '')
         if v['views'] else f'{k}=no-photos' for k, v in scores.items())
-    _log(f"{n_features} photo features; matches/similarity: {report} "
-         f"(need {MIN_INLIERS} matches, or similarity {MIN_SIMILARITY} with lead {MIN_MARGIN}); "
-         f"picked {ranked or 'none'} in {time.time() - started:.1f}s")
+    _log(f"{n_features} photo features; matches/similarity: {report}; picked {ranked or 'none'} "
+         f"in {time.time() - started:.1f}s")
     return [{'room_id': r, 'matches': scores[r]['matches'], 'similarity': scores[r]['similarity'],
              'evidence': accepted[r]} for r in ranked[:limit]]
 
