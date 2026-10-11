@@ -1,0 +1,11 @@
+{
+  "title": "Where RU? Lost & found for Rutgers students",
+  "description": "Easily generate blank pages for various projects, perfect for designers, writers, and developers seeking a clean slate for creativity and organization.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

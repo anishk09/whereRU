@@ -1,0 +1,28 @@
+# Source and asset provenance
+
+- Frontend repository: https://github.com/PranavBala01/whereru-figma
+- Fetched main on 2026-10-11: `5dd0d1460acb2148a6a89d58bf735d75e957f878`.
+- Local branch: `codex/hackathon-demo`. Original source snapshot: `design-source/`.
+- User-supplied examples: IMG_3989.HEIC through IMG_3995.HEIC in Downloads. Originals are untouched. JPEG copies in `public/examples/` are resized and stripped of metadata. The reviewed local collection contains three objects: red bottle, gray Hydro Flask, and tablet in folding case. Capacity, exact tablet model and unverified marks are not fabricated.
+- User confirmed on 2026-10-11: all seven photos were taken in **IDEA3 Lab in Richard Weeks Hall**. Exact numeric lab room was not supplied or independently verified. This location lookup is labeled as a user-confirmed example reference.
+- Rutgers building/campus/address/approximate map marker: https://webapps.rutgers.edu/dcs/classrooms/RWH-206 — Busch, 500 Bartholomew Road, approximately 40.524464, −74.459505.
+- Official RWH classroom references: https://webapps.rutgers.edu/dcs/classrooms/RWH-102, https://webapps.rutgers.edu/dcs/classrooms/RWH-105, https://webapps.rutgers.edu/dcs/classrooms/RWH-206, https://webapps.rutgers.edu/dcs/classrooms/RWH-208. These are distinct rooms, not verified as IDEA3.
+- Additional user-supplied room sample: `Rutgers-Weeks-Hall_24-sm.webp`, retained as a metadata-free JPEG in `public/examples/Weeks-lecture.jpg`. The original photograph appears on Torcon's project page: https://torcon.com/project/richard-weeks-hall-of-engineering-2/ . Its room label **RWH-105** is a visual inference from the official panorama's red central wall, paired monitors, curved tiered tables, windows and wood rails; Torcon does not explicitly identify that room. The official room name is Robert and Beatrice Salvin Lecture Hall: https://soe.rutgers.edu/resources/weeks-hall-space-reservation/rooms-and-facilities . The app explicitly labels this supplied/reviewed reference and requires confirmation. The original sample did not pass the conservative independent panorama-matching threshold.
+- Rutgers non-DCS classroom support directory: https://dcs.rutgers.edu/learning-spaces/non-dcs-classrooms/ — other RWH spaces are supported by Engineering Computing Services.
+- Official panorama URLs and each room source page are recorded in `backend/data/classrooms.json`; prepared by `backend/tools/prepare_references.py`. The 33 genuine rooms produce 792 perspective views, plus two official ABW still photos. Runtime comparisons use local files. Candidate scores are retrieval rankings, not probabilities.
+- Official ABW stills: https://learningcenters.rutgers.edu/sites/default/files/2023-03/ca_collab-room-1150a.jpg and https://learningcenters.rutgers.edu/sites/default/files/2023-03/ca_collab-room-1150b_0.jpg.
+- ABW-1245B was excluded because Rutgers returns a missing-room placeholder despite HTTP 200. Unverified proposed room identifiers were excluded.
+- macOS on-device image tools: Apple's Vision framework, `VNClassifyImageRequest` and `VNRecognizeTextRequest`; source in `backend/tools/local_vision.swift`. https://developer.apple.com/documentation/vision/vnclassifyimagerequest and https://developer.apple.com/documentation/vision/vnrecognizetextrequest.
+- Basemap: OpenFreeMap / OpenMapTiles / OpenStreetMap, with attribution retained in the map. Network access for basemap tiles does not require an AI API key.
+
+The 140 seeded reports are synthetic presentation data, labeled in their titles and descriptions. Sample location spread does not represent actual campus lost-item incidents. Local photographs/reference downloads are excluded from Git and are not published to a remote repository.
+
+## Uploaded five-room matcher integration
+
+The user supplied `/Users/sujai/Downloads/whereRU-main/` after the requested private GitHub URL returned 404. Integration uses that local source, not a claimed remote fetch. The uploaded files remain unchanged. `design-source/uploaded-room-matcher.py` preserves the original; `backend/whereru/scene_matcher.py` adapts the scene embedding, FLANN retrieval and fundamental-matrix verification, adds persistent offline caches and tightens geometric acceptance/spatial spread. Existing strict homography matching and reviewed examples remain available.
+
+The uploaded five classroom IDs are ARC-103, LSH-A102, PHY-001, RWH-105 and SEC-111. Missing official panoramas were downloaded from their Rutgers DCS links into the existing catalogue. There are now 33 official rooms plus one user-confirmed IDEA3 location, with 795 indexed views including the two ABW stills and supplied Weeks photo. The scene model's five-hall reference set excludes the supplied Weeks photo.
+
+DINOv2-small comes from [Meta's official DINOv2 repository](https://github.com/facebookresearch/dinov2), pinned at `7764ea0f912e53c92e82eb78a2a1631e92725fc8`; weights are the official `dinov2_vits14_pretrain.pth`. Upstream source and model licenses are preserved in the local `.tools/dinov2/` directory. PyTorch is pinned to 2.9.1. No uploaded query image is sent to Meta, Gemini or another recognition service. Runtime model inference and reference comparison use local files.
+
+The five-hall scene matcher independently selects RWH-105 for the supplied Weeks photo, using official reference views only. This provides model evidence for the earlier visual inference, while retaining mandatory user confirmation. The earlier geometric matcher did not identify the original photograph independently; these are different test results from different methods.

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root=$PWD
+stage_id=$(printf '%s' "$repo_root" | cksum | cut -d' ' -f1)
+stage_dir="${TMPDIR:-/tmp}/figma-make-dev-$stage_id"
+
+# Imported Make files are flattened at the repository root. Copy them into the
+# canonical Vite layout so hosted previews receive /src URLs instead of /@fs.
+rm -rf "$stage_dir"
+mkdir -p "$stage_dir/src" "$stage_dir/.figma/make"
+cp "$repo_root/index.html" "$repo_root/vite.config.ts" "$repo_root/favicon.svg" "$stage_dir/"
+cp "$repo_root/.figma/make/site.json" "$stage_dir/.figma/make/site.json"
+cp "$repo_root/App.tsx" "$repo_root/CampusMap.tsx" "$repo_root/index.css" \
+  "$repo_root/LocationPicker.tsx" "$repo_root/main.tsx" "$repo_root/mapData.ts" \
+  "$repo_root/roomRecognition.ts" "$repo_root/ui.tsx" "$stage_dir/src/"
+ln -s "$repo_root/node_modules" "$stage_dir/node_modules"
+
+exec "$repo_root/node_modules/.bin/vite" "$stage_dir" --port "$PORT" --host

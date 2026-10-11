@@ -1,0 +1,1 @@
+{"version":"2.0.0","tasks":[{"label":"Start WhereRU demo","type":"shell","command":"./start-demo.command","isBackground":true,"problemMatcher":[]},{"label":"Backend tests","type":"shell","command":"backend/.venv/bin/python -m pytest backend/tests -q","group":"test","problemMatcher":[]}]}

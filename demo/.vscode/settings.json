@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+  "python.useEnvironmentsExtension": false,
+  "files.exclude": {"**/__pycache__":true,"**/.pytest_cache":true,"node_modules":true,"backend/.venv":true,"backend/.tools":true},
+  "search.exclude": {"node_modules":true,"dist":true,"backend/data/room-references":true},
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "python-envs.pythonProjects": []
+}

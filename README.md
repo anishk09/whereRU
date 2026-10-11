@@ -1,5 +1,14 @@
 # Where RU?
 
+## Complete three-minute demo
+
+The `sujai/demo-fixes` branch includes the tested presentation app in **[demo/](demo/)**. It preserves the existing team frontend, backend, classroom importer and room stress tools below.
+
+Run **`./start-demo.command`** from the repository root, then open **http://localhost:5003** and sign in with demo code **000000**. No Gemini key is required. First setup downloads dependencies and classroom/model assets. See **[DEMO-RUN.md](DEMO-RUN.md)** for prerequisites and device instructions, **[demo/DEMO-SCRIPT.md](demo/DEMO-SCRIPT.md)** for the presentation, and **[demo/TEST-REPORT.md](demo/TEST-REPORT.md)** for verification.
+
+The original app and its instructions remain below; the complete presentation app uses port **5003**.
+
+
 **Student-to-student lost & found for Rutgers.** Built at HackRU Fall 2026.
 
 Every lost item is asking the same question: where are you? Where RU? answers it.

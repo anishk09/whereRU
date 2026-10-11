@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root=$PWD
+stage_dir=$(mktemp -d)
+trap 'rm -rf "$stage_dir"' EXIT
+
+# Imported Make files are flattened at the repository root. Recreate the
+# canonical Vite layout in a temporary build workspace.
+mkdir -p "$stage_dir/src" "$stage_dir/.figma/make"
+cp index.html vite.config.ts favicon.svg "$stage_dir/"
+cp .figma/make/site.json "$stage_dir/.figma/make/"
+cp App.tsx CampusMap.tsx index.css LocationPicker.tsx main.tsx mapData.ts roomRecognition.ts ui.tsx "$stage_dir/src/"
+ln -s "$repo_root/node_modules" "$stage_dir/node_modules"
+
+# Build in development mode to emit sourcemaps.
+"$repo_root/node_modules/.bin/vite" build "$stage_dir" \
+  --mode development \
+  --outDir "$repo_root/dist" \
+  --emptyOutDir
+figma make deploy-preview --build-dir dist
