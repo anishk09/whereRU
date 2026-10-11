@@ -81,8 +81,20 @@ function Toggle({ on, setOn, label, icon }: { on: boolean; setOn: (value: boolea
   return <button type="button" className="toggle-row" aria-pressed={on} onClick={() => setOn(!on)}>{icon}<span className="toggle-label">{label}</span><span className={`toggle ${on ? "on" : ""}`} aria-hidden="true"><span /></span></button>;
 }
 
-function SignIn({ go, email, setEmail }: { go: (screen: Screen) => void; email: string; setEmail: (email: string) => void }) {
+function SignIn({ go, email, setEmail, onDevSkip }: { go: (screen: Screen) => void; email: string; setEmail: (email: string) => void; onDevSkip?: () => void }) {
   const [error, setError] = useState("");
+  // Developer shortcut: tap the logo 3 times within 1.5 s to skip sign-in. Dev builds only.
+  const [taps, setTaps] = useState<number[]>([]);
+  const tapLogo = () => {
+    if (!import.meta.env.DEV || !onDevSkip) return;
+    const now = Date.now();
+    const recent = [...taps.filter((time) => now - time < 1500), now];
+    setTaps(recent);
+    if (recent.length >= 3) {
+      setTaps([]);
+      onDevSkip();
+    }
+  };
   const submit = () => {
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (!isEmail) {
@@ -93,7 +105,7 @@ function SignIn({ go, email, setEmail }: { go: (screen: Screen) => void; email: 
   };
   return <main className="welcome-screen">
     <div className="welcome-content">
-      <Brand size="welcome" subtitle />
+      <div onClick={tapLogo} style={{ display: "contents" }}><Brand size="welcome" subtitle /></div>
       <div className="welcome-copy">
         <h1>Help it find its way home.</h1>
       </div>
@@ -1247,13 +1259,21 @@ export default function App() {
     setLastName(names.last);
     go("name");
   };
+  const devSkipSignIn = () => {
+    // Signs in as this phone's demo persona (?as=jordan / ?as=maya), straight to Home.
+    setEmail(currentUser.email);
+    setFirstName(currentUser.firstName);
+    setLastName(currentUser.lastName);
+    api.signIn(currentUser.email, `${currentUser.firstName} ${currentUser.lastName}`.trim()).catch(() => {});
+    go("home");
+  };
   const completeProfile = () => {
     updatePrimaryUser({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() });
     api.updateName(`${firstName.trim()} ${lastName.trim()}`.trim()).catch(() => {});
     go("home");
   };
   const screens: Record<Screen, ReactNode> = {
-    signin: <SignIn go={go} email={email} setEmail={setEmail} />, code: <CodeScreen go={go} email={email} onVerified={completeEmailVerification} />, name: <NameScreen go={go} firstName={firstName} setFirstName={setFirstName} lastName={lastName} setLastName={setLastName} onContinue={completeProfile} />, home: <Home go={go} openReport={openReport} reports={[...publicReports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))} firstName={currentUser.firstName} lastName={currentUser.lastName} demo={demo} />,
+    signin: <SignIn go={go} email={email} setEmail={setEmail} onDevSkip={devSkipSignIn} />, code: <CodeScreen go={go} email={email} onVerified={completeEmailVerification} />, name: <NameScreen go={go} firstName={firstName} setFirstName={setFirstName} lastName={lastName} setLastName={setLastName} onContinue={completeProfile} />, home: <Home go={go} openReport={openReport} reports={[...publicReports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))} firstName={currentUser.firstName} lastName={currentUser.lastName} demo={demo} />,
     explore: <Explore go={go} openReport={openReport} state={exploreState} setState={setExploreState} />, detail: <ReportDetail reportId={selectedReportId} go={go} onBack={() => go(detailReturnScreen === "detail" ? "explore" : detailReturnScreen)} startFoundFromLost={startFoundFromLost} />,
     capture: <Capture go={go} report={foundReport} setReport={setFoundReport} />, locate: <Locate go={go} report={foundReport} setReport={setFoundReport} />, confirm: <Confirm go={go} report={foundReport} setReport={setFoundReport} onSubmit={submitFoundReport} />, finderStatus: <FinderStatus go={go} report={selectedReport} claims={claims} onUpdateClaim={updateClaim} />, ownerNotice: <OwnerNotice go={go} report={selectedReport} />,
     ownership: <Ownership go={go} report={selectedReport} claimantId={currentUserId} onSubmit={createClaim} />, handoff: <Handoff go={go} report={selectedReport} claim={activeClaim} onUpdateClaim={updateClaim} />, lost: <Lost go={go} openReport={openReport} onSubmit={submitLostReport} sensitiveItems={sensitiveItems} />, items: <Items openReport={openReport} />,
