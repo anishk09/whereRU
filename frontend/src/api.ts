@@ -230,3 +230,13 @@ export async function notifyIdOwner(words: string[]): Promise<boolean> {
   if (!words.length || !(await ensureSession())) return false;
   return (await request<{ notified: boolean }>("POST", "/api/id-owner", { words })).notified;
 }
+
+/** Teaches item recognition: the posted photo plus the item name the finder kept.
+ * The server saves only an embedding (never the photo) and skips ID cards. */
+export async function sendItemFeedback(photo: File, label: string): Promise<string | null> {
+  if (!label.trim() || !(await ensureSession())) return null;
+  const form = new FormData();
+  form.append("image", photo);
+  form.append("label", label.trim());
+  return (await request<{ learned: string | null }>("POST", "/api/item-feedback", form, 20000)).learned;
+}

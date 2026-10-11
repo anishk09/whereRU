@@ -513,6 +513,104 @@ def _softmax(x):
     return e / e.sum()
 
 
+def _clip_image_feature(image_bgr):
+    import torch
+    from PIL import Image
+    model, preprocess, _ = _clip
+    pil = Image.fromarray(cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB))
+    with _clip_lock, torch.inference_mode():
+        feat = model.encode_image(preprocess(pil).unsqueeze(0)).float()[0].numpy()
+    return feat / np.linalg.norm(feat)
+
+
+# ---------------------------------------------------------------- learning from confirmed reports
+# When a finder posts a report, the photo's CLIP embedding is saved under the item type they
+# confirmed (only the embedding, never the photo; ID cards are never learned). New photos that
+# look like a saved example get a boost toward that type. No retraining: it takes effect at once.
+LEARNED_FILE = Path(os.getenv('ITEM_LEARNED_FILE', str(Path(__file__).resolve().parent.parent / 'data' / 'items' / 'learned.jsonl')))
+LEARN_FLOOR = float(os.getenv('ITEM_LEARN_FLOOR', '0.80'))   # below this similarity an example adds nothing
+LEARN_MAX_PER_CLASS = 200
+NEVER_LEARN = {'ruid', 'other_id_card'}
+_learned_cache = {'mtime': None, 'by_class': {}}
+_learned_lock = threading.Lock()
+
+# Words in the finder's final item name -> item type.
+LABEL_KEYWORDS = [
+    ('rutgers id', 'ruid'), ('ruid', 'ruid'), ('license', 'other_id_card'), ('id card', 'other_id_card'), ('badge', 'other_id_card'),
+    ('wallet', 'wallet'), ('purse', 'wallet'), ('card holder', 'wallet'),
+    ('airpod', 'earbuds'), ('earbud', 'earbuds'), ('headphone', 'headphones'), ('headset', 'headphones'),
+    ('iphone', 'phone'), ('phone', 'phone'), ('laptop', 'laptop'), ('macbook', 'laptop'), ('calculator', 'calculator'),
+    ('charger', 'charger'), ('cable', 'charger'), ('key', 'keys'), ('glasses', 'eyeglasses'),
+    ('backpack', 'backpack'), ('bag', 'backpack'), ('jacket', 'jacket'), ('hoodie', 'jacket'), ('sweatshirt', 'jacket'),
+    ('coat', 'jacket'), ('hat', 'hat'), ('cap', 'hat'), ('beanie', 'hat'), ('notebook', 'notebook'),
+    ('textbook', 'notebook'), ('binder', 'notebook'), ('bottle', 'water_bottle'), ('tumbler', 'water_bottle'),
+    ('flask', 'water_bottle'), ('umbrella', 'umbrella'),
+]
+
+
+def label_to_class(label):
+    text = f' {str(label).lower()} '
+    for keyword, cls in LABEL_KEYWORDS:
+        if keyword in text:
+            return cls
+    return None
+
+
+def _load_learned():
+    import json
+    try:
+        mtime = LEARNED_FILE.stat().st_mtime
+    except FileNotFoundError:
+        return {}
+    with _learned_lock:
+        if _learned_cache['mtime'] != mtime:
+            by_class = {}
+            for line in LEARNED_FILE.read_text().splitlines():
+                try:
+                    row = json.loads(line)
+                    by_class.setdefault(row['class'], []).append(np.asarray(row['embedding'], np.float32))
+                except (ValueError, KeyError):
+                    continue
+            _learned_cache.update(mtime=mtime, by_class={c: np.stack(v) for c, v in by_class.items()})
+        return _learned_cache['by_class']
+
+
+def learned_boost(feat, names):
+    """Extra logits per class from saved examples that look like this photo."""
+    learned = _load_learned()
+    boost = np.zeros(len(names), np.float32)
+    for i, name in enumerate(names):
+        if name in learned:
+            best = float((learned[name] @ feat).max())
+            boost[i] = 100.0 * max(0.0, best - LEARN_FLOOR)
+    return boost
+
+
+def learn_item(raw, label):
+    """Save this photo's embedding under the type named in label. Returns the class or None."""
+    import json
+    import time as _time
+    cls = label_to_class(label)
+    if cls is None or cls in NEVER_LEARN or clip_model() is None:
+        return None
+    image = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError('Unreadable image')
+    feat = _clip_image_feature(image)
+    row = {'class': cls, 'embedding': [round(float(x), 5) for x in feat], 'at': int(_time.time())}
+    with _learned_lock:
+        LEARNED_FILE.parent.mkdir(parents=True, exist_ok=True)
+        rows = LEARNED_FILE.read_text().splitlines() if LEARNED_FILE.exists() else []
+        rows.append(json.dumps(row))
+        same = [r for r in rows if json.loads(r)['class'] == cls]
+        if len(same) > LEARN_MAX_PER_CLASS:            # keep the newest examples per type
+            drop = set(same[:len(same) - LEARN_MAX_PER_CLASS])
+            rows = [r for r in rows if r not in drop]
+        LEARNED_FILE.write_text('\n'.join(rows) + '\n')
+    _log(f'learned: {cls} (from "{label}")')
+    return cls
+
+
 def classify_item(raw, base):
     """What the found item is, and its color.
 
@@ -523,18 +621,14 @@ def classify_item(raw, base):
     """
     if clip_model() is None:
         return classify_item_dataset(raw, base)
-    import torch
-    from PIL import Image
     image = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
     if image is None:
         raise ValueError('Unreadable image')
-    model, preprocess, _ = _clip
-    pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-    with _clip_lock, torch.inference_mode():
-        feat = model.encode_image(preprocess(pil).unsqueeze(0)).float()[0].numpy()
-    feat /= np.linalg.norm(feat)
+    feat = _clip_image_feature(image)
     names, matrix = _class_matrix()
-    probs = _softmax(100.0 * matrix @ feat)
+    logits = 100.0 * matrix @ feat
+    boost = learned_boost(feat, names)
+    probs = _softmax(logits + boost)
     order = np.argsort(-probs)
     top, second = names[order[0]], names[order[1]]
     p_top, p_second = float(probs[order[0]]), float(probs[order[1]])

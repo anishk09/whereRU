@@ -77,7 +77,7 @@ def create_app(test_config=None):
             if origin and not origin_permitted(origin): raise Forbidden('Origin is not permitted')
             if request.headers.get('Sec-Fetch-Site')=='cross-site' and not (origin and origin in allowed):
                 raise Forbidden('Cross-site request denied')
-            if request.endpoint not in ('media.upload','ai.recognize_room_photo','ai.analyze_item_photo') and not request.is_json:
+            if request.endpoint not in ('media.upload','ai.recognize_room_photo','ai.analyze_item_photo','ai.item_feedback') and not request.is_json:
                 raise UnsupportedMediaType('Use Content-Type: application/json')
             if g.user and request.endpoint not in ('auth.request_code','auth.verify_code','auth.demo_login'):
                 import hmac

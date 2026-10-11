@@ -160,6 +160,22 @@ def analyze_item_photo():
     return jsonify(mode='local',suggestion=suggestion,requires_review=True)
 
 
+@bp.post('/api/item-feedback')
+@login_required
+def item_feedback():
+    """Teach item recognition from a posted report: the photo plus the item name the finder kept.
+    Only an embedding is saved (never the photo); ID cards are never learned."""
+    from . import vision
+    rate_limit('item_feedback',60)
+    if 'image' not in request.files: raise BadRequest('multipart/form-data field image is required')
+    label=text(request.form.get('label',''),'label',160)
+    raw,_,_=normalize_image(request.files['image'].stream)
+    if current_app.config['AI_MODE']!='local': return jsonify(learned=None)
+    try: learned=vision.learn_item(raw,label)
+    except ValueError: raise BadRequest('Could not read the photo')
+    return jsonify(learned=learned)
+
+
 @bp.post('/api/id-owner')
 @login_required
 def id_owner():

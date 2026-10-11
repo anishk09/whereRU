@@ -1177,6 +1177,10 @@ export default function App() {
       }
       api.notifyIdOwner(cardWords).catch((error) => console.warn("Backend owner lookup skipped:", error));
     }
+    // Teach item recognition from what the finder confirmed (real photos only, never the sample).
+    if (foundReport.photoFile && !foundReport.sample) {
+      api.sendItemFeedback(foundReport.photoFile, foundReport.title).catch((error) => console.warn("Item feedback skipped:", error));
+    }
     // Mirror to the Flask backend (matching engine, cross-device). Best effort: the app keeps working offline.
     api.publishFoundReport({
       title: report.itemName,

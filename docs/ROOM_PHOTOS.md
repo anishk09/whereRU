@@ -126,3 +126,21 @@ Wallets, phones, keys, laptops and ID cards are marked sensitive, so their listi
 python tools/test_item_photo.py --eval                 # accuracy on the 120 dataset images
 python tools/test_item_photo.py ~/Downloads/keys.jpg   # try real phone photos
 ```
+
+## Found ID cards
+
+When a photo is recognized as an ID card, the backend reads the printed text (macOS Vision via
+`pip install pyobjc-framework-Vision`, or Tesseract if installed) and keeps only name-like words;
+digits, so the ID number, are never read into the app. When the report is posted, a registered user
+is privately notified only if both their first and last name are on the card and exactly one user
+matches (`POST /api/id-owner`). The finder learns only that someone was notified, not who.
+
+## Learning from posted reports
+
+When a finder posts a report with a real photo, the app sends the photo and the item name they
+kept to `POST /api/item-feedback`. The backend maps the name to an item type ("black hydro flask"
+-> water bottle), and saves only the photo's CLIP embedding (not the photo) to
+`data/items/learned.jsonl` (git-ignored; up to 200 per type; ID cards are never learned). New
+photos that look like a saved example get a boost toward that type right away, no retraining.
+Delete the file to reset. In production this would need moderation, since a bad label teaches a
+bad example.
