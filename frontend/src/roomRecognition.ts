@@ -204,8 +204,9 @@ export const backendRecognizer: RoomRecognizer = {
     if (!photo || !(await api.isOnline())) return demoRecognizer.describeItem(photo);
     try {
       const { suggestion } = await api.analyzeItemPhoto(photo);
+      if (!suggestion) return { title: "", category: "", color: "", description: "", demo: false };
       const color = suggestion.attributes.color ?? "";
-      const label = categoryLabels[suggestion.category] ?? "";
+      const label = suggestion.title.startsWith("Rutgers ID") ? "Wallet or ID" : categoryLabels[suggestion.category] ?? "";
       const genericTitle = !suggestion.title || suggestion.title === "Found item";
       return {
         title: genericTitle ? (color ? `${color[0].toUpperCase()}${color.slice(1)} item` : "") : suggestion.title,
@@ -215,8 +216,10 @@ export const backendRecognizer: RoomRecognizer = {
         demo: false,
       };
     } catch (error) {
-      console.warn("Item analysis failed, using demo result", error);
-      return demoRecognizer.describeItem(photo);
+      // The server is up but analysis failed (e.g. rate limit). Leave the fields for the finder
+      // instead of filling in made-up sample details.
+      console.warn("Item analysis failed", error);
+      return { title: "", category: "", color: "", description: "", demo: false };
     }
   },
 };

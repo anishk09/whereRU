@@ -112,28 +112,46 @@ def analyze(listing_id):
             current_app.logger.warning('Item AI failed: %s',type(error).__name__)
             result=fallback(listing);mode='fallback';notice='Gemini unavailable; text-only fallback used. Check API key, model availability and quota.'
     elif mode=='local':
-        from . import vision
         result=fallback(listing)
-        color=vision.dominant_color(images[0]) if images else None
-        if color: result['attributes']['color']=color
-        item=None
-        if images:
-            try: item=vision.classify_item(images[0],Path(current_app.config['CLASSROOM_CATALOG']).parent)
-            except ValueError: item=None
-        if item and item['confident']:
-            result['title']=f"{color.capitalize()} {item['title'].lower()}" if color and item['class'] not in ('ruid','other_id_card') else item['title']
-            result['category']=item['category']
-            result['priority']=item['priority']
-            result['sensitive']=item['sensitive']
-            result['uncertainty']=(f"On-device recognition: looks like {item['title'].lower()} "
-                f"(similarity {item['similarity']:.2f}, next guess {item['runner_up'].replace('_',' ')}). "
-                'Color estimated from the photo. Check everything before saving.')
-        else:
-            result['uncertainty']=('On-device analysis: color estimated from the center of the photo. '
-                'The item type was not clear enough to suggest, so add it yourself.')
+        if images: result.update(local_item_suggestion(images[0]))
     else: result=fallback(listing);mode='demo'
     aid=save_analysis(listing,'ITEM',result,mode)
     return jsonify(id=aid,mode=mode,suggestion=result,notice=notice,requires_review=True)
+
+
+def local_item_suggestion(raw):
+    """On-device item suggestion: color from the photo, item type from the campus lost-items set."""
+    from . import vision
+    color=vision.dominant_color(raw)
+    out={'attributes':{'color':color} if color else {}}
+    try: item=vision.classify_item(raw,Path(current_app.config['CLASSROOM_CATALOG']).parent)
+    except ValueError: item=None
+    if item and item['confident']:
+        named=item['class'] not in ('ruid','other_id_card') and color
+        out.update(title=f"{color.capitalize()} {item['title'].lower()}" if named else item['title'],
+            category=item['category'],priority=item['priority'],sensitive=item['sensitive'],
+            uncertainty=(f"On-device recognition: looks like {item['title'].lower()} (similarity {item['similarity']:.2f}, "
+                f"next guess {item['runner_up'].replace('_',' ')}). Color estimated from the photo. Check everything before saving."))
+    else:
+        reason='the vision model is not installed' if item is None else 'the item type was not clear enough to suggest'
+        out['uncertainty']=f'On-device analysis: color estimated from the photo; {reason}, so add the item type yourself.'
+    return out
+
+
+@bp.post('/api/analyze-item')
+@login_required
+def analyze_item_photo():
+    """Suggest details for a found-item photo without storing it (compared in memory, then discarded)."""
+    rate_limit('item_scan',60)
+    if 'image' not in request.files: raise BadRequest('multipart/form-data field image is required')
+    raw,_,_=normalize_image(request.files['image'].stream)
+    if current_app.config['AI_MODE']!='local':
+        return jsonify(mode=current_app.config['AI_MODE'],suggestion=None,message='Item recognition without storing the photo needs AI_MODE=local.')
+    try: suggestion=local_item_suggestion(raw)
+    except ValueError: raise BadRequest('Could not read the photo')
+    suggestion={'title':'','description':'','category':'other',**suggestion}
+    suggestion['attributes']={'color':None,**suggestion['attributes']}
+    return jsonify(mode='local',suggestion=suggestion,requires_review=True)
 
 
 @bp.post('/api/analyses/<int:analysis_id>/apply')

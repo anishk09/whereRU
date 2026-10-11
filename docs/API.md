@@ -158,3 +158,12 @@ Only points after session consent and no more than 30 seconds in the future are 
 The photo is validated, compared in memory and discarded. Limit: 60 scans per user per hour.
 
 Response: `{mode, candidates:[{room_id, building, room, campus, evidence[], conflicts[]}], needs_confirmation, uncertainty}`. An empty `candidates` list means no room was clearly identified.
+
+
+## Item photo analysis without storing the photo
+
+`POST /api/analyze-item` (signed in, CSRF header, `multipart/form-data`, field `image`)
+
+Returns `{mode, suggestion: {title, category, attributes: {color}, priority?, sensitive?, uncertainty}}`.
+Empty `title` means the item type wasn't clear; the finder fills it in. The photo is compared in
+memory and discarded. Limit: 60 per user per hour.

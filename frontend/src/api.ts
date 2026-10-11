@@ -142,19 +142,14 @@ export function startNewFoundReport() {
   draftFoundId = null;
 }
 
-async function uploadToDraft(photo: File): Promise<{ listingId: number; imageId: number }> {
-  const listingId = await ensureDraftFound();
+export type ApiItemSuggestion = { title: string; description: string; category: ApiCategory; attributes: { color: string | null }; priority?: string; sensitive?: boolean; uncertainty?: string };
+
+/** Suggests details for a found-item photo. The server compares it in memory and does not keep it. */
+export async function analyzeItemPhoto(photo: File) {
+  await ensureSession();
   const form = new FormData();
   form.append("image", photo);
-  const image = await request<{ id: number }>("POST", `/api/listings/${listingId}/images`, form);
-  return { listingId, imageId: image.id };
-}
-
-export type ApiItemSuggestion = { title: string; description: string; category: ApiCategory; attributes: { color: string | null } };
-
-export async function analyzeItemPhoto(photo: File) {
-  const { listingId, imageId } = await uploadToDraft(photo);
-  return request<{ mode: string; suggestion: ApiItemSuggestion }>("POST", `/api/listings/${listingId}/analyze`, { consent_to_ai: true, image_ids: [imageId] });
+  return request<{ mode: string; suggestion: ApiItemSuggestion | null; message?: string }>("POST", "/api/analyze-item", form, 30000);
 }
 
 export type ApiRoomCandidate = { room_id: string; building: string; room: string; campus: string; evidence: string[]; conflicts?: string[]; confident?: boolean };
