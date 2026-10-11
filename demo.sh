@@ -68,7 +68,15 @@ python app.py >/tmp/whereru-backend.log 2>&1 &
 PIDS="$PIDS $!"
 
 cd "$ROOT/frontend"
-npm run dev -- --port 5173 --strictPort >/tmp/whereru-frontend.log 2>&1 &
+# Serve a production build: the dev server's live reload keeps reconnecting over the tunnel
+# and reloading the phones (white flash). Falls back to the dev server without live reload.
+echo "Building the app..."
+if VITE_DEMO=true npx vite build >/tmp/whereru-build.log 2>&1; then
+  npx vite preview --port 5173 --strictPort >/tmp/whereru-frontend.log 2>&1 &
+else
+  echo "!! Build failed (see /tmp/whereru-build.log); using the dev server without live reload."
+  WHERERU_NO_HMR=1 npm run dev -- --port 5173 --strictPort >/tmp/whereru-frontend.log 2>&1 &
+fi
 PIDS="$PIDS $!"
 
 echo "Starting backend and app..."

@@ -88,7 +88,7 @@ function SignIn({ go, email, setEmail, onDevSkip }: { go: (screen: Screen) => vo
   // Developer shortcut: tap the logo 3 times within 1.5 s to skip sign-in. Dev builds only.
   const [taps, setTaps] = useState<number[]>([]);
   const tapLogo = () => {
-    if (!import.meta.env.DEV || !onDevSkip) return;
+    if (!(import.meta.env.DEV || import.meta.env.VITE_DEMO === "true") || !onDevSkip) return;
     const now = Date.now();
     const recent = [...taps.filter((time) => now - time < 1500), now];
     setTaps(recent);
