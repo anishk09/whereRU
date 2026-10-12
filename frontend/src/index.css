@@ -1025,6 +1025,14 @@ html:has(.showcase), body:has(.showcase), body:has(.showcase) #root { background
 .showcase-actions button:hover { background: rgba(255, 255, 255, .12); }
 .showcase-actions span { flex: 1 1 220px; }
 .showcase-actions a { color: #fff; text-underline-offset: 3px; }
+.showcase-links { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+.showcase-links a { min-height: 40px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; border-radius: 12px; background: #fff; color: #0b0b0d; font-size: 14px; font-weight: 700; text-decoration: none; }
+.showcase-links a:hover { background: #ffe1e8; }
+.showcase-links a + a { background: rgba(255, 255, 255, .08); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); }
+.showcase-links a + a:hover { background: rgba(255, 255, 255, .14); }
+.project-links { display: flex; justify-content: center; gap: 16px; margin: -14px 0 25px; }
+.project-links a { color: var(--scarlet); font-size: 12px; font-weight: 700; text-decoration: none; }
+.dark .project-links a { color: #ff5c7f; }
 .showcase-note { margin: 22px 0 0; color: rgba(255, 255, 255, .42); font-size: 12px; line-height: 1.6; }
 .showcase-phones { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .showcase-row { display: flex; gap: clamp(20px, 2.5vw, 40px); }

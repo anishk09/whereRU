@@ -8,6 +8,7 @@ import LocationPicker, { DemoTag, LocationSummary, PhotoButtons } from "./Locati
 import { activeRecognizer, nameOnCard, campuses as campusOptions, campusCenters, formatLocation, sourceLabel, type CampusId, type RoomLocation } from "./roomRecognition";
 import * as api from "./api";
 import { embedded } from "./embed";
+import { DEVPOST_URL, GITHUB_URL } from "./Showcase";
 import { categoryIcon, ReportImage, reportCategories, reportStatusLabel, storeReportImage, toPublicReport, useReports, type Claim, type ItemReport, type PublicItemReport, type ReportCategory, type ReportLocation } from "./reports";
 
 type Screen =
@@ -1207,6 +1208,7 @@ function Profile({ go, email, firstName, lastName, theme, setTheme, demo, setDem
     <p className="demo-caption">Demo mode loads sample items and keeps every flow available offline.</p>
     <button className="signout" onClick={() => { try { localStorage.removeItem(SIGNED_IN_KEY); } catch { /* storage unavailable */ } go("signin"); }}><Icon name="logout" /> Sign out</button>
     <p className="project-note">Where RU? is an independent student project.<br />Not affiliated with or endorsed by Rutgers University.</p>
+    <p className="project-links"><a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a><a href={DEVPOST_URL} target="_blank" rel="noopener noreferrer">Devpost</a></p>
   </main>;
 }
 
