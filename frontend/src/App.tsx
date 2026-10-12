@@ -1213,21 +1213,27 @@ function Profile({ go, email, firstName, lastName, theme, setTheme, demo, setDem
 function NotificationToast({ onOpen }: { onOpen: (reportId: string) => void }) {
   const { notifications, currentUserId, markNotificationRead } = useReports();
   const [shown, setShown] = useState<{ id: string; reportId: string; title: string; body: string } | null>(null);
-  const [seen] = useState(() => new Set<string>());
-  const [ready, setReady] = useState(false);
+  const seen = useRef(new Set<string>());
+  const opened = useRef(false);
+  const lastUser = useRef(currentUserId);
   useEffect(() => {
-    // Everything already present when the app opens (or the persona changes) counts as seen.
-    notifications.forEach((notification) => seen.add(notification.id));
-    setReady(true);
-  }, [currentUserId]);
-  useEffect(() => {
-    if (!ready) return;
-    const fresh = notifications.find((notification) => notification.userId === currentUserId && !notification.read && !seen.has(notification.id));
-    notifications.forEach((notification) => seen.add(notification.id));
+    // Alerts already there when the app opens count as seen. After that, a new unread alert for
+    // this persona pops up. Switching persona (one phone playing both people) pops up that
+    // persona's latest alert from the last 10 minutes, so the story works on a single phone.
+    if (!opened.current) {
+      notifications.forEach((notification) => seen.current.add(notification.id));
+      opened.current = true;
+      return;
+    }
+    const switched = lastUser.current !== currentUserId;
+    lastUser.current = currentUserId;
+    const mine = notifications.filter((notification) => notification.userId === currentUserId && !notification.read);
+    const fresh = mine.find((notification) => !seen.current.has(notification.id) && (!switched || Date.now() - new Date(notification.createdAt).getTime() < 10 * 60_000));
+    mine.forEach((notification) => seen.current.add(notification.id));
     if (!fresh) return;
     setShown({ id: fresh.id, reportId: fresh.reportId, title: fresh.title, body: fresh.body });
     try { navigator.vibrate?.(200); } catch { /* not supported */ }
-  }, [notifications, currentUserId, ready]);
+  }, [notifications, currentUserId]);
   useEffect(() => {
     if (!shown) return;
     const timer = window.setTimeout(() => setShown(null), 8000);

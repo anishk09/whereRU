@@ -48,6 +48,8 @@ Camera capture on phones needs HTTPS or localhost; uploading from the photo libr
 
 **Room scan needs reference photos.** Add 2 photos per classroom, see [docs/ROOM_PHOTOS.md](docs/ROOM_PHOTOS.md).
 
+**Public demo** (no backend, deploys to Vercel for free): see [docs/DEPLOY.md](docs/DEPLOY.md).
+
 **Two-phone demo** (sender + receiver + fake students): `python tools/seed_demo.py`, then open
 `?as=jordan` and `?as=maya` on two phones. See [docs/DEMO_SERVER.md](docs/DEMO_SERVER.md).
 Add live background activity from fake students with `./demo.sh --sim`.

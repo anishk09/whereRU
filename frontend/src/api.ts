@@ -62,7 +62,12 @@ export async function shrinkPhoto(photo: Blob, maxSide = 1600): Promise<Blob> {
 
 /** True when the Flask backend answers. A "yes" is remembered; a "no" is re-checked after a
  * few seconds, so starting the backend after the page loaded still works. */
+/** Static hosting (the public Vercel demo) is built with VITE_BACKEND=off: no backend calls at all,
+ * every feature uses its on-device demo version. */
+export const backendDisabled = import.meta.env.VITE_BACKEND === "off";
+
 export async function isOnline(): Promise<boolean> {
+  if (backendDisabled) return false;
   if (online) return true;
   if (online === false && Date.now() - offlineCheckedAt < 5000) return false;
   try {

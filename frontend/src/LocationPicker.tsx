@@ -176,7 +176,7 @@ export default function LocationPicker({ value, onChange, context }: {
       {phase === "results" && <div className="candidate-list">
         <div className="candidate-head"><h3>Possible classroom matches</h3>{candidates.some((candidate) => candidate.demo !== false) ? <DemoTag /> : <span className="demo-tag live"><Icon name="check" size={12} />On-device match</span>}</div>
         {candidates.some((candidate) => candidate.demo !== false)
-          ? <p className="form-hint left">These are sample rooms because the room-recognition server isn't running. Pick the one that matches what you see.</p>
+          ? <p className="form-hint left">Room recognition runs on our server, which this demo isn't connected to, so these are sample rooms. Pick the one that matches what you see.</p>
           : !candidates[0].confident
             ? <p className="form-hint left">Not a sure match. These are the closest rooms, so pick the one you're in. If it's none of them, retake from the front of the room or scan the placard.</p>
             : <p className="form-hint left">Matched against reference photos of campus classrooms. Confirm the room before continuing.</p>}

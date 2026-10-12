@@ -4,6 +4,7 @@ import type { PlaceType } from "./mapData";
 import { startDemoSync, type SyncCatalog } from "./demoSync";
 import { uploadDemoPhoto } from "./api";
 import { metersBetween } from "./nearby";
+import demoSeed from "./demoSeed.json";
 
 export type ReportType = "lost" | "found";
 export type ReportStatus = "active" | "possible_match" | "claim_under_review" | "returned" | "closed";
@@ -409,6 +410,21 @@ function proximity(lost: ReportLocation | null, found: ReportLocation | null): {
   return { near: false, text: `near ${place} on ${found.campus}` };
 }
 
+/** The fake campus (students, reports, past returns) bundled into the app, from
+ * `python tools/seed_demo.py --static-out frontend/src/demoSeed.json`. Its times are moved forward
+ * so the newest item is as recent as when it was generated: "3h ago" stays "3h ago" months later. */
+function bundledSeed(): CatalogSnapshot | null {
+  const seed = demoSeed as unknown as CatalogSnapshot & { generatedAt?: string };
+  if (!seed?.reports?.length || !seed.generatedAt) return null;
+  const shift = Math.max(0, Date.now() - new Date(seed.generatedAt).getTime());
+  const move = (value: string) => new Date(new Date(value).getTime() + shift).toISOString();
+  return {
+    reports: seed.reports.map((report) => ({ ...report, observedAt: move(report.observedAt), createdAt: move(report.createdAt), updatedAt: move(report.updatedAt) })),
+    claims: (seed.claims ?? []).map((claim) => ({ ...claim, createdAt: move(claim.createdAt), updatedAt: move(claim.updatedAt) })),
+    notifications: (seed.notifications ?? []).map((notification) => ({ ...notification, createdAt: move(notification.createdAt) })),
+  };
+}
+
 export class LocalReportRepository implements ReportRepository {
   private data: CatalogSnapshot;
   private claimAnswers = new Map<string, string>();
@@ -447,7 +463,7 @@ export class LocalReportRepository implements ReportRepository {
     } catch {
       // Storage can be unavailable in private browsing; the in-memory repository still works.
     }
-    return { reports: seedReports, claims: [], notifications: [] };
+    return bundledSeed() ?? { reports: seedReports, claims: [], notifications: [] };
   }
 
   private persist() {

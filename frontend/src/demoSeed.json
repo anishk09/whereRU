@@ -1,0 +1,2085 @@
+{
+ "generatedAt": "2026-10-12T03:04:05.071Z",
+ "reports": [
+  {
+   "id": "seed-000",
+   "reporterId": "demo-user-chloe-murphy",
+   "type": "lost",
+   "itemName": "Glasses case",
+   "category": "Other",
+   "color": "Tortoiseshell",
+   "publicDescription": "Hard glasses case.",
+   "privateDetails": "Prescription glasses inside.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Library of Science and Medicine",
+    "building": "Library of Science and Medicine",
+    "source": "timeline",
+    "placeType": "library",
+    "approximateLabel": "Around Library of Science and Medicine",
+    "approximateCoordinates": [
+     -74.46253,
+     40.5262
+    ],
+    "precise": {
+     "label": "Library of Science and Medicine",
+     "coordinates": [
+      -74.46253,
+      40.5262
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T17:34:02.558Z",
+   "createdAt": "2026-10-09T18:49:02.558Z",
+   "updatedAt": "2026-10-09T18:49:02.558Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-001",
+   "reporterId": "demo-user-ava-nguyen",
+   "type": "lost",
+   "itemName": "Rutgers hoodie",
+   "category": "Clothing",
+   "color": "Gray",
+   "publicDescription": "Pullover hoodie.",
+   "privateDetails": "Size M, small paint stain on the sleeve.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Science & Engineering Research Center",
+    "building": "Science & Engineering Research Center",
+    "room": "111",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Science & Engineering Research Center",
+    "approximateCoordinates": [
+     -74.45884,
+     40.5238
+    ],
+    "precise": {
+     "label": "Science & Engineering Research Center 111",
+     "coordinates": [
+      -74.45884,
+      40.5238
+     ]
+    }
+   },
+   "observedAt": "2026-10-08T21:21:20.833Z",
+   "createdAt": "2026-10-08T22:10:20.833Z",
+   "updatedAt": "2026-10-08T22:10:20.833Z",
+   "status": "possible_match",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-002",
+   "reporterId": "demo-user-fatima-chen",
+   "type": "found",
+   "itemName": "Rain jacket",
+   "category": "Clothing",
+   "color": "Dark green",
+   "publicDescription": "Light rain jacket.",
+   "privateDetails": "Receipt in the left pocket.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Cook/Douglass",
+    "area": "Cook Campus Center",
+    "building": "Cook Campus Center",
+    "source": "manual-area",
+    "placeType": "building",
+    "approximateLabel": "Near Cook Campus Center",
+    "approximateCoordinates": [
+     -74.4364,
+     40.48092
+    ],
+    "precise": {
+     "label": "Cook Campus Center",
+     "coordinates": [
+      -74.4364,
+      40.48092
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T13:58:47.509Z",
+   "createdAt": "2026-10-09T15:12:47.509Z",
+   "updatedAt": "2026-10-09T15:12:47.509Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-003",
+   "reporterId": "demo-user-alex-shah",
+   "type": "lost",
+   "itemName": "Glasses case",
+   "category": "Other",
+   "color": "Tortoiseshell",
+   "publicDescription": "Hard glasses case.",
+   "privateDetails": "Prescription glasses inside.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Livingston",
+    "area": "Livingston Plaza",
+    "building": "Livingston Plaza",
+    "source": "timeline",
+    "placeType": "outdoor",
+    "approximateLabel": "Around Livingston Plaza",
+    "approximateCoordinates": [
+     -74.43588,
+     40.52521
+    ],
+    "precise": {
+     "label": "Livingston Plaza",
+     "coordinates": [
+      -74.43588,
+      40.52521
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T13:27:09.871Z",
+   "createdAt": "2026-10-10T14:50:09.871Z",
+   "updatedAt": "2026-10-10T14:50:09.871Z",
+   "status": "possible_match",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-004",
+   "reporterId": "demo-user-zara-rahman",
+   "type": "found",
+   "itemName": "Wallet",
+   "category": "Wallets/IDs",
+   "color": "Brown",
+   "publicDescription": "Leather bifold wallet.",
+   "privateDetails": "Holds a Rutgers ID and a library card.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Livingston",
+    "area": "Livingston Student Center",
+    "building": "Livingston Student Center",
+    "source": "manual-area",
+    "placeType": "dining",
+    "approximateLabel": "Near Livingston Student Center",
+    "approximateCoordinates": [
+     -74.43694,
+     40.52408
+    ],
+    "precise": {
+     "label": "Livingston Student Center",
+     "coordinates": [
+      -74.43694,
+      40.52408
+     ]
+    }
+   },
+   "observedAt": "2026-10-08T23:29:11.401Z",
+   "createdAt": "2026-10-09T00:08:11.401Z",
+   "updatedAt": "2026-10-09T00:08:11.401Z",
+   "status": "closed",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-005",
+   "reporterId": "demo-user-kevin-nguyen",
+   "type": "lost",
+   "itemName": "Wireless headphones",
+   "category": "Electronics",
+   "color": "Black",
+   "publicDescription": "Over-ear headphones.",
+   "privateDetails": "Left ear cushion is slightly torn.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Engineering Building",
+    "building": "Engineering Building",
+    "room": "B120",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Engineering Building",
+    "approximateCoordinates": [
+     -74.45864,
+     40.52135
+    ],
+    "precise": {
+     "label": "Engineering Building B120",
+     "coordinates": [
+      -74.45864,
+      40.52135
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T07:12:29.909Z",
+   "createdAt": "2026-10-09T08:26:29.909Z",
+   "updatedAt": "2026-10-09T08:26:29.909Z",
+   "status": "returned",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-006",
+   "reporterId": "demo-user-ibrahim-rossi",
+   "type": "lost",
+   "itemName": "Pencil case",
+   "category": "School Supplies",
+   "color": "Purple",
+   "publicDescription": "Zip pencil case.",
+   "privateDetails": "Has a highlighter set inside.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "Academic Building West Wing",
+    "building": "Academic Building West Wing",
+    "room": "2160",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Academic Building West Wing",
+    "approximateCoordinates": [
+     -74.45055,
+     40.50258
+    ],
+    "precise": {
+     "label": "Academic Building West Wing 2160",
+     "coordinates": [
+      -74.45055,
+      40.50258
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T08:19:31.385Z",
+   "createdAt": "2026-10-10T09:27:31.385Z",
+   "updatedAt": "2026-10-10T09:27:31.385Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-007",
+   "reporterId": "demo-user-kevin-brown",
+   "type": "lost",
+   "itemName": "Glasses case",
+   "category": "Other",
+   "color": "Tortoiseshell",
+   "publicDescription": "Hard glasses case.",
+   "privateDetails": "Prescription glasses inside.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Pharmacy Building",
+    "building": "Pharmacy Building",
+    "room": "111",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Pharmacy Building",
+    "approximateCoordinates": [
+     -74.45739,
+     40.52435
+    ],
+    "precise": {
+     "label": "Pharmacy Building 111",
+     "coordinates": [
+      -74.45739,
+      40.52435
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T13:14:31.975Z",
+   "createdAt": "2026-10-10T14:35:31.975Z",
+   "updatedAt": "2026-10-10T14:35:31.975Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-008",
+   "reporterId": "demo-user-zara-rahman",
+   "type": "lost",
+   "itemName": "Stanley tumbler",
+   "category": "Bottles",
+   "color": "Cream",
+   "publicDescription": "40 oz tumbler with a handle.",
+   "privateDetails": "Chip in the paint on the handle.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Livingston",
+    "area": "Lucy Stone Hall",
+    "building": "Lucy Stone Hall",
+    "room": "A142",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Lucy Stone Hall",
+    "approximateCoordinates": [
+     -74.43472,
+     40.52359
+    ],
+    "precise": {
+     "label": "Lucy Stone Hall A142",
+     "coordinates": [
+      -74.43472,
+      40.52359
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T08:53:40.196Z",
+   "createdAt": "2026-10-09T10:00:40.196Z",
+   "updatedAt": "2026-10-09T10:00:40.196Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-009",
+   "reporterId": "demo-user-noah-liu",
+   "type": "lost",
+   "itemName": "Rutgers ID card",
+   "category": "Wallets/IDs",
+   "color": "Red and white",
+   "publicDescription": "Student ID card.",
+   "privateDetails": "Name and photo on the card.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Livingston",
+    "area": "Livingston Plaza",
+    "building": "Livingston Plaza",
+    "source": "timeline",
+    "placeType": "outdoor",
+    "approximateLabel": "Around Livingston Plaza",
+    "approximateCoordinates": [
+     -74.43606,
+     40.52459
+    ],
+    "precise": {
+     "label": "Livingston Plaza",
+     "coordinates": [
+      -74.43606,
+      40.52459
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T05:48:38.116Z",
+   "createdAt": "2026-10-09T06:50:38.116Z",
+   "updatedAt": "2026-10-09T06:50:38.116Z",
+   "status": "closed",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-010",
+   "reporterId": "demo-user-kevin-nguyen",
+   "type": "found",
+   "itemName": "Nalgene bottle",
+   "category": "Bottles",
+   "color": "Clear green",
+   "publicDescription": "Wide-mouth plastic bottle.",
+   "privateDetails": "Initials written on the lid in marker.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "Alexander Library",
+    "building": "Alexander Library",
+    "source": "manual-area",
+    "placeType": "library",
+    "approximateLabel": "Near Alexander Library",
+    "approximateCoordinates": [
+     -74.45207,
+     40.5042
+    ],
+    "precise": {
+     "label": "Alexander Library",
+     "coordinates": [
+      -74.45207,
+      40.5042
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T09:48:59.484Z",
+   "createdAt": "2026-10-09T10:13:59.484Z",
+   "updatedAt": "2026-10-09T10:13:59.484Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-011",
+   "reporterId": "demo-user-diego-nguyen",
+   "type": "lost",
+   "itemName": "Tote bag",
+   "category": "Bags",
+   "color": "Beige",
+   "publicDescription": "Canvas tote bag.",
+   "privateDetails": "Printed design from a local bookstore.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Livingston",
+    "area": "Livingston Plaza",
+    "building": "Livingston Plaza",
+    "source": "timeline",
+    "placeType": "outdoor",
+    "approximateLabel": "Around Livingston Plaza",
+    "approximateCoordinates": [
+     -74.43567,
+     40.52534
+    ],
+    "precise": {
+     "label": "Livingston Plaza",
+     "coordinates": [
+      -74.43567,
+      40.52534
+     ]
+    }
+   },
+   "observedAt": "2026-10-12T01:49:54.343Z",
+   "createdAt": "2026-10-12T03:04:05.068Z",
+   "updatedAt": "2026-10-12T03:04:05.068Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-012",
+   "reporterId": "demo-user-ryan-park",
+   "type": "found",
+   "itemName": "Rutgers ID card",
+   "category": "Wallets/IDs",
+   "color": "Red and white",
+   "publicDescription": "Student ID card.",
+   "privateDetails": "Name and photo on the card.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Cook/Douglass",
+    "area": "Douglass Student Center",
+    "building": "Douglass Student Center",
+    "source": "manual-area",
+    "placeType": "outdoor",
+    "approximateLabel": "Near Douglass Student Center",
+    "approximateCoordinates": [
+     -74.43723,
+     40.48541
+    ],
+    "precise": {
+     "label": "Douglass Student Center",
+     "coordinates": [
+      -74.43723,
+      40.48541
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T14:37:00.469Z",
+   "createdAt": "2026-10-09T15:06:00.469Z",
+   "updatedAt": "2026-10-09T15:06:00.469Z",
+   "status": "active",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-013",
+   "reporterId": "demo-user-fatima-chen",
+   "type": "found",
+   "itemName": "Car key fob",
+   "category": "Keys",
+   "color": "Black",
+   "publicDescription": "Key fob with one key.",
+   "privateDetails": "Toyota fob with a blue keychain.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "College Ave Student Center",
+    "building": "College Ave Student Center",
+    "source": "manual-area",
+    "placeType": "building",
+    "approximateLabel": "Near College Ave Student Center",
+    "approximateCoordinates": [
+     -74.4514,
+     40.50355
+    ],
+    "precise": {
+     "label": "College Ave Student Center",
+     "coordinates": [
+      -74.4514,
+      40.50355
+     ]
+    }
+   },
+   "observedAt": "2026-10-06T08:58:36.331Z",
+   "createdAt": "2026-10-06T09:11:36.331Z",
+   "updatedAt": "2026-10-06T09:11:36.331Z",
+   "status": "active",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-014",
+   "reporterId": "demo-user-noah-shah",
+   "type": "found",
+   "itemName": "Glasses case",
+   "category": "Other",
+   "color": "Tortoiseshell",
+   "publicDescription": "Hard glasses case.",
+   "privateDetails": "Prescription glasses inside.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Livingston",
+    "area": "Livingston Plaza",
+    "building": "Livingston Plaza",
+    "source": "manual-area",
+    "placeType": "outdoor",
+    "approximateLabel": "Near Livingston Plaza",
+    "approximateCoordinates": [
+     -74.43536,
+     40.52497
+    ],
+    "precise": {
+     "label": "Livingston Plaza",
+     "coordinates": [
+      -74.43536,
+      40.52497
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T06:59:28.257Z",
+   "createdAt": "2026-10-10T07:30:28.257Z",
+   "updatedAt": "2026-10-10T07:30:28.257Z",
+   "status": "returned",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-015",
+   "reporterId": "demo-user-alex-murphy",
+   "type": "lost",
+   "itemName": "Car key fob",
+   "category": "Keys",
+   "color": "Black",
+   "publicDescription": "Key fob with one key.",
+   "privateDetails": "Toyota fob with a blue keychain.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Livingston",
+    "area": "Lucy Stone Hall",
+    "building": "Lucy Stone Hall",
+    "room": "A142",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Lucy Stone Hall",
+    "approximateCoordinates": [
+     -74.43472,
+     40.52359
+    ],
+    "precise": {
+     "label": "Lucy Stone Hall A142",
+     "coordinates": [
+      -74.43472,
+      40.52359
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T02:17:31.083Z",
+   "createdAt": "2026-10-10T02:35:31.083Z",
+   "updatedAt": "2026-10-10T02:35:31.083Z",
+   "status": "possible_match",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-016",
+   "reporterId": "demo-user-nina-johnson",
+   "type": "found",
+   "itemName": "Nalgene bottle",
+   "category": "Bottles",
+   "color": "Clear green",
+   "publicDescription": "Wide-mouth plastic bottle.",
+   "privateDetails": "Initials written on the lid in marker.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "College Ave Student Center",
+    "building": "College Ave Student Center",
+    "source": "manual-area",
+    "placeType": "building",
+    "approximateLabel": "Near College Ave Student Center",
+    "approximateCoordinates": [
+     -74.45186,
+     40.50365
+    ],
+    "precise": {
+     "label": "College Ave Student Center",
+     "coordinates": [
+      -74.45186,
+      40.50365
+     ]
+    }
+   },
+   "observedAt": "2026-10-06T14:20:21.182Z",
+   "createdAt": "2026-10-06T14:54:21.182Z",
+   "updatedAt": "2026-10-06T14:54:21.182Z",
+   "status": "returned",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-017",
+   "reporterId": "demo-user-grace-liu",
+   "type": "lost",
+   "itemName": "Nalgene bottle",
+   "category": "Bottles",
+   "color": "Clear green",
+   "publicDescription": "Wide-mouth plastic bottle.",
+   "privateDetails": "Initials written on the lid in marker.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "Scott Hall bus stop",
+    "building": "Scott Hall bus stop",
+    "source": "timeline",
+    "placeType": "bus_stop",
+    "approximateLabel": "Around Scott Hall bus stop",
+    "approximateCoordinates": [
+     -74.44941,
+     40.50014
+    ],
+    "precise": {
+     "label": "Scott Hall bus stop",
+     "coordinates": [
+      -74.44941,
+      40.50014
+     ]
+    }
+   },
+   "observedAt": "2026-10-08T22:31:19.844Z",
+   "createdAt": "2026-10-08T23:30:19.844Z",
+   "updatedAt": "2026-10-08T23:30:19.844Z",
+   "status": "returned",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-018",
+   "reporterId": "demo-user-chloe-murphy",
+   "type": "found",
+   "itemName": "Spiral notebook",
+   "category": "School Supplies",
+   "color": "Blue",
+   "publicDescription": "Five-subject notebook.",
+   "privateDetails": "Orgo notes, name on the inside cover.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Cook/Douglass",
+    "area": "Food Science and Nutritional Sciences West",
+    "building": "Food Science and Nutritional Sciences West",
+    "room": "105",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Food Science and Nutritional Sciences West",
+    "approximateCoordinates": [
+     -74.43602,
+     40.48518
+    ],
+    "precise": {
+     "label": "Food Science and Nutritional Sciences West 105",
+     "coordinates": [
+      -74.43602,
+      40.48518
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T06:48:48.944Z",
+   "createdAt": "2026-10-10T07:51:48.944Z",
+   "updatedAt": "2026-10-10T07:51:48.944Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-019",
+   "reporterId": "demo-user-zara-rahman",
+   "type": "found",
+   "itemName": "Rutgers ID card",
+   "category": "Wallets/IDs",
+   "color": "Red and white",
+   "publicDescription": "Student ID card.",
+   "privateDetails": "Name and photo on the card.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Cook/Douglass",
+    "area": "Hickman Hall",
+    "building": "Hickman Hall",
+    "room": "138",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Hickman Hall",
+    "approximateCoordinates": [
+     -74.43363,
+     40.4854
+    ],
+    "precise": {
+     "label": "Hickman Hall 138",
+     "coordinates": [
+      -74.43363,
+      40.4854
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T05:23:36.600Z",
+   "createdAt": "2026-10-09T06:00:36.600Z",
+   "updatedAt": "2026-10-09T06:00:36.600Z",
+   "status": "possible_match",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-020",
+   "reporterId": "demo-user-kevin-nguyen",
+   "type": "found",
+   "itemName": "Wireless headphones",
+   "category": "Electronics",
+   "color": "Black",
+   "publicDescription": "Over-ear headphones.",
+   "privateDetails": "Left ear cushion is slightly torn.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "Scott Hall bus stop",
+    "building": "Scott Hall bus stop",
+    "source": "manual-area",
+    "placeType": "bus_stop",
+    "approximateLabel": "Near Scott Hall bus stop",
+    "approximateCoordinates": [
+     -74.44845,
+     40.49965
+    ],
+    "precise": {
+     "label": "Scott Hall bus stop",
+     "coordinates": [
+      -74.44845,
+      40.49965
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T03:08:58.650Z",
+   "createdAt": "2026-10-10T03:38:58.650Z",
+   "updatedAt": "2026-10-10T03:38:58.650Z",
+   "status": "returned",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-021",
+   "reporterId": "demo-user-kevin-nguyen",
+   "type": "lost",
+   "itemName": "Keys on a lanyard",
+   "category": "Keys",
+   "color": "Silver and red",
+   "publicDescription": "Several keys on a Rutgers lanyard.",
+   "privateDetails": "Includes a uniquely shaped apartment key.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Busch Student Center",
+    "building": "Busch Student Center",
+    "source": "timeline",
+    "placeType": "building",
+    "approximateLabel": "Around Busch Student Center",
+    "approximateCoordinates": [
+     -74.45832,
+     40.52356
+    ],
+    "precise": {
+     "label": "Busch Student Center",
+     "coordinates": [
+      -74.45832,
+      40.52356
+     ]
+    }
+   },
+   "observedAt": "2026-10-07T19:49:12.990Z",
+   "createdAt": "2026-10-07T21:10:12.990Z",
+   "updatedAt": "2026-10-07T21:10:12.990Z",
+   "status": "possible_match",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-022",
+   "reporterId": "demo-user-nina-johnson",
+   "type": "found",
+   "itemName": "Backpack",
+   "category": "Bags",
+   "color": "Black",
+   "publicDescription": "Black backpack with laptop sleeve.",
+   "privateDetails": "Has a physics textbook inside.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "Scott Hall bus stop",
+    "building": "Scott Hall bus stop",
+    "source": "manual-area",
+    "placeType": "bus_stop",
+    "approximateLabel": "Near Scott Hall bus stop",
+    "approximateCoordinates": [
+     -74.44882,
+     40.49941
+    ],
+    "precise": {
+     "label": "Scott Hall bus stop",
+     "coordinates": [
+      -74.44882,
+      40.49941
+     ]
+    }
+   },
+   "observedAt": "2026-10-11T01:59:24.358Z",
+   "createdAt": "2026-10-11T02:49:24.358Z",
+   "updatedAt": "2026-10-11T02:49:24.358Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-023",
+   "reporterId": "demo-user-ibrahim-rossi",
+   "type": "found",
+   "itemName": "USB-C laptop charger",
+   "category": "Electronics",
+   "color": "White",
+   "publicDescription": "65W charger with a coiled cable.",
+   "privateDetails": "Green tape on the brick.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Fiber Optic Materials Research Building",
+    "building": "Fiber Optic Materials Research Building",
+    "room": "108",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Fiber Optic Materials Research Building",
+    "approximateCoordinates": [
+     -74.45707,
+     40.52493
+    ],
+    "precise": {
+     "label": "Fiber Optic Materials Research Building 108",
+     "coordinates": [
+      -74.45707,
+      40.52493
+     ]
+    }
+   },
+   "observedAt": "2026-10-11T03:24:30.539Z",
+   "createdAt": "2026-10-11T04:06:30.539Z",
+   "updatedAt": "2026-10-11T04:06:30.539Z",
+   "status": "active",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-024",
+   "reporterId": "demo-user-ava-nguyen",
+   "type": "found",
+   "itemName": "Nalgene bottle",
+   "category": "Bottles",
+   "color": "Clear green",
+   "publicDescription": "Wide-mouth plastic bottle.",
+   "privateDetails": "Initials written on the lid in marker.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Livingston",
+    "area": "Lucy Stone Hall",
+    "building": "Lucy Stone Hall",
+    "room": "A102",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Lucy Stone Hall",
+    "approximateCoordinates": [
+     -74.43472,
+     40.52359
+    ],
+    "precise": {
+     "label": "Lucy Stone Hall A102",
+     "coordinates": [
+      -74.43472,
+      40.52359
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T16:48:47.637Z",
+   "createdAt": "2026-10-10T18:09:47.637Z",
+   "updatedAt": "2026-10-10T18:09:47.637Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-025",
+   "reporterId": "demo-user-alex-murphy",
+   "type": "lost",
+   "itemName": "Rain jacket",
+   "category": "Clothing",
+   "color": "Dark green",
+   "publicDescription": "Light rain jacket.",
+   "privateDetails": "Receipt in the left pocket.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Engineering Building",
+    "building": "Engineering Building",
+    "room": "B120",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Engineering Building",
+    "approximateCoordinates": [
+     -74.45864,
+     40.52135
+    ],
+    "precise": {
+     "label": "Engineering Building B120",
+     "coordinates": [
+      -74.45864,
+      40.52135
+     ]
+    }
+   },
+   "observedAt": "2026-10-08T11:25:37.103Z",
+   "createdAt": "2026-10-08T12:15:37.103Z",
+   "updatedAt": "2026-10-08T12:15:37.103Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-026",
+   "reporterId": "demo-user-chloe-murphy",
+   "type": "lost",
+   "itemName": "Glasses case",
+   "category": "Other",
+   "color": "Tortoiseshell",
+   "publicDescription": "Hard glasses case.",
+   "privateDetails": "Prescription glasses inside.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Busch Dining Hall",
+    "building": "Busch Dining Hall",
+    "source": "timeline",
+    "placeType": "dining",
+    "approximateLabel": "Around Busch Dining Hall",
+    "approximateCoordinates": [
+     -74.45973,
+     40.52455
+    ],
+    "precise": {
+     "label": "Busch Dining Hall",
+     "coordinates": [
+      -74.45973,
+      40.52455
+     ]
+    }
+   },
+   "observedAt": "2026-10-06T20:31:01.973Z",
+   "createdAt": "2026-10-06T21:26:01.973Z",
+   "updatedAt": "2026-10-06T21:26:01.973Z",
+   "status": "returned",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-027",
+   "reporterId": "demo-user-ava-nguyen",
+   "type": "found",
+   "itemName": "Spiral notebook",
+   "category": "School Supplies",
+   "color": "Blue",
+   "publicDescription": "Five-subject notebook.",
+   "privateDetails": "Orgo notes, name on the inside cover.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "Alexander Library",
+    "building": "Alexander Library",
+    "source": "manual-area",
+    "placeType": "library",
+    "approximateLabel": "Near Alexander Library",
+    "approximateCoordinates": [
+     -74.45244,
+     40.50442
+    ],
+    "precise": {
+     "label": "Alexander Library",
+     "coordinates": [
+      -74.45244,
+      40.50442
+     ]
+    }
+   },
+   "observedAt": "2026-10-07T22:47:32.764Z",
+   "createdAt": "2026-10-08T00:11:32.764Z",
+   "updatedAt": "2026-10-08T00:11:32.764Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-028",
+   "reporterId": "demo-user-zara-rahman",
+   "type": "lost",
+   "itemName": "Rutgers hoodie",
+   "category": "Clothing",
+   "color": "Gray",
+   "publicDescription": "Pullover hoodie.",
+   "privateDetails": "Size M, small paint stain on the sleeve.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "Academic Building West Wing",
+    "building": "Academic Building West Wing",
+    "room": "2125",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Academic Building West Wing",
+    "approximateCoordinates": [
+     -74.45055,
+     40.50258
+    ],
+    "precise": {
+     "label": "Academic Building West Wing 2125",
+     "coordinates": [
+      -74.45055,
+      40.50258
+     ]
+    }
+   },
+   "observedAt": "2026-10-11T18:30:40.482Z",
+   "createdAt": "2026-10-11T18:55:40.482Z",
+   "updatedAt": "2026-10-11T18:55:40.482Z",
+   "status": "possible_match",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-029",
+   "reporterId": "demo-user-ava-nguyen",
+   "type": "found",
+   "itemName": "Beanie",
+   "category": "Clothing",
+   "color": "Scarlet",
+   "publicDescription": "Knit beanie.",
+   "privateDetails": "Pom-pom on top.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Hill Center",
+    "building": "Hill Center",
+    "room": "116",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Hill Center",
+    "approximateCoordinates": [
+     -74.46299,
+     40.52199
+    ],
+    "precise": {
+     "label": "Hill Center 116",
+     "coordinates": [
+      -74.46299,
+      40.52199
+     ]
+    }
+   },
+   "observedAt": "2026-10-06T06:53:52.222Z",
+   "createdAt": "2026-10-06T07:51:52.222Z",
+   "updatedAt": "2026-10-06T07:51:52.222Z",
+   "status": "returned",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-030",
+   "reporterId": "demo-user-kevin-nguyen",
+   "type": "lost",
+   "itemName": "Keys on a lanyard",
+   "category": "Keys",
+   "color": "Silver and red",
+   "publicDescription": "Several keys on a Rutgers lanyard.",
+   "privateDetails": "Includes a uniquely shaped apartment key.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Livingston",
+    "area": "Livingston Student Center",
+    "building": "Livingston Student Center",
+    "source": "timeline",
+    "placeType": "dining",
+    "approximateLabel": "Around Livingston Student Center",
+    "approximateCoordinates": [
+     -74.43643,
+     40.52439
+    ],
+    "precise": {
+     "label": "Livingston Student Center",
+     "coordinates": [
+      -74.43643,
+      40.52439
+     ]
+    }
+   },
+   "observedAt": "2026-10-08T20:39:28.946Z",
+   "createdAt": "2026-10-08T21:18:28.946Z",
+   "updatedAt": "2026-10-08T21:18:28.946Z",
+   "status": "active",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-031",
+   "reporterId": "demo-user-noah-shah",
+   "type": "found",
+   "itemName": "Tote bag",
+   "category": "Bags",
+   "color": "Beige",
+   "publicDescription": "Canvas tote bag.",
+   "privateDetails": "Printed design from a local bookstore.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Cook/Douglass",
+    "area": "Loree Classroom Building",
+    "building": "Loree Classroom Building",
+    "room": "022",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Loree Classroom Building",
+    "approximateCoordinates": [
+     -74.43525,
+     40.48554
+    ],
+    "precise": {
+     "label": "Loree Classroom Building 022",
+     "coordinates": [
+      -74.43525,
+      40.48554
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T12:42:37.661Z",
+   "createdAt": "2026-10-10T14:02:37.661Z",
+   "updatedAt": "2026-10-10T14:02:37.661Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-032",
+   "reporterId": "demo-user-noah-shah",
+   "type": "found",
+   "itemName": "Tote bag",
+   "category": "Bags",
+   "color": "Beige",
+   "publicDescription": "Canvas tote bag.",
+   "privateDetails": "Printed design from a local bookstore.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Cook/Douglass",
+    "area": "Ruth Adams Building",
+    "building": "Ruth Adams Building",
+    "room": "001",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Ruth Adams Building",
+    "approximateCoordinates": [
+     -74.43991,
+     40.48637
+    ],
+    "precise": {
+     "label": "Ruth Adams Building 001",
+     "coordinates": [
+      -74.43991,
+      40.48637
+     ]
+    }
+   },
+   "observedAt": "2026-10-08T23:53:01.151Z",
+   "createdAt": "2026-10-09T01:03:01.151Z",
+   "updatedAt": "2026-10-09T01:03:01.151Z",
+   "status": "returned",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-033",
+   "reporterId": "demo-user-arjun-cohen",
+   "type": "lost",
+   "itemName": "Rutgers ID card",
+   "category": "Wallets/IDs",
+   "color": "Red and white",
+   "publicDescription": "Student ID card.",
+   "privateDetails": "Name and photo on the card.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Busch Dining Hall",
+    "building": "Busch Dining Hall",
+    "source": "timeline",
+    "placeType": "dining",
+    "approximateLabel": "Around Busch Dining Hall",
+    "approximateCoordinates": [
+     -74.45979,
+     40.5238
+    ],
+    "precise": {
+     "label": "Busch Dining Hall",
+     "coordinates": [
+      -74.45979,
+      40.5238
+     ]
+    }
+   },
+   "observedAt": "2026-10-06T06:29:15.038Z",
+   "createdAt": "2026-10-06T07:24:15.038Z",
+   "updatedAt": "2026-10-06T07:24:15.038Z",
+   "status": "closed",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-034",
+   "reporterId": "demo-user-ava-haddad",
+   "type": "found",
+   "itemName": "Glasses case",
+   "category": "Other",
+   "color": "Tortoiseshell",
+   "publicDescription": "Hard glasses case.",
+   "privateDetails": "Prescription glasses inside.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Fiber Optic Materials Research Building",
+    "building": "Fiber Optic Materials Research Building",
+    "room": "108",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Fiber Optic Materials Research Building",
+    "approximateCoordinates": [
+     -74.45707,
+     40.52493
+    ],
+    "precise": {
+     "label": "Fiber Optic Materials Research Building 108",
+     "coordinates": [
+      -74.45707,
+      40.52493
+     ]
+    }
+   },
+   "observedAt": "2026-10-08T15:15:17.595Z",
+   "createdAt": "2026-10-08T15:44:17.595Z",
+   "updatedAt": "2026-10-08T15:44:17.595Z",
+   "status": "returned",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-035",
+   "reporterId": "demo-user-nina-johnson",
+   "type": "lost",
+   "itemName": "Beanie",
+   "category": "Clothing",
+   "color": "Scarlet",
+   "publicDescription": "Knit beanie.",
+   "privateDetails": "Pom-pom on top.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "Alexander Library",
+    "building": "Alexander Library",
+    "source": "timeline",
+    "placeType": "library",
+    "approximateLabel": "Around Alexander Library",
+    "approximateCoordinates": [
+     -74.45244,
+     40.50455
+    ],
+    "precise": {
+     "label": "Alexander Library",
+     "coordinates": [
+      -74.45244,
+      40.50455
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T15:58:23.399Z",
+   "createdAt": "2026-10-09T16:41:23.399Z",
+   "updatedAt": "2026-10-09T16:41:23.399Z",
+   "status": "closed",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-036",
+   "reporterId": "demo-user-diego-nguyen",
+   "type": "found",
+   "itemName": "AirPods case",
+   "category": "Electronics",
+   "color": "White",
+   "publicDescription": "Charging case, no earbuds visible.",
+   "privateDetails": "Engraved with a small star.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "Academic Building East Wing",
+    "building": "Academic Building East Wing",
+    "room": "2400",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Academic Building East Wing",
+    "approximateCoordinates": [
+     -74.44816,
+     40.50128
+    ],
+    "precise": {
+     "label": "Academic Building East Wing 2400",
+     "coordinates": [
+      -74.44816,
+      40.50128
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T19:24:39.541Z",
+   "createdAt": "2026-10-10T20:40:39.541Z",
+   "updatedAt": "2026-10-10T20:40:39.541Z",
+   "status": "possible_match",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-037",
+   "reporterId": "demo-user-fatima-chen",
+   "type": "lost",
+   "itemName": "Wallet",
+   "category": "Wallets/IDs",
+   "color": "Brown",
+   "publicDescription": "Leather bifold wallet.",
+   "privateDetails": "Holds a Rutgers ID and a library card.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Biomedical Engineering Building",
+    "building": "Biomedical Engineering Building",
+    "room": "102",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Biomedical Engineering Building",
+    "approximateCoordinates": [
+     -74.46152,
+     40.52392
+    ],
+    "precise": {
+     "label": "Biomedical Engineering Building 102",
+     "coordinates": [
+      -74.46152,
+      40.52392
+     ]
+    }
+   },
+   "observedAt": "2026-10-11T06:12:23.488Z",
+   "createdAt": "2026-10-11T06:46:23.488Z",
+   "updatedAt": "2026-10-11T06:46:23.488Z",
+   "status": "active",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-038",
+   "reporterId": "demo-user-kevin-chen",
+   "type": "found",
+   "itemName": "Tote bag",
+   "category": "Bags",
+   "color": "Beige",
+   "publicDescription": "Canvas tote bag.",
+   "privateDetails": "Printed design from a local bookstore.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Busch Student Center",
+    "building": "Busch Student Center",
+    "source": "manual-area",
+    "placeType": "building",
+    "approximateLabel": "Near Busch Student Center",
+    "approximateCoordinates": [
+     -74.45783,
+     40.52363
+    ],
+    "precise": {
+     "label": "Busch Student Center",
+     "coordinates": [
+      -74.45783,
+      40.52363
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T09:35:15.065Z",
+   "createdAt": "2026-10-10T11:02:15.065Z",
+   "updatedAt": "2026-10-10T11:02:15.065Z",
+   "status": "possible_match",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-039",
+   "reporterId": "demo-user-grace-liu",
+   "type": "lost",
+   "itemName": "Pencil case",
+   "category": "School Supplies",
+   "color": "Purple",
+   "publicDescription": "Zip pencil case.",
+   "privateDetails": "Has a highlighter set inside.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Cook/Douglass",
+    "area": "Cook/Douglass Lecture Hall",
+    "building": "Cook/Douglass Lecture Hall",
+    "room": "102",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Cook/Douglass Lecture Hall",
+    "approximateCoordinates": [
+     -74.43569,
+     40.48148
+    ],
+    "precise": {
+     "label": "Cook/Douglass Lecture Hall 102",
+     "coordinates": [
+      -74.43569,
+      40.48148
+     ]
+    }
+   },
+   "observedAt": "2026-10-11T02:02:45.757Z",
+   "createdAt": "2026-10-11T02:26:45.757Z",
+   "updatedAt": "2026-10-11T02:26:45.757Z",
+   "status": "possible_match",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-040",
+   "reporterId": "demo-user-ava-haddad",
+   "type": "found",
+   "itemName": "Stanley tumbler",
+   "category": "Bottles",
+   "color": "Cream",
+   "publicDescription": "40 oz tumbler with a handle.",
+   "privateDetails": "Chip in the paint on the handle.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Cook/Douglass",
+    "area": "Ludwig Global Village Learning Center",
+    "building": "Ludwig Global Village Learning Center",
+    "room": "010",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Ludwig Global Village Learning Center",
+    "approximateCoordinates": [
+     -74.43512,
+     40.48126
+    ],
+    "precise": {
+     "label": "Ludwig Global Village Learning Center 010",
+     "coordinates": [
+      -74.43512,
+      40.48126
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T21:45:38.060Z",
+   "createdAt": "2026-10-09T22:36:38.060Z",
+   "updatedAt": "2026-10-09T22:36:38.060Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-041",
+   "reporterId": "demo-user-zara-rahman",
+   "type": "found",
+   "itemName": "Wireless headphones",
+   "category": "Electronics",
+   "color": "Black",
+   "publicDescription": "Over-ear headphones.",
+   "privateDetails": "Left ear cushion is slightly torn.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Cook/Douglass",
+    "area": "Hickman Hall",
+    "building": "Hickman Hall",
+    "room": "101",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Hickman Hall",
+    "approximateCoordinates": [
+     -74.43363,
+     40.4854
+    ],
+    "precise": {
+     "label": "Hickman Hall 101",
+     "coordinates": [
+      -74.43363,
+      40.4854
+     ]
+    }
+   },
+   "observedAt": "2026-10-08T10:02:06.285Z",
+   "createdAt": "2026-10-08T10:27:06.285Z",
+   "updatedAt": "2026-10-08T10:27:06.285Z",
+   "status": "active",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-042",
+   "reporterId": "demo-user-diego-nguyen",
+   "type": "lost",
+   "itemName": "Car key fob",
+   "category": "Keys",
+   "color": "Black",
+   "publicDescription": "Key fob with one key.",
+   "privateDetails": "Toyota fob with a blue keychain.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "Academic Building East Wing",
+    "building": "Academic Building East Wing",
+    "room": "4225",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Academic Building East Wing",
+    "approximateCoordinates": [
+     -74.44816,
+     40.50128
+    ],
+    "precise": {
+     "label": "Academic Building East Wing 4225",
+     "coordinates": [
+      -74.44816,
+      40.50128
+     ]
+    }
+   },
+   "observedAt": "2026-10-07T05:34:31.177Z",
+   "createdAt": "2026-10-07T05:55:31.177Z",
+   "updatedAt": "2026-10-07T05:55:31.177Z",
+   "status": "returned",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "seed-043",
+   "reporterId": "demo-user-noah-shah",
+   "type": "lost",
+   "itemName": "Tote bag",
+   "category": "Bags",
+   "color": "Beige",
+   "publicDescription": "Canvas tote bag.",
+   "privateDetails": "Printed design from a local bookstore.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Hill Center",
+    "building": "Hill Center",
+    "room": "114",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Hill Center",
+    "approximateCoordinates": [
+     -74.46299,
+     40.52199
+    ],
+    "precise": {
+     "label": "Hill Center 114",
+     "coordinates": [
+      -74.46299,
+      40.52199
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T18:07:48.713Z",
+   "createdAt": "2026-10-10T18:59:48.713Z",
+   "updatedAt": "2026-10-10T18:59:48.713Z",
+   "status": "returned",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-044",
+   "reporterId": "demo-user-aisha-shah",
+   "type": "found",
+   "itemName": "Glasses case",
+   "category": "Other",
+   "color": "Tortoiseshell",
+   "publicDescription": "Hard glasses case.",
+   "privateDetails": "Prescription glasses inside.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Livingston",
+    "area": "Lucy Stone Hall",
+    "building": "Lucy Stone Hall",
+    "room": "A142",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Lucy Stone Hall",
+    "approximateCoordinates": [
+     -74.43472,
+     40.52359
+    ],
+    "precise": {
+     "label": "Lucy Stone Hall A142",
+     "coordinates": [
+      -74.43472,
+      40.52359
+     ]
+    }
+   },
+   "observedAt": "2026-10-11T01:12:19.498Z",
+   "createdAt": "2026-10-11T02:06:19.498Z",
+   "updatedAt": "2026-10-11T02:06:19.498Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-045",
+   "reporterId": "demo-user-kevin-chen",
+   "type": "lost",
+   "itemName": "Rain jacket",
+   "category": "Clothing",
+   "color": "Dark green",
+   "publicDescription": "Light rain jacket.",
+   "privateDetails": "Receipt in the left pocket.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Hill Center",
+    "building": "Hill Center",
+    "room": "116",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Hill Center",
+    "approximateCoordinates": [
+     -74.46299,
+     40.52199
+    ],
+    "precise": {
+     "label": "Hill Center 116",
+     "coordinates": [
+      -74.46299,
+      40.52199
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T19:48:16.239Z",
+   "createdAt": "2026-10-09T20:14:16.239Z",
+   "updatedAt": "2026-10-09T20:14:16.239Z",
+   "status": "possible_match",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-046",
+   "reporterId": "demo-user-aisha-shah",
+   "type": "found",
+   "itemName": "Rutgers hoodie",
+   "category": "Clothing",
+   "color": "Gray",
+   "publicDescription": "Pullover hoodie.",
+   "privateDetails": "Size M, small paint stain on the sleeve.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Hill Center",
+    "building": "Hill Center",
+    "room": "114",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Hill Center",
+    "approximateCoordinates": [
+     -74.46299,
+     40.52199
+    ],
+    "precise": {
+     "label": "Hill Center 114",
+     "coordinates": [
+      -74.46299,
+      40.52199
+     ]
+    }
+   },
+   "observedAt": "2026-10-10T12:19:53.976Z",
+   "createdAt": "2026-10-10T13:49:53.976Z",
+   "updatedAt": "2026-10-10T13:49:53.976Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "seed-047",
+   "reporterId": "demo-user-ibrahim-rossi",
+   "type": "found",
+   "itemName": "Rutgers hoodie",
+   "category": "Clothing",
+   "color": "Gray",
+   "publicDescription": "Pullover hoodie.",
+   "privateDetails": "Size M, small paint stain on the sleeve.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Cook/Douglass",
+    "area": "Food Science and Nutritional Sciences West",
+    "building": "Food Science and Nutritional Sciences West",
+    "room": "105",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Food Science and Nutritional Sciences West",
+    "approximateCoordinates": [
+     -74.43602,
+     40.48518
+    ],
+    "precise": {
+     "label": "Food Science and Nutritional Sciences West 105",
+     "coordinates": [
+      -74.43602,
+      40.48518
+     ]
+    }
+   },
+   "observedAt": "2026-10-07T11:43:31.800Z",
+   "createdAt": "2026-10-07T12:44:31.800Z",
+   "updatedAt": "2026-10-07T12:44:31.800Z",
+   "status": "possible_match",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "jordan-found-0",
+   "reporterId": "demo-jordan",
+   "type": "found",
+   "itemName": "TI-84 calculator",
+   "category": "Electronics",
+   "color": "Black",
+   "publicDescription": "Graphing calculator in a slide cover.",
+   "privateDetails": "Name scratched inside the battery cover.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Allison Road Classroom",
+    "building": "Allison Road Classroom",
+    "room": "103",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Allison Road Classroom",
+    "approximateCoordinates": [
+     -74.4608,
+     40.5228
+    ],
+    "precise": {
+     "label": "Allison Road Classroom 103",
+     "coordinates": [
+      -74.4608,
+      40.5228
+     ]
+    }
+   },
+   "observedAt": "2026-10-09T03:04:05.068Z",
+   "createdAt": "2026-10-09T03:56:05.068Z",
+   "updatedAt": "2026-10-09T03:56:05.068Z",
+   "status": "returned",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "jordan-found-1",
+   "reporterId": "demo-jordan",
+   "type": "found",
+   "itemName": "Rain jacket",
+   "category": "Clothing",
+   "color": "Dark green",
+   "publicDescription": "Light rain jacket.",
+   "privateDetails": "Receipt in the left pocket.",
+   "photoUrl": null,
+   "location": {
+    "campus": "College Ave",
+    "area": "Scott Hall bus stop",
+    "building": "Scott Hall bus stop",
+    "source": "manual-area",
+    "placeType": "bus_stop",
+    "approximateLabel": "Near Scott Hall bus stop",
+    "approximateCoordinates": [
+     -74.44879,
+     40.49964
+    ],
+    "precise": {
+     "label": "Scott Hall bus stop",
+     "coordinates": [
+      -74.44879,
+      40.49964
+     ]
+    }
+   },
+   "observedAt": "2026-10-05T21:04:05.068Z",
+   "createdAt": "2026-10-05T22:17:05.068Z",
+   "updatedAt": "2026-10-05T22:17:05.068Z",
+   "status": "returned",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  },
+  {
+   "id": "jordan-found-2",
+   "reporterId": "demo-jordan",
+   "type": "found",
+   "itemName": "AirPods case",
+   "category": "Electronics",
+   "color": "White",
+   "publicDescription": "Charging case, no earbuds visible.",
+   "privateDetails": "Engraved with a small star.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Busch Student Center",
+    "building": "Busch Student Center",
+    "source": "manual-area",
+    "placeType": "building",
+    "approximateLabel": "Near Busch Student Center",
+    "approximateCoordinates": [
+     -74.45791,
+     40.52385
+    ],
+    "precise": {
+     "label": "Busch Student Center",
+     "coordinates": [
+      -74.45791,
+      40.52385
+     ]
+    }
+   },
+   "observedAt": "2026-10-11T22:04:05.068Z",
+   "createdAt": "2026-10-11T23:23:05.068Z",
+   "updatedAt": "2026-10-11T23:23:05.068Z",
+   "status": "active",
+   "visibility": "trusted-only",
+   "sensitive": true,
+   "sample": true
+  },
+  {
+   "id": "maya-lost",
+   "reporterId": "demo-maya",
+   "type": "lost",
+   "itemName": "Hydro Flask water bottle",
+   "category": "Bottles",
+   "color": "Navy blue",
+   "publicDescription": "Navy blue hydro flask water bottle.",
+   "privateDetails": "Dent near the base and a cat sticker under the lid.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Busch",
+    "area": "Hill Center",
+    "building": "Hill Center",
+    "room": "114",
+    "source": "room-scan",
+    "placeType": "classroom",
+    "approximateLabel": "Near Hill Center",
+    "approximateCoordinates": [
+     -74.46299,
+     40.52199
+    ],
+    "precise": {
+     "label": "Hill Center 114",
+     "coordinates": [
+      -74.46299,
+      40.52199
+     ]
+    }
+   },
+   "observedAt": "2026-10-12T00:04:05.068Z",
+   "createdAt": "2026-10-12T01:20:05.068Z",
+   "updatedAt": "2026-10-12T01:20:05.068Z",
+   "status": "active",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": false
+  },
+  {
+   "id": "maya-lost-history",
+   "reporterId": "demo-maya",
+   "type": "lost",
+   "itemName": "Umbrella",
+   "category": "Other",
+   "color": "Black",
+   "publicDescription": "Compact folding umbrella.",
+   "privateDetails": "Wooden handle.",
+   "photoUrl": null,
+   "location": {
+    "campus": "Livingston",
+    "area": "Livingston Student Center",
+    "building": "Livingston Student Center",
+    "source": "timeline",
+    "placeType": "dining",
+    "approximateLabel": "Around Livingston Student Center",
+    "approximateCoordinates": [
+     -74.43725,
+     40.52395
+    ],
+    "precise": {
+     "label": "Livingston Student Center",
+     "coordinates": [
+      -74.43725,
+      40.52395
+     ]
+    }
+   },
+   "observedAt": "2026-10-02T03:04:05.068Z",
+   "createdAt": "2026-10-02T03:56:05.068Z",
+   "updatedAt": "2026-10-02T03:56:05.068Z",
+   "status": "returned",
+   "visibility": "public",
+   "sensitive": false,
+   "sample": true
+  }
+ ],
+ "claims": [
+  {
+   "id": "seed-claim-014",
+   "reportId": "seed-014",
+   "claimantId": "demo-user-kevin-chen",
+   "status": "returned",
+   "createdAt": "2026-10-10T07:30:28.257Z",
+   "updatedAt": "2026-10-10T07:30:28.257Z"
+  },
+  {
+   "id": "seed-claim-016",
+   "reportId": "seed-016",
+   "claimantId": "demo-user-grace-liu",
+   "status": "returned",
+   "createdAt": "2026-10-06T14:54:21.182Z",
+   "updatedAt": "2026-10-06T14:54:21.182Z"
+  },
+  {
+   "id": "seed-claim-020",
+   "reportId": "seed-020",
+   "claimantId": "demo-user-chloe-murphy",
+   "status": "returned",
+   "createdAt": "2026-10-10T03:38:58.650Z",
+   "updatedAt": "2026-10-10T03:38:58.650Z"
+  },
+  {
+   "id": "seed-claim-029",
+   "reportId": "seed-029",
+   "claimantId": "demo-user-arjun-cohen",
+   "status": "returned",
+   "createdAt": "2026-10-06T07:51:52.222Z",
+   "updatedAt": "2026-10-06T07:51:52.222Z"
+  },
+  {
+   "id": "seed-claim-032",
+   "reportId": "seed-032",
+   "claimantId": "demo-user-nina-johnson",
+   "status": "returned",
+   "createdAt": "2026-10-09T01:03:01.151Z",
+   "updatedAt": "2026-10-09T01:03:01.151Z"
+  },
+  {
+   "id": "seed-claim-034",
+   "reportId": "seed-034",
+   "claimantId": "demo-user-grace-liu",
+   "status": "returned",
+   "createdAt": "2026-10-08T15:44:17.595Z",
+   "updatedAt": "2026-10-08T15:44:17.595Z"
+  },
+  {
+   "id": "jordan-claim-0",
+   "reportId": "jordan-found-0",
+   "claimantId": "demo-user-sofia-garcia",
+   "status": "returned",
+   "createdAt": "2026-10-09T03:56:05.068Z",
+   "updatedAt": "2026-10-09T03:56:05.068Z"
+  },
+  {
+   "id": "jordan-claim-1",
+   "reportId": "jordan-found-1",
+   "claimantId": "demo-user-nina-johnson",
+   "status": "returned",
+   "createdAt": "2026-10-05T22:17:05.068Z",
+   "updatedAt": "2026-10-05T22:17:05.068Z"
+  }
+ ],
+ "notifications": [
+  {
+   "id": "jordan-note-0",
+   "userId": "demo-jordan",
+   "reportId": "jordan-found-0",
+   "claimId": "jordan-claim-0",
+   "title": "Item returned",
+   "body": "TI-84 calculator is back with its owner. Thanks for helping!",
+   "createdAt": "2026-10-09T03:56:05.068Z",
+   "read": true,
+   "demo": true
+  },
+  {
+   "id": "jordan-note-1",
+   "userId": "demo-jordan",
+   "reportId": "jordan-found-1",
+   "claimId": "jordan-claim-1",
+   "title": "Item returned",
+   "body": "Rain jacket is back with its owner. Thanks for helping!",
+   "createdAt": "2026-10-05T22:17:05.068Z",
+   "read": true,
+   "demo": true
+  }
+ ]
+}

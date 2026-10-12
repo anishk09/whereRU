@@ -105,6 +105,10 @@ def iso(when):
     return when.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.') + f'{when.microsecond // 1000:03d}Z'
 
 
+def seed_iso_now():
+    return iso(datetime.now(timezone.utc))
+
+
 def classrooms():
     data = json.loads((BACKEND / 'data/classrooms.json').read_text())
     return data['rooms']
@@ -231,6 +235,9 @@ def build(args):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--static-out', metavar='PATH',
+                        help='Instead of seeding the backend, write the data the static web demo bundles '
+                             '(frontend/src/demoSeed.json); times are shifted to "now" when the app loads')
     parser.add_argument('--out', default=str(BACKEND / 'instance/demo_catalog.json'),
                         help='Catalog file the backend serves (default: instance/demo_catalog.json)')
     parser.add_argument('--reports', type=int, default=48, help='Number of reports from fake students (default 48)')
@@ -249,6 +256,11 @@ def main(argv=None):
         parser.error('--reports must be between 0 and 1000')
 
     catalog, personas, owner_room = build(args)
+    if args.static_out:
+        out = Path(args.static_out)
+        out.write_text(json.dumps({'generatedAt': seed_iso_now(), **catalog}, indent=1) + '\n')
+        print(f"Wrote {len(catalog['reports'])} reports for the static demo -> {out}")
+        return
     state = demo_store.reset(args.out, catalog, personas=personas)
     reports = catalog['reports']
     print(f"Seeded {len(reports)} reports ({sum(r['type'] == 'found' for r in reports)} found, "
