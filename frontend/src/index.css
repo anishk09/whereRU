@@ -38,6 +38,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   --scarlet: #cc0033;
   --scarlet-dark: #a9002a;
   --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --page-padding: 24px;
   --welcome-padding: 32px;
   --welcome-brand-gap: 12px;
@@ -147,7 +148,7 @@ h3 { font-size: 16px; font-weight: 700; }
 .safe-card { display: flex; gap: 12px; padding: 14px; background: rgba(204,0,51,.06); color: var(--scarlet); border-radius: 14px; margin: 22px 0; }
 .safe-card p { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0; }
 .safe-card strong { color: var(--text); }
-.bottom-action { position: sticky; bottom: 0; z-index: 20; width: auto; flex: 0 0 auto; margin: auto calc(var(--page-padding) * -1) 0; padding: 14px var(--page-padding) calc(18px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(0deg, var(--bg) 75%, color-mix(in srgb, var(--bg) 0%, transparent)); }
+.bottom-action { position: sticky; bottom: 0; z-index: 20; width: auto; flex: 0 0 auto; margin: auto calc(var(--page-padding) * -1) 0; padding: 14px var(--page-padding) calc(18px + var(--safe-bottom)); background: linear-gradient(0deg, var(--bg) 75%, color-mix(in srgb, var(--bg) 0%, transparent)); }
 .bottom-action.dual { padding-top: 10px; }
 .bottom-action.dual .button-ghost { min-height: 38px; }
 .action-hint, .form-hint { color: var(--muted); text-align: center; font-size: 11px; line-height: 1.4; margin: 0 0 8px; }
@@ -212,7 +213,7 @@ h3 { font-size: 16px; font-weight: 700; }
 .tip-card strong { color: var(--text); font-size: 12px; }
 .tip-card p { margin: 3px 0 0; font-size: 11px; line-height: 1.45; }
 
-.bottom-nav { position: fixed; z-index: 30; bottom: 0; left: 50%; width: min(100%, 430px); height: calc(80px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: repeat(4, 1fr); background: color-mix(in srgb, var(--surface) 94%, transparent); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(20,22,28,.04); backdrop-filter: blur(16px); }
+.bottom-nav { position: fixed; z-index: 30; bottom: 0; left: 50%; width: min(100%, 430px); height: calc(80px + var(--safe-bottom)); transform: translateX(-50%); padding: 8px 10px calc(8px + var(--safe-bottom)); display: grid; grid-template-columns: repeat(4, 1fr); background: color-mix(in srgb, var(--surface) 94%, transparent); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(20,22,28,.04); backdrop-filter: blur(16px); }
 .bottom-nav { will-change: transform; isolation: isolate; }
 .map-page + .bottom-nav { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface); }
 .map-page::before { -webkit-backdrop-filter: none; backdrop-filter: none; }
@@ -822,7 +823,7 @@ h3 { font-size: 16px; font-weight: 700; }
 @keyframes wi-ring { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.45); opacity: 0; } }
 @keyframes wi-float { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(6px, -8px) rotate(-3deg); } }
 @keyframes wi-twinkle { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
-.welcome-content { position: relative; z-index: 1; width: 100%; display: flex; flex-direction: column; padding: calc(24px + var(--safe-top)) var(--welcome-padding) calc(24px + env(safe-area-inset-bottom, 0px)); gap: 28px; }
+.welcome-content { position: relative; z-index: 1; width: 100%; display: flex; flex-direction: column; padding: calc(24px + var(--safe-top)) var(--welcome-padding) calc(24px + var(--safe-bottom)); gap: 28px; }
 .welcome-brand { justify-content: center; margin-bottom: 4px; }
 .welcome-brand-copy { width: 100%; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .welcome-brand-copy small { margin-top: 10px; color: rgba(255, 255, 255, .6); font-size: 11px; font-weight: 700; line-height: 1.25; letter-spacing: .14em; text-transform: uppercase; }
@@ -1002,7 +1003,6 @@ h3 { font-size: 16px; font-weight: 700; }
 /* ---------- Desktop showcase (Showcase.tsx): pitch + two live phones ---------- */
 html:has(.showcase), body:has(.showcase), body:has(.showcase) #root { background: #0b0b0d; }
 .showcase {
-  --phone-h: min(844px, max(560px, calc(100dvh - 170px)));
   min-height: 100dvh; display: grid; grid-template-columns: minmax(340px, 460px) auto; justify-content: center; align-items: center; gap: clamp(32px, 5vw, 80px);
   padding: 40px clamp(24px, 4vw, 64px); color: #fff; font-family: Lato, system-ui, sans-serif;
   background: radial-gradient(60% 50% at 75% 45%, rgba(204, 0, 51, .22), transparent 70%), radial-gradient(50% 40% at 0% 100%, rgba(204, 0, 51, .16), transparent 70%), #0b0b0d;
@@ -1032,8 +1032,22 @@ html:has(.showcase), body:has(.showcase), body:has(.showcase) #root { background
 .showcase-phone figcaption { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .showcase-phone figcaption strong { font-size: 15px; }
 .showcase-phone figcaption span { color: rgba(255, 255, 255, .55); font-size: 12px; }
-.phone-frame { width: 410px; height: calc(var(--phone-h) + 20px); padding: 10px; border-radius: 48px; background: #1c1d22; box-shadow: 0 0 0 1px rgba(255, 255, 255, .08), 0 30px 80px rgba(0, 0, 0, .55); }
-.phone-frame iframe { display: block; width: 390px; height: var(--phone-h); border: 0; border-radius: 38px; background: #0b0b0d; }
+/* iPhone 17: 402 x 874 pt screen, Dynamic Island, 62 / 34 pt safe areas. The app inside sees the real
+   402 x 874 viewport; the whole phone is scaled (Showcase.tsx) when the window is too short. */
+.phone-slot { position: relative; width: calc(426px * var(--phone-scale, 1)); height: calc(898px * var(--phone-scale, 1)); }
+.phone-frame { position: absolute; top: 0; left: 0; width: 426px; height: 898px; padding: 12px; border-radius: 67px; background: #1c1d22; box-shadow: 0 0 0 1.5px #3a3b42, 0 0 0 3px #111214, 0 30px 80px rgba(0, 0, 0, .55); transform: scale(var(--phone-scale, 1)); transform-origin: 0 0; }
+.phone-screen { position: relative; width: 402px; height: 874px; border-radius: 55px; overflow: hidden; background: #f6f6f8; }
+.phone-screen iframe { display: block; width: 402px; height: 874px; border: 0; }
+.phone-island { position: absolute; z-index: 2; top: 11px; left: 50%; width: 126px; height: 37px; transform: translateX(-50%); border-radius: 20px; background: #000; pointer-events: none; }
+.phone-status { position: absolute; z-index: 1; top: 0; left: 0; right: 0; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 4px 30px 0 46px; color: #000; font: 600 17px/1 -apple-system, "SF Pro Text", system-ui, sans-serif; pointer-events: none; }
+.phone-status svg { display: block; }
+.phone-status-icons { display: flex; align-items: center; gap: 6px; }
+.phone-home { position: absolute; z-index: 1; bottom: 8px; left: 50%; width: 140px; height: 5px; transform: translateX(-50%); border-radius: 3px; background: #000; pointer-events: none; }
+@media (prefers-color-scheme: dark) {
+  .phone-status { color: #fff; }
+  .phone-home { background: #fff; }
+  .phone-screen { background: #0b0b0d; }
+}
 .showcase .only-one { display: none; }
 @media (max-width: 1439px) { .showcase .only-one { display: inline; } }
 .showcase-switch { display: none; padding: 4px; gap: 4px; border-radius: 14px; background: rgba(255, 255, 255, .08); }
@@ -1056,3 +1070,6 @@ html:has(.showcase), body:has(.showcase), body:has(.showcase) #root { background
   .showcase { padding-top: 20px; padding-bottom: 20px; }
   .showcase-phones { gap: 10px; }
 }
+
+/* Running inside a showcase phone frame (embed.ts): iPhone 17 safe areas. */
+html[data-embed] .app-root { --safe-top: 62px; --safe-bottom: 34px; }
