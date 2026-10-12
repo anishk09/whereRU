@@ -9,6 +9,11 @@ maintenance-free. Everything runs in the visitor's browser:
 - The full story works on one phone: post the bottle as Jordan, switch to Maya in
   Profile → Demo persona, get the match alert, claim it, switch back and approve.
 - Each visitor's changes stay in their own browser.
+- **On a laptop or desktop** the link opens a showcase: the pitch and a 3-step guide on the left,
+  Jordan's and Maya's phones running side by side on the right (one phone with a Jordan / Maya
+  switch below 1440px wide). The phones share the browser's storage, so posting on one pops the
+  alert on the other. "Reset demo" starts over. Add `?app` to the link to open the plain app.
+- On phones and tablets it opens the normal full-screen app.
 
 The two-phone demo with the real backend (`./demo.sh`) is unchanged. See [DEMO_SERVER.md](DEMO_SERVER.md).
 

@@ -744,11 +744,13 @@ h3 { font-size: 16px; font-weight: 700; }
 }
 
 @media (min-width: 600px) {
-  .app-root { min-height: 100dvh; padding: 28px 0; }
-  .app-shell { max-width: 430px; min-height: calc(100dvh - 56px); margin: 0 auto; border-radius: 28px; box-shadow: 0 18px 70px rgba(20,22,28,.16); }
-  .simple-page, .tab-page, .auth-screen, .camera-screen, .result-screen { min-height: calc(100dvh - 56px); }
-  .bottom-nav { bottom: 28px; border-radius: 0 0 28px 28px; }
-  .bottom-action { bottom: 0; border-radius: 0 0 28px 28px; overflow: hidden; }
+  /* Tablet / narrow desktop window: the app as a card that runs to the bottom edge, so the tab bar
+     sits on the window's bottom edge and nothing scrolls visibly underneath it. */
+  .app-root { min-height: 100dvh; padding: 28px 0 0; }
+  .app-shell { max-width: 430px; min-height: calc(100dvh - 28px); margin: 0 auto; border-radius: 28px 28px 0 0; box-shadow: 0 18px 70px rgba(20,22,28,.16); }
+  .simple-page, .tab-page, .auth-screen, .camera-screen, .result-screen { min-height: calc(100dvh - 28px); }
+  .bottom-nav { bottom: 0; border-radius: 0; }
+  .bottom-action { bottom: 0; border-radius: 0; overflow: hidden; }
 }
 
 /* Readable type and pointer proportions aligned with WCAG target-size guidance. */
@@ -996,3 +998,61 @@ h3 { font-size: 16px; font-weight: 700; }
 .claim-chat-form input { flex: 1; min-width: 0; height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid var(--line); background: var(--bg); color: inherit; font: inherit; font-size: 16px; }
 .claim-chat-form button { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; background: #cc0033; color: #fff; display: grid; place-items: center; cursor: pointer; }
 .claim-chat-form button:disabled { opacity: .4; cursor: default; }
+
+/* ---------- Desktop showcase (Showcase.tsx): pitch + two live phones ---------- */
+html:has(.showcase), body:has(.showcase), body:has(.showcase) #root { background: #0b0b0d; }
+.showcase {
+  --phone-h: min(844px, max(560px, calc(100dvh - 170px)));
+  min-height: 100dvh; display: grid; grid-template-columns: minmax(340px, 460px) auto; justify-content: center; align-items: center; gap: clamp(32px, 5vw, 80px);
+  padding: 40px clamp(24px, 4vw, 64px); color: #fff; font-family: Lato, system-ui, sans-serif;
+  background: radial-gradient(60% 50% at 75% 45%, rgba(204, 0, 51, .22), transparent 70%), radial-gradient(50% 40% at 0% 100%, rgba(204, 0, 51, .16), transparent 70%), #0b0b0d;
+}
+.showcase-copy { max-width: 460px; }
+.showcase-wordmark { font-size: 40px; color: #fff; }
+.showcase .brand-ru::after { background: #ff2e5b; }
+.showcase .brand-question { color: #ff2e5b; }
+.showcase-kicker { margin: 16px 0 0; color: rgba(255, 255, 255, .6); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.showcase h1 { margin: 10px 0 0; font-size: clamp(34px, 3.2vw, 46px); font-weight: 900; line-height: 1.08; letter-spacing: -.01em; }
+.showcase-lede { margin: 16px 0 0; color: rgba(255, 255, 255, .8); font-size: 16px; line-height: 1.6; }
+.showcase h2 { margin: 32px 0 12px; font-size: 13px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: #ff5c7f; }
+.showcase-steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+.showcase-steps li { position: relative; padding: 0 0 0 40px; color: rgba(255, 255, 255, .82); font-size: 15px; line-height: 1.55; counter-increment: step; }
+.showcase-steps li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 46, 91, .16); color: #ff5c7f; font-size: 13px; font-weight: 900; }
+.showcase-steps strong { color: #fff; }
+.showcase-steps em { font-style: normal; color: #fff; font-weight: 700; }
+.showcase-actions { margin-top: 28px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; color: rgba(255, 255, 255, .62); font-size: 13px; line-height: 1.5; }
+.showcase-actions button { min-height: 40px; padding: 0 16px; border: 1px solid rgba(255, 255, 255, .22); border-radius: 12px; background: rgba(255, 255, 255, .06); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.showcase-actions button:hover { background: rgba(255, 255, 255, .12); }
+.showcase-actions span { flex: 1 1 220px; }
+.showcase-actions a { color: #fff; text-underline-offset: 3px; }
+.showcase-note { margin: 22px 0 0; color: rgba(255, 255, 255, .42); font-size: 12px; line-height: 1.6; }
+.showcase-phones { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.showcase-row { display: flex; gap: clamp(20px, 2.5vw, 40px); }
+.showcase-phone { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.showcase-phone figcaption { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.showcase-phone figcaption strong { font-size: 15px; }
+.showcase-phone figcaption span { color: rgba(255, 255, 255, .55); font-size: 12px; }
+.phone-frame { width: 410px; height: calc(var(--phone-h) + 20px); padding: 10px; border-radius: 48px; background: #1c1d22; box-shadow: 0 0 0 1px rgba(255, 255, 255, .08), 0 30px 80px rgba(0, 0, 0, .55); }
+.phone-frame iframe { display: block; width: 390px; height: var(--phone-h); border: 0; border-radius: 38px; background: #0b0b0d; }
+.showcase .only-one { display: none; }
+@media (max-width: 1439px) { .showcase .only-one { display: inline; } }
+.showcase-switch { display: none; padding: 4px; gap: 4px; border-radius: 14px; background: rgba(255, 255, 255, .08); }
+.showcase-switch button { min-width: 96px; min-height: 36px; border: 0; border-radius: 10px; background: transparent; color: rgba(255, 255, 255, .7); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.showcase-switch button.active { background: #cc0033; color: #fff; }
+/* Not wide enough for both phones: one at a time, with a Jordan / Maya switch. */
+@media (max-width: 1439px) {
+  .showcase-switch { display: flex; }
+  .showcase .only-two { display: none; }
+  .showcase-phone:not(.is-active) { display: none; }
+  .showcase-phone figcaption { display: none; }
+}
+@media (max-height: 820px) {
+  .showcase h1 { font-size: clamp(30px, 2.8vw, 38px); }
+  .showcase-lede { font-size: 15px; }
+  .showcase h2 { margin-top: 24px; }
+  .showcase-actions { margin-top: 20px; }
+}
+@media (max-height: 760px) {
+  .showcase { padding-top: 20px; padding-bottom: 20px; }
+  .showcase-phones { gap: 10px; }
+}

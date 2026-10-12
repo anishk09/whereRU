@@ -7,6 +7,7 @@ import { BrandIcon, Button, Icon, Wordmark, type IconName } from "./ui";
 import LocationPicker, { DemoTag, LocationSummary, PhotoButtons } from "./LocationPicker";
 import { activeRecognizer, nameOnCard, campuses as campusOptions, campusCenters, formatLocation, sourceLabel, type CampusId, type RoomLocation } from "./roomRecognition";
 import * as api from "./api";
+import { embedded } from "./embed";
 import { categoryIcon, ReportImage, reportCategories, reportStatusLabel, storeReportImage, toPublicReport, useReports, type Claim, type ItemReport, type PublicItemReport, type ReportCategory, type ReportLocation } from "./reports";
 
 type Screen =
@@ -1443,8 +1444,9 @@ export default function App() {
     go("home");
   };
   useEffect(() => {
-    // After a refresh, pick up where this phone left off instead of the sign-in screen.
-    if (wasSignedIn()) devSkipSignIn();
+    // After a refresh, pick up where this phone left off instead of the sign-in screen. Phones in
+    // the desktop showcase open straight to Home as their persona.
+    if (wasSignedIn() || embedded) devSkipSignIn();
   }, []);
   const completeProfile = () => {
     updatePrimaryUser({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() });

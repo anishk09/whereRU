@@ -124,6 +124,17 @@ export interface ReportRepository {
 }
 
 const STORAGE_KEY = "where-ru.catalog.v1";
+/** Claim proof answers live for this browser tab only (sessionStorage), never in the saved catalog.
+ * Same-tab frames share them, so the desktop showcase's two phones can review each other's claims. */
+const ANSWERS_KEY = "where-ru.claim-answers";
+
+function storedAnswers(): Record<string, string> {
+  try {
+    return JSON.parse(sessionStorage.getItem(ANSWERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
 const IMAGE_DB = "where-ru.images.v1";
 const IMAGE_STORE = "images";
 const IMAGE_PREFIX = "where-ru-image:";
@@ -427,10 +438,28 @@ function bundledSeed(): CatalogSnapshot | null {
 
 export class LocalReportRepository implements ReportRepository {
   private data: CatalogSnapshot;
-  private claimAnswers = new Map<string, string>();
+  private claimAnswers = new Map<string, string>(Object.entries(storedAnswers()));
 
   constructor() {
     this.data = this.load();
+  }
+
+  private saveAnswers() {
+    try {
+      sessionStorage.setItem(ANSWERS_KEY, JSON.stringify({ ...storedAnswers(), ...Object.fromEntries(this.claimAnswers) }));
+    } catch {
+      // Without storage the answer stays in memory for this page only.
+    }
+  }
+
+  private answer(id: string) {
+    return this.claimAnswers.get(id) ?? storedAnswers()[id];
+  }
+
+  /** Another tab or frame changed the saved catalog: take its version (no write back). */
+  reloadFromStorage() {
+    this.data = this.load();
+    for (const [id, answer] of Object.entries(storedAnswers())) this.claimAnswers.set(id, answer);
   }
 
   private load(): CatalogSnapshot {
@@ -595,6 +624,7 @@ export class LocalReportRepository implements ReportRepository {
     const now = new Date().toISOString();
     const claim: Claim = { id: uid("claim"), reportId, claimantId, status: "submitted", createdAt: now, updatedAt: now };
     this.claimAnswers.set(claim.id, privateProof.trim());
+    this.saveAnswers();
     this.data = { ...this.data, claims: [claim, ...this.data.claims] };
     this.updateInternal(reportId, { status: "claim_under_review" });
     this.addNotification({
@@ -614,7 +644,7 @@ export class LocalReportRepository implements ReportRepository {
     const claim = this.data.claims.find((item) => item.id === id);
     const report = claim && this.getById(claim.reportId);
     if (!claim || !report || report.reporterId !== actorId) return undefined;
-    return this.claimAnswers.get(id);
+    return this.answer(id);
   }
 
   updateClaim(id: string, status: ClaimStatus, actorId: string, handoffNote?: string) {
@@ -632,7 +662,7 @@ export class LocalReportRepository implements ReportRepository {
       returned: [],
     };
     if (!transitions[current.status].includes(status)) throw new Error(`A claim cannot move from ${current.status} to ${status}.`);
-    if (status === "approved" && !this.claimAnswers.get(id)?.trim()) throw new Error("Private answer unavailable after refresh — ask the claimant to resubmit.");
+    if (status === "approved" && !this.answer(id)?.trim()) throw new Error("Private answer unavailable after refresh — ask the claimant to resubmit.");
     if (["closed", "returned"].includes(report.status)) throw new Error("Claims cannot be changed for an unavailable report.");
     const updated: Claim = { ...current, status, ...(handoffNote ? { handoffNote } : {}), updatedAt: new Date().toISOString() };
     this.data = { ...this.data, claims: this.data.claims.map((claim) => claim.id === id ? updated : claim) };
@@ -703,6 +733,7 @@ export class LocalReportRepository implements ReportRepository {
       notifications: catalog.notifications ?? [],
     };
     for (const [id, answer] of Object.entries(claimAnswers)) this.claimAnswers.set(id, answer);
+    this.saveAnswers();
     this.persist();
   }
 }
@@ -781,6 +812,16 @@ export function ReportProvider({ children }: { children: ReactNode }) {
   const [currentUserId, setCurrentUserId] = useState<DemoUser["id"]>(initialPersona);
   const [users, setUsers] = useState(initialDemoUsers);
   const syncRef = useRef<ReturnType<typeof startDemoSync> | null>(null);
+  useEffect(() => {
+    // Another tab, or the other phone in the desktop showcase, saved a change: show it here too.
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY && event.key !== null) return;
+      repository.reloadFromStorage();
+      setSnapshot(repository.snapshot());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [repository]);
   useEffect(() => {
     const sync = startDemoSync(repository, () => setSnapshot(repository.snapshot()));
     syncRef.current = sync;
